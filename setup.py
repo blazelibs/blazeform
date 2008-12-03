@@ -18,6 +18,7 @@ setup(
     install_requires = [
         "FormEncode>=1.2",
         "WebHelpers>=0.6.4"
-    ]
+    ],
+    zip_safe=False
 )
 
