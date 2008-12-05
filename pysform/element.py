@@ -1,7 +1,6 @@
 from os import path
 import cgi
-from webhelpers.html import HTML
-from webhelpers.html.tags import select
+from webhelpers.html import HTML, tags
 import formencode
 import formencode.validators as fev
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
@@ -49,7 +48,7 @@ class ElementBase(HtmlAttributeHolder):
     """
     Base class for form elements.
     """
-    def __init__(self, type, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
+    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
 
         self._defaultval = NotGiven
@@ -57,12 +56,10 @@ class ElementBase(HtmlAttributeHolder):
         
         self.id = eid
         self.label = Label(self, label)
-        self.type = type
         self.form = form
     
         self.defaultval = defaultval
         self.set_attr('id', self.getidattr())
-        self.set_attr('class_', self.type)
 
         self._bind_to_form()
     
@@ -111,7 +108,7 @@ class FormFieldElementBase(HasValueElement):
     Base class for form elements that represent form fields (input, select, etc.)
     as opposed to Elements that are only for display (i.e. static, headers).
     """
-    def __init__(self, etype, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
         # if this field was not submitted, we can substitute
         self.if_missing = kwargs.pop('if_missing', NotGiven)
         # if the field was submitted, but is an empty value
@@ -120,7 +117,7 @@ class FormFieldElementBase(HasValueElement):
         self.if_invalid = kwargs.pop('if_invalid', NotGiven)
         #: is this field required in order for the form submission to be valid?
         self.required = kwargs.pop('required', False)
-        HasValueElement.__init__(self, etype, form, eid, label, defaultval, **kwargs)
+        HasValueElement.__init__(self, form, eid, label, defaultval, **kwargs)
 
         self._submittedval = NotGiven
         self._safeval = NotGiven
@@ -307,17 +304,19 @@ class InputElementBase(FormFieldElementBase):
     this common base class. You don't need to instantiate it directly,
     use one of the child classes.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, etype, *args, **kwargs):
         FormFieldElementBase.__init__(self, *args, **kwargs)
         # use to override using the id as the default "name" attribute
         self.nameattr = None
+        self.set_attr('class_', etype)
+        self.etype = etype
     
     def render(self, **kwargs):
         if self.displayval and self.displayval is not NotGiven:
             self.set_attr('value', self.displayval)
         self.set_attr('name', self.nameattr or self.id)
         self.set_attrs(**kwargs)
-        return HTML.input(type=self.type, **self.attributes)
+        return HTML.input(type=self.etype, **self.attributes)
 
 class ButtonElement(InputElementBase):
     def __init__(self, *args, **kwargs):
@@ -352,7 +351,7 @@ class CheckboxElement(InputElementBase):
             self.set_attr('checked', 'checked')
         self.set_attr('name', self.nameattr or self.id)
         self.set_attrs(**kwargs)
-        return HTML.input(type=self.type, **self.attributes)
+        return HTML.input(type=self.etype, **self.attributes)
 form_elements['checkbox'] = CheckboxElement
 
 class HiddenElement(InputElementBase):
@@ -431,7 +430,7 @@ class PasswordElement(TextElement):
         self.default_ok = kwargs.pop('default_ok', False)
         TextElement.__init__(self, *args, **kwargs)
         # override the type
-        self.type = 'password'
+        self.etype = 'password'
         # class attribute set already, override that too
         self.set_attr('class_', 'password')
         
@@ -467,7 +466,7 @@ class SelectElement(FormFieldElementBase):
                  auto_validate=True, invalid = [], error_msg = None,
                  required = False, **kwargs):
         self.multiple = bool(kwargs.pop('multiple', False))
-        FormFieldElementBase.__init__(self, 'select', form, eid, label,
+        FormFieldElementBase.__init__(self, form, eid, label,
                 vtype, defaultval, strip, required=required, **kwargs)
 
         self.options = options
@@ -518,7 +517,7 @@ class SelectElement(FormFieldElementBase):
         if self.multiple:
             self.set_attr('multiple', 'multiple')
         self.set_attrs(**kwargs)
-        return select(self.id, self.displayval or None, self.options, **self.attributes)
+        return tags.select(self.id, self.displayval or None, self.options, **self.attributes)
 form_elements['select'] = SelectElement
 
 class MultiSelectElement(SelectElement):
@@ -532,14 +531,15 @@ class TextAreaElement(FormFieldElementBase):
     """
     HTML class for a textarea type field
     """
-    def __init__(self, form, eid, displayName=None, rows = 7, cols=40, **kwargs):
-        FormFieldElementBase.__init__(self, form, eid, displayName, rows=rows, cols=cols, **kwargs)
-        self.setType('textarea')
+    def __init__(self, *args, **kwargs):
+        # set default values
+        kwargs['rows'] = kwargs.pop('rows', 7)
+        kwargs['cols'] = kwargs.pop('cols', 40)
+        FormFieldElementBase.__init__(self, *args, **kwargs)
     
     def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html.tags import textarea
-        return textarea(self.name, self.currentValue(), **self.attributes)
+        self.set_attrs(**kwargs)
+        return tags.textarea(self.id, self.displayval, **self.attributes)
 
 class FileElement(InputElementBase):
     def __init__(self, *args, **kwargs):

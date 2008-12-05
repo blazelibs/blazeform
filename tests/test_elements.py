@@ -689,7 +689,7 @@ class InputElementsTest(unittest.TestCase):
 
     def test_el_select(self):
         html = \
-        '<select class="select" id="f-f" name="f">\n<option value="-2">Choose:'\
+        '<select id="f-f" name="f">\n<option value="-2">Choose:'\
         '</option>\n<option value="-1">-------------------------</option>\n'\
         '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
         o = [(1, 'a'), (2, 'b')]
@@ -698,7 +698,7 @@ class InputElementsTest(unittest.TestCase):
         
         # custom choose name
         html = \
-        '<select class="select" id="f-f" name="f">\n<option value="-2">test:'\
+        '<select id="f-f" name="f">\n<option value="-2">test:'\
         '</option>\n<option value="-1">-------------------------</option>\n'\
         '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
         el = Form('f').add_select('f', o, choose='test:')
@@ -706,14 +706,14 @@ class InputElementsTest(unittest.TestCase):
         
         # no choose
         html = \
-        '<select class="select" id="f-f" name="f">\n'\
+        '<select id="f-f" name="f">\n'\
         '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
         el = Form('f').add_select('f', o, choose=None)
         self.assertEqual(str(el()), html)
         
         # default values
         html = \
-        '<select class="select" id="f-f" name="f">\n'\
+        '<select id="f-f" name="f">\n'\
         '<option selected="selected" value="1">a</option>\n<option value="2">'\
         'b</option>\n</select>'
         el = Form('f').add_select('f', o, defaultval=1, choose=None)
@@ -786,7 +786,7 @@ class InputElementsTest(unittest.TestCase):
         
     def test_el_select_multi(self):
         html = \
-        '<select class="select" id="f-f" multiple="multiple" name="f">\n'\
+        '<select id="f-f" multiple="multiple" name="f">\n'\
         '<option value="-2">Choose:'\
         '</option>\n<option value="-1">-------------------------</option>\n'\
         '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
@@ -802,7 +802,7 @@ class InputElementsTest(unittest.TestCase):
         
         # single default values
         html = \
-        '<select class="select" id="f-f" multiple="multiple" name="f">\n'\
+        '<select id="f-f" multiple="multiple" name="f">\n'\
         '<option selected="selected" value="1">a</option>\n<option value="2">'\
         'b</option>\n</select>'
         el = Form('f').add_mselect('f', o, defaultval=1, choose=None)
@@ -812,7 +812,7 @@ class InputElementsTest(unittest.TestCase):
         
         # multiple default values
         html = \
-        '<select class="select" id="f-f" multiple="multiple" name="f">\n'\
+        '<select id="f-f" multiple="multiple" name="f">\n'\
         '<option selected="selected" value="1">a</option>\n'\
         '<option selected="selected" value="2">'\
         'b</option>\n</select>'
