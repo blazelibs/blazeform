@@ -1,14 +1,20 @@
 from os import path
-from util import HtmlAttributeHolder, ElementHolder
+import cgi
+from webhelpers.html import HTML
 import formencode
-import formencode.validators as fevalidators
-from validators import Select
+import formencode.validators as fev
+from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven
+
+form_elements = {}
+
+class ElementInvalid(Exception):
+    pass
 
 class Label(object):
     """
     A class which represents the label associated with an element
     """
-    def __init__(self, element):
+    def __init__(self, element, value):
         """
         @param element: the parent element of this label
         @type element: instantiated object that inherits pyHtmlQuickForm.element.ElementBase
@@ -21,281 +27,267 @@ class Label(object):
             raise TypeError('Label expects pyHtmlQuickForm.element.ElementBase' )
         
         #: the value of the label
-        self.value = None
-    
-    def setValue(self, value):
-        """
-        @param value: the value the label should display
-        @type value: C{str}
-        """
         self.value = value
     
-    def getValue(self):
-        return self.value
-    
     def render(self, **kwargs):
-        from webhelpers.html import HTML
-        kwargs['for'] = self.element.getId()
+        if isinstance(self.element, FormFieldElementBase):
+            kwargs['for'] = self.element.getId()
         return HTML.label(self.value, **kwargs)
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
+    
+    def __str__(self):
+        return self.value
 
 class ElementBase(HtmlAttributeHolder):
     """
     Base class for form elements.
     """
-    def __init__(self, form, eid, displayName, value=None, name=None, **kwargs):
-        """
-        @param form: the parent form of this element
-        @type form: instantiated pyHtmlQuickForm.form
-        @param eid: the id of this element.  It will be used to create the
-            html "id" attribute.
-        @type eid: C{str}
-        @param name: the name of this element.  It corresponds to the html "name"
-            attribute.
-        @type name: C{str}
-        @param displayName: the display name of this element (used in labels and
-            error messages)
-        @type displayName: C{str}
-        @param attrs: HTML attributes for this element
-        @type attrs: dictionary
-        """
+    def __init__(self, type, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
-        
-        #: unique id for this element
-        self.id = eid
-        #: the parent form of this element
-        self.form = form
-        #: the name of this element
-        self._name = name
-        #: the display name of this element (used for labels and error messages)
-        self.displayName = displayName
-        #: the element type, corresponds to the name of a registered type (C{str})
-        self._type = None
-        #: the default value that is set programmatically
-        self.defaultValue = None
-                
-        # set the default value
-        self.setDefaultValue(value)
 
-    def getType(self):
-        """
-        returns the element's type, which corresponds to the name of a
-        registered element (C{str})
-        """
-        return self._type
-    
-    def setType(self, type):
-        """
-        @param type: the element's type, which corresponds to the name of a
-        registered type
-        @type type: C{str}
-        """
-        self._type = type
+        self._defaultval = NotGiven
+        self._displayval = NotGiven
         
-    def setDefaultValue(self, value):
-        """
-        @param value: the value the form field should start with, usually from
-            a database or programmatically set
-        @type value: any Python type, will be converted to a C{str}
-        """
-        self.defaultValue = value
-        
-    def getDefaultValue(self):
-        return self.defaultValue
+        self.id = eid
+        self.label = Label(self, label)
+        self.type = type
+        self.form = form
     
-    def _renderPrep(self, attrs):
-        self.setAttribute('id', self.getId())
-        self.setAttribute('class', self.getType())
-        self.setAttributes(**attrs)
+        self.defaultval = defaultval
+        self.set_attr('id', self.getidattr())
+        self.set_attr('class_', self.type)
+
+        self._bind_to_form()
+    
+    def _bind_to_form(self):
+        f = self.form
+        f.all_els[self.id] = self
+        f.defaultable_els[self.id] = self
+        f.render_els.append(self)
+        f.submittable_els[self.id] = self
+        f.returning_els.append(self)
+    
+    def _get_defaultval(self):
+        return self._defaultval
+    def _set_defaultval(self, value):
+        self._displayval = NotGiven
+        self._defaultval = value
+    defaultval = property(_get_defaultval, _set_defaultval)
+    
+    def _get_displayval(self):
+        if self._displayval is NotGiven:
+            self._from_python_processing()
+        return self._displayval
+    displayval = property(_get_displayval)
+
+    def _from_python_processing(self):
+        self._displayval = self._defaultval
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
-
-    def getDisplayName(self):
-        if not self.displayName:
-            return self.name
-        return self.displayName
     
-    def getId(self):
+    def getidattr(self):
         return self.form.element_id_formatter % {'form_name':self.form.name, 'element_id':self.id}
-    
-    def _get_name(self):
-        return self._name or self.id
-    
-    name = property(_get_name)
-    
-    def handle_exception(self, e):
-        """ can be overridden to help with handling expected exceptions """
-        return False
 
-class LabelElementBase(ElementBase):
-    """
-    Abstract base class for elements that have a label.  Instantiates a label object,
-    assigns that object to an instance variable and provides methods for working
-    with the label.
-    """
-    def __init__(self, form, eid, displayName, hasLabel = True, **kwargs):
-        ElementBase.__init__(self, form, eid, displayName, **kwargs)
+class HasValueElement(ElementBase):
+    def __init__(self, *args, **kwargs):
+        ElementBase.__init__(self, *args, **kwargs)
         
-        #: an instantiated pyhtmlquickform.element.ElementLabel object
-        if hasLabel:
-            self.label = Label(self)
-    
-    def setLabel(self, value):
-        """
-        @param value: the value to set the label's display text to
-        @type value: C{str}
-        """
-        try:
-            self.label.setValue(value)
-        except AttributeError:
-            pass
+        self.render_group = None
+        
+    def _get_value(self):
+        raise NotImplimentedError('this method needs to be overriden')
+    value = property(_get_value)
 
-class FormFieldElementBase(LabelElementBase):
+class FormFieldElementBase(HasValueElement):
     """
     Base class for form elements that represent form fields (input, select, etc.)
     as opposed to Elements that are only for display (i.e. static, headers).
     """
-    def __init__(self, form, eid, displayName, required = False, **kwargs):
+    def __init__(self, etype, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+        # if this field was not submitted, we can substitute
+        self.if_missing = kwargs.pop('if_missing', NotGiven)
+        # if the field was submitted, but is an empty value
+        self.if_empty = kwargs.pop('if_empty', NotGiven)
+        # if the field is invalid, return this value
+        self.if_invalid = kwargs.pop('if_invalid', NotGiven)
+        #: is this field required in order for the form submission to be valid?
+        self.required = kwargs.pop('required', False)
+        HasValueElement.__init__(self, etype, form, eid, label, defaultval, **kwargs)
 
-        # initialize the base element
-        LabelElementBase.__init__(self, form, eid, displayName, **kwargs)
-
-        #: the raw value that is set from a form submission C{str}
-        self.submittedValue = None
-        #: the value after it has passed through all filters and rules and been converted to a Python type
-        self.processedValue = None
+        self._submittedval = NotGiven
+        self._safeval = NotGiven
         #: a list of error messages for this field (C{str})
         self.errors = []
         #: a list of user messages for this field (C{str})
         self.notes = []
-        #: pre-validation conversion
-        self.filters = []
-        #: a list of validators for this field
-        self.validators = []
-        #: a list of converters for this field
-        self.converters = []
-        #: is this field required in order for the form submission to be valid?
-        self.required = required
+        #: validators/converters
+        self.processors = []
         #: whether or not this field is valid, None means the field has not been processed yet
-        self.valid = None
+        self._valid = None
         #: allows a form/element to "expect" an exception and handle gracefully
         self.exception_handlers = []
+        #: strip string submitted values?
+        self.strip = strip
         
-        # set the default value of the label
-        self.setLabel(self.displayName)
+        # types
+        vtypes = ('boolean', 'bool', 'int', 'integer', 'number', 'num',
+                        'str', 'string', 'unicode', 'uni', 'float')
+        if vtype is not NotGiven:
+            try:
+                vtype = vtype.lower()
+                if vtype not in vtypes:
+                    raise ValueError('invalid vtype "%s"' % vtype)
+            except AttributeError, e:
+                raise TypeError('vtype should have been a string, got %s instead' % type(vtype))
+        self._vtype = vtype
+        
     
-    def setSubmitValue(self, value):
-        """
-        @param value: the value from a POST or GET form submission.  This value
-            should be considered UNSAFE until it passes through all the elements
-            filters, rules, and is converted to a Python type.
-        @type value: any Python type, will be converted to a C{str}
-        """
-        # we want to process the value again since it might have been changed
-        self.valid = None
-        
-        self.submittedValue = value
-        
-    def getSubmitValue(self):
-        return self.submittedValue
-
-    def currentValue(self, submittedValue=None):
-        """
-        returns the current value of this element.  Looks for a submitted value
-        first and if not found then looks for a default value
-        """
-        #if submittedValue != None:
-        #    self.setSubmittedValue(submittedValue)
-        
-        if self.submittedValue != None:
-            return self.submittedValue
-        else:
-            return self.defaultValue
-
-    def getValue(self):
-        """
-        returns a "safe" value after the submitted value has been 
-        processed through all filters, rules, and conversions succesfully
-        """
-        self._processValue()
-        return self.processedValue
-
-    def isValid(self):
-        """
-            tests whether the submitted value is valid
-        """
-        self._processValue()
-        return self.valid
+    def _get_submittedval(self):
+        return self._submittedval
+    def _set_submittedval(self, value):
+        self._valid = None
+        self.errors = []
+        self._submittedval = value
+    submittedval = property(_get_submittedval, _set_submittedval)
     
-    def _processValue(self):
-        """
-        filters, validates, and converts the submitted value
-        """
-        valid = True
+    def _get_displayval(self):
+        if self.submittedval is NotGiven:
+            return HasValueElement._get_displayval(self)
+        return self.submittedval
+    displayval = property(_get_displayval)
+
+    def _get_value(self):
+        self._to_python_processing()
+        if self._valid != True:
+            raise ElementInvalid('element value is not valid')
+        return self._safeval
+    value = property(_get_value)
+
+    def _from_python_processing(self):
+        # process processors
+        value = self.defaultval
         
+        # If its empty, there is no reason to run the converters.  By default,
+        # the validators don't do anything if the value is empty and they WILL
+        # try to convert our NotGiven value, which we want to avoid.  Therefore,
+        # just skip the conversion.
+        if not is_empty(value):
+            for processor, msg in self.processors:
+                value = processor.from_python(value)
+        self._displayval = value
+    
+    def _to_python_processing(self):
+        """
+        filters, validates, and converts the submitted value based on
+        element settings and processors
+        """
+
         # if the value has already been processed, don't process it again
-        if self.valid != None:
+        if self._valid != None:
             return
         
-        value = self.getSubmitValue()
+        valid = True
+        value = self.submittedval
+        
+        # strip if necessary
+        if self.strip and isinstance(value, basestring):
+            value = value.strip()
+        
+        # if nothing was submitted, but we have an if_missing, substitute
+        if value is NotGiven and self.if_missing is not NotGiven:
+            value = self.if_missing
+        
+        # handle empty or missing submit value with if_empty
+        if is_empty(value) and self.if_empty is not NotGiven:
+            value = self.if_empty
+        # standardize all empty values as None if if_empty not given
+        elif is_empty(value) and value is not NotGiven:
+            value = None  
 
-        # process filters
-        for vfilter in self.filters:
-            if isinstance(value, list):
-                value = map(vfilter, value)
-            else:
-                value = vfilter(value)
-        
         # process required
-        if self.required and (value == '' or value == None):
+        if self.required and is_empty(value):
             valid = False
-            self.addError('"%s" is required' % self.getDisplayName())
+            self.add_error('"%s" is required' % self.label)
         
-        # process validators
-        for validator, msg in self.validators:
+        # process processors
+        for validator, msg in self.processors:
             try:
-                try:
-                    value = validator.to_python(value)
-                except AttributeError, e:
-                    value = validator(value)
-            except (formencode.Invalid, ValueError), e:
+                value = validator.to_python(value)
+            except formencode.Invalid, e:
                 valid = False
-                self.addError((msg or e))
-        # convert
-        
+                self.add_error((msg or str(e)))
+            
+        # If its empty, there is no reason to run the converters.  By default,
+        # the validators don't do anything if the value is empty and they WILL
+        # try to convert our NotGiven value, which we want to avoid.  Therefore,
+        # just skip the conversion.
+        if not is_empty(value):
+            # process type conversion
+            if self._vtype is not NotGiven:
+                if self._vtype in ('boolean', 'bool'):
+                    tvalidator = formencode.compound.Any(fev.Bool(), fev.StringBoolean())
+                elif self._vtype in ('integer', 'int'):
+                    tvalidator = fev.Int
+                elif self._vtype in ('number', 'num', 'float'):
+                    tvalidator = fev.Number
+                elif self._vtype in ('str', 'string'):
+                    tvalidator = fev.String
+                elif self._vtype in ('unicode', 'uni'):
+                    tvalidator = fev.UnicodeString
+                try:
+                    value = tvalidator.to_python(value)
+                except (formencode.Invalid, ValueError), e:
+                    valid = False
+                    self.add_error(str(e))
+
         # save
         if valid:
-            self.processedValue = value
-            self.valid = True
+            self._safeval = value
+            self._valid = True
         else:
-            self.valid = False
+            # is if_invalid if applicable
+            if self.if_invalid is not NotGiven:
+                # we might want to clear error messages too, but the extra
+                # detail probably won't hurt (for now)
+                self._safeval = self.if_invalid
+                self._valid = True
+            else:
+                self._valid = False
     
-    def addError(self, error):
+    def is_submitted(self):
+        return self.submittedval is not NotGiven
+    
+    def is_valid(self):
+        self._to_python_processing()
+        return self._valid
+    
+    def add_error(self, error):
         self.errors.append(error)
     
-    def addNote(self, note, escapeHtml = True):
-        if escapeHtml:
-            from cgi import escape
-            note = escape(note)
+    def add_note(self, note, escape = True):
+        if escape:
+            note = cgi.escape(note)
         self.notes.append(note)
     
-    def addValidator(self, validator, msg = None):
-        self.validators.append((validator, msg))
-    
-    def add_filter(self, filter):
-        self.filters.append(filter)
-    
-    def onexc(self, looking_for, error_msg):
-        self.exception_handlers.append((looking_for, error_msg))
+    def add_processor(self, processor, msg = None):
+        if not formencode.is_validator(processor):
+            if callable(processor):
+                processor = formencode.validators.Wrapper(to_python=processor)
+            else:
+                raise TypeError('processor must be a Formencode validator or a callable')
+        self.processors.append((processor, msg))
+        
+    def add_handler(self, exception_txt, error_msg, exc_type=None):
+        self.exception_handlers.append((exception_txt, error_msg, exc_type))
 
-    def handle_exception(self, exception_text):
-        for looking_for, error_msg in self.exception_handlers:
-            if looking_for in exception_text:
-                self.valid = False
-                self.addError(error_msg)
+    def handle_exception(self, exc):
+        for looking_for, error_msg, exc_type in self.exception_handlers:
+            if looking_for in str(exc) and (exc_type is None or isinstance(exc, exc_type)):
+                self._valid = False
+                self.add_error(error_msg)
                 return True
         return False
 
@@ -303,111 +295,152 @@ class InputElementBase(FormFieldElementBase):
     """
     Base class for input form elements.
     
-    Since <input> elements have very similar HTML representations, they have this common base class. You don't need to instantiate it directly, use one of the child classes.
-    """        
-    pass
-        
-
-class TextElement(InputElementBase):
-    def __init__(self, form, eid, displayName=None, length=None, **kwargs):
-        InputElementBase.__init__(self, form, eid, displayName, **kwargs)
-        self.setType('text')
-        
-        #: the number of characters allowed in the field
-        self.length = None
-        
-        self.setLength(length)
-        
-    def setLength(self, size):
-        """
-        @param size: the number of characters allowed in the field
-        @type size: C{int}
-        """
-        
-        # if size is none, set it to None and return
-        if size == None:
-            self.length = None
-            return
-        
-        # make sure the size is an integer
-        if type(1) == type(size):
-            self.length = size
-        else:
-            raise TypeError('Length should have been int but was %s' % type(size))
-    
-    def _renderPrep(self, attrs):
-        # do any render prep in ancestor classes
-        super(TextElement, self)._renderPrep(attrs)
-        
-        self.setAttribute('maxlength', self.length)
+    Since <input> elements have very similar HTML representations, they have
+    this common base class. You don't need to instantiate it directly,
+    use one of the child classes.
+    """
+    def __init__(self, *args, **kwargs):
+        FormFieldElementBase.__init__(self, *args, **kwargs)
+        # use to override using the id as the default "name" attribute
+        self.nameattr = None
     
     def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html.tags import text
-        return text(self.name, self.currentValue(), **self.attributes)
+        if self.displayval and self.displayval is not NotGiven:
+            self.set_attr('value', self.displayval)
+        self.set_attr('name', self.nameattr or self.id)
+        self.set_attrs(**kwargs)
+        return HTML.input(type=self.type, **self.attributes)
 
-class DateTimeElement(TextElement):
-    def __init__(self, form, eid, displayName=None, **kwargs):
-        TextElement.__init__(self, form, eid, displayName, **kwargs)
-        
-        self.addValidator(fevalidators.DateConverter())
-
-class PasswordElement(TextElement):
-    def __init__(self, form, eid, displayName=None, length=None, **kwargs):
-        TextElement.__init__(self, form, eid, displayName, **kwargs)
-        self.setType('password')
-
-    def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html.tags import password
-        return password(self.name, u'', **self.attributes)
+class ButtonElement(InputElementBase):
+    def __init__(self, *args, **kwargs):
+        InputElementBase.__init__(self, 'button', *args, **kwargs)
+form_elements['button'] = ButtonElement
 
 class CheckboxElement(InputElementBase):
-    def __init__(self, form, eid, displayName=None, checked=False, **kwargs):
-        InputElementBase.__init__(self, form, eid, displayName, **kwargs)
-        self.setType('checkbox')
+    def __init__(self, *args, **kwargs):
+        checked = kwargs.pop('checked', NotGiven)
+        InputElementBase.__init__(self, 'checkbox', *args, **kwargs)
         
-        if checked != False:
-            self.setDefaultValue(1)
-    
-    def getValue(self):
-        value = InputElementBase.getValue(self)
-        if value:
-            return True
-        return False
+        # some sane defaults for a checkbox IMO
+        if self._vtype is NotGiven:
+            self._vtype = 'bool'
+        if self.if_empty is NotGiven:
+            self.if_empty = False
+        if self.defaultval is NotGiven:
+            self.defaultval = bool(checked)
+
+    def _get_submittedval(self):
+        return self._submittedval
+    def _set_submittedval(self, value):
+        self._valid = None
+        self.errors = []
+        self._submittedval = bool(value)
+    submittedval = property(_get_submittedval, _set_submittedval)
     
     def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html.tags import checkbox
-        #print str(self.getDefaultValue()) + ' ' + str(self.getSubmitValue()) + ' ' + str(self.currentValue())
-        if self.currentValue() == None or self.currentValue() == False or self.currentValue() == '':
-            checked = False
-        else:
-            checked = True
-        return checkbox(self.name, checked=checked, **self.attributes)
+        # have to override InputBase.render or it will put a value attribute
+        # for a checkbox
+        if self.displayval and self.displayval is not NotGiven:
+            self.set_attr('checked', 'checked')
+        self.set_attr('name', self.nameattr or self.id)
+        self.set_attrs(**kwargs)
+        return HTML.input(type=self.type, **self.attributes)
+form_elements['checkbox'] = CheckboxElement
+
+class HiddenElement(InputElementBase):
+    def __init__(self, *args, **kwargs):
+        InputElementBase.__init__(self, 'hidden', *args, **kwargs)
+form_elements['hidden'] = HiddenElement
+
+class ImageElement(InputElementBase):
+    def __init__(self, *args, **kwargs):
+        InputElementBase.__init__(self, 'image', *args, **kwargs)
+form_elements['image'] = ImageElement
+
+class ResetElement(InputElementBase):
+    def __init__(self, *args, **kwargs):
+        InputElementBase.__init__(self, 'reset', *args, **kwargs)
+form_elements['reset'] = ResetElement
 
 class SubmitElement(InputElementBase):
-    def __init__(self, form, eid, value=None, displayName=None, **kwargs):
-        InputElementBase.__init__(self, form, eid, displayName, value=value, hasLabel=False, **kwargs)
-        self.setType('submit')
-    
-    def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html.tags import submit
-        return submit(self.name, self.currentValue(), **self.attributes)
+    def __init__(self, *args, **kwargs):
+        InputElementBase.__init__(self, 'submit', *args, **kwargs)
+form_elements['submit'] = SubmitElement
 
 class CancelElement(SubmitElement):
     pass
+form_elements['cancel'] = CancelElement
 
-class HiddenElement(InputElementBase):
-    def __init__(self, form, eid, value=None, displayName=None, **kwargs):
-        InputElementBase.__init__(self, form, eid, displayName, value=value, hasLabel=False, **kwargs)
-        self.setType('hidden')
-    
-    def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html.tags import hidden
-        return hidden(self.name, self.currentValue(), **self.attributes)
+class TextElement(InputElementBase):
+    def __init__(self, *args, **kwargs):
+        maxlength = kwargs.pop('maxlength', None)
+        InputElementBase.__init__(self, 'text', *args, **kwargs)
+        
+        self.set_length(maxlength)
+            
+    def set_length(self, len):
+        # if size is none, set it to None and return
+        if len == None:
+            return
+        
+        # make sure the size is an integer
+        if type(1) != type(len):
+            raise TypeError('maxlength should have been int but was %s' % type(size))
+        
+        self.set_attr('maxlength', len)
+        
+        # set a maxlength validator on this
+        self.add_processor(fev.MaxLength(len))
+form_elements['text'] = TextElement
+
+class DateElement(TextElement):
+    def __init__(self, *args, **kwargs):
+        vargs = multi_pop(kwargs, 'accept_day', 'month_style', 'datetime_module')
+        TextElement.__init__(self, *args, **kwargs)
+        self.add_processor(fev.DateConverter(**vargs))
+form_elements['date'] = DateElement
+
+class EmailElement(TextElement):
+    def __init__(self, *args, **kwargs):
+        vargs = multi_pop(kwargs, 'resolve_domain')
+        TextElement.__init__(self, *args, **kwargs)
+        self.add_processor(fev.Email(**vargs))
+form_elements['email'] = EmailElement
+
+class PasswordElement(TextElement):
+    """
+    techincally, password is on the same level as text as both are types
+    of input elements, but I want to inherit the text maxlength validator
+    """
+    def __init__(self, *args, **kwargs):
+        self.default_ok = kwargs.pop('default_ok', False)
+        TextElement.__init__(self, *args, **kwargs)
+        # override the type
+        self.type = 'password'
+        # class attribute set already, override that too
+        self.set_attr('class_', 'password')
+        
+    def _get_displayval(self):
+        if self.default_ok:
+            return TextElement._get_displayval(self)
+        return None
+    displayval = property(_get_displayval)
+form_elements['password'] = PasswordElement
+
+class TimeElement(TextElement):
+    def __init__(self, *args, **kwargs):
+        vargs = multi_pop(kwargs, 'use_ampm', 'prefer_ampm', 'use_seconds',
+                          'use_datetime', 'datetime_module')
+        TextElement.__init__(self, *args, **kwargs)
+        self.add_processor(fev.TimeConverter(**vargs))
+form_elements['time'] = TimeElement
+
+class URLElement(TextElement):
+    def __init__(self, *args, **kwargs):
+        vargs = multi_pop(kwargs, 'check_exists', 'add_http', 'require_tld')
+        TextElement.__init__(self, *args, **kwargs)
+        self.add_processor(fev.URL(**vargs))
+form_elements['url'] = URLElement
 
 class SelectElement(FormFieldElementBase):
     """
@@ -466,16 +499,15 @@ class TextAreaElement(FormFieldElementBase):
         return textarea(self.name, self.currentValue(), **self.attributes)
 
 class FileElement(InputElementBase):
-    def __init__(self, form, eid, displayName=None, maxsize=None, **kwargs):
-        InputElementBase.__init__(self, form, eid, displayName, **kwargs)
-        self.setType('file')
+    def __init__(self, *args, **kwargs):
+        InputElementBase.__init__(self, 'file', *args, **kwargs)
         self.content_type = None
         self.file_name = None
         self._allowed_exts = []
         self._allowed_types = []
         self._denied_exts = []
         self._denied_types = []
-        self._maxsize = maxsize
+        self._maxsize = None
         
     def maxsize(self, size):
         self._maxsize = size
@@ -549,15 +581,10 @@ class FileElement(InputElementBase):
                 valid = False
                 self.addError('file too big, max size %d' % self._maxsize)
                 
-        self.valid = valid
+        self._valid = valid
     
     def addValidator(self, *args, **kwargs):
         raise NotImplementedError('FileElement does not support addValidator()')
-    
-    def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html.tags import file
-        return file(self.name, '', **self.attributes)
 
 class StaticValueElement(InputElementBase):
     def __init__(self, form, eid, displayName=None, length=None, **kwargs):
@@ -568,7 +595,7 @@ class StaticValueElement(InputElementBase):
         self._renderPrep(kwargs)
         return self.currentValue()
 
-class StaticElement(LabelElementBase):
+class StaticElement(ElementBase):
     """
     class for static HTML fields in the form.
     
@@ -667,32 +694,4 @@ class HeaderElement(StaticElement):
         from webhelpers.html import HTML
         attr = self.getAttributes()
         return HTML.tag(self.element_type, self.getDefaultValue(), **attr)
-
-#: elements that correspond to HTML form elements
-form_elements = {
-    'text': TextElement,
-    'submit': SubmitElement,
-    'hidden': HiddenElement,
-    'checkbox': CheckboxElement,
-    'textarea': TextAreaElement,
-    'select': SelectElement,
-    'password': PasswordElement,
-    'datetime': DateTimeElement,
-    'file': FileElement,
-    'cancel': CancelElement,
-    'static-value': StaticValueElement,
-    'passthru' : PassThruElement
-}
-
-#: elements that correspond to non-form HTML elements
-html_elements = {
-    'static': StaticElement,
-    'header': HeaderElement,
-    'group': GroupElement
-}
-
-#: all elements
-all_elements = {}
-all_elements.update(html_elements)
-all_elements.update(form_elements)
 

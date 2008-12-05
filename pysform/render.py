@@ -23,7 +23,7 @@ class BaseRenderer(object):
 
     def render(self):
         self.output.append(self.startForm())
-        for element in self.form.elements:
+        for element in self.form.render_els:
             self.element_count += 1
             self.output.append(self.renderElement(element))
         self.output.append(self.finishForm())
@@ -60,7 +60,7 @@ class CssRenderer(BaseRenderer):
     
     def startForm(self):
         from webhelpers.html.tags import form
-        attr = self.form.getAttributes()
+        attr = self.form.get_attrs()
         self.ind.inc(form(self.form.action, **attr))
         return self.ind.get()
     
@@ -73,33 +73,33 @@ class CssRenderer(BaseRenderer):
     
     def renderElement(self, element):
         try:
-            if element.getType() == 'header':
+            if element.type == 'header':
                 return self.renderHeader(element)
-            elif element.getType() == 'static':
+            elif element.type == 'static':
                 self.alt_count += 1
                 return self.renderStatic(element)
-            elif element.getType() == 'hidden':
+            elif element.type == 'hidden':
                 return self.renderHidden(element)
-            elif element.getType() == 'suasdfbmit':
+            elif element.type == 'suasdfbmit':
                 self.alt_count += 1
                 return self.renderSubmit(element)
-            elif element.getType() == 'group':
+            elif element.type == 'group':
                 self.alt_count += 1
                 return self.renderGroup(element)
-            elif element.getType() == 'passthru':
+            elif element.type == 'passthru':
                 return ''
             else:
                 self.alt_count += 1
                 return self.renderField(element)
         finally:
             non_first_reset_elements = ('header', 'hidden', 'passthru')
-            if element.getType() not in non_first_reset_elements:
+            if element.type not in non_first_reset_elements:
                 self.first = False
     
     def renderField(self, element):
         first_class = self.renderFirstClass()
         alt_class = self.renderAltClass()
-        self.ind.inc('<div class="row %s%s%s">' % (element.getType(), first_class, alt_class))
+        self.ind.inc('<div class="row %s%s%s">' % (element.type, first_class, alt_class))
         
         try:
             self.ind(element.label())

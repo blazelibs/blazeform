@@ -1,56 +1,21 @@
-
-class ElementHolder(object):
-    """
-    A container object that holds instantiated elements in the order they are
-    created and is iterable
-    """
-    
-    def __init__(self):
-        #: holds the instantiated element objects
-        self._elements = []
-        
-        #: maps a field's name to its position in _elements, for efficient lookups
-        self._map = {}
-        
-    def add(self, element):
-        """
-        adds an instantiated element object
-        """
-        
-        self._elements.append(element)
-        
-        pos = len(self._elements) - 1
-        
-        self._map[element.id] = pos
-    
-    def __iter__(self): 
-        for element in self._elements:
-            yield element
-    
-    def __getattr__(self, name):
-        try:
-            return self._elements[self._map[name]]
-        except KeyError:
-            raise AttributeError(name)
-    
-    def __repr__(self):
-        return str([(k, self._elements[i]) for k,i in self._map.items()])
-
 class HtmlAttributeHolder(object):
     def __init__(self, **kwargs):
         #: a dictionary that represents html attributes
         self.attributes = kwargs
         
-    def setAttributes(self, **kwargs ):
+    def set_attrs(self, **kwargs ):
         self.attributes.update(kwargs)
         
-    def setAttribute(self, key, value):
+    def set_attr(self, key, value):
         self.attributes[key] = value
+        
+    def del_attr(self, key):
+        del self.attributes[key]
     
-    def getAttributes(self):
+    def get_attrs(self):
         return self.attributes
     
-    def getAttribute(self, attr):
+    def get_attr(self, attr):
         return self.attributes[attr]
     
 class StringIndentHelper(object):
@@ -84,4 +49,39 @@ class StringIndentHelper(object):
         retval = '\n'.join(self.output)
         self.output = []
         return retval
+
+def is_empty(value):
+    if not value and value is not 0 and value is not False:
+        return True
+    return False
+
+def multi_pop(d, *args):
+    retval = {}
+    for key in args:
+        if d.has_key(key):
+            retval[key] = d.pop(key)
+    return retval
+
+class NotGivenBase(object):
+    """ an empty sentinel object """
     
+    def __str__(self):
+        return 'None'
+    
+    def __unicode__(self):
+        return u'None'
+    
+    def __nonzero__(self):
+        return False
+    
+    def __ne__(self, other):
+        if other is None or isinstance(other, NotGivenBase):
+            return False
+        return True
+    
+    def __eq__(self, other):
+        if other is None or isinstance(other, NotGivenBase):
+            return True
+        return False
+    
+NotGiven = NotGivenBase()

@@ -1,7 +1,6 @@
-
-from element import all_elements, FormFieldElementBase, \
+from pysform.element import form_elements, FormFieldElementBase, \
     FileElement, CancelElement
-from util import HtmlAttributeHolder, ElementHolder
+from pysform.util import HtmlAttributeHolder, NotGiven
 
 class FormBase(HtmlAttributeHolder):
     """
@@ -11,33 +10,42 @@ class FormBase(HtmlAttributeHolder):
     def __init__(self, name, action='', **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
         
-        self.name = name
-        self.elements = ElementHolder()
-        self._registered_types = {}
-        self.register_elements(all_elements)
-        self.renderer = None
-        self.action = action
-        self.validators = []
-        
-        # this string is used to generate the HTML id attribute for each
-        # element
-        self.element_id_formatter = '%(form_name)s-%(element_id)s'
-        
+        self.name = name       
         # include a hidden field so we can check if this form was submitted
         self._form_ident_field = '%s-submit-flag' % name
+        # registered element types
+        self._registered_types = {}
+        # our renderer
+        self.renderer = None
+        # this string is used to generate the HTML id attribute for each
+        # rendering element
+        self.element_id_formatter = '%(form_name)s-%(element_id)s'
+        # the form's action attribute
+        self.action = action
+        # our validators and converters
+        self.processors = []
+        
+        # element holders
+        self.all_els = {}
+        self.defaultable_els = {}
+        self.render_els = []
+        self.submittable_els = {}
+        self.returning_els = []
+        
+        # init actions
+        self.register_elements(form_elements)
         self.add_element('hidden', self._form_ident_field, value='submitted')
     
     def __getattr__(self, name):
         """
-            we want to enable add_*, create_* methods on the form object
+            we want to enable add_* methods on the form object
             that correspond to elements we have available
         """
         if name.startswith('add_'):
             type = name.replace('add_', '')
             func = self.add_element
-        elif name.startswith('create_'):
-            type = name.replace('create_', '')
-            func = self.create_element
+        elif self.all_els.has_key(name):
+            return self.all_els[name]
         else:
             raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
         
@@ -55,13 +63,13 @@ class FormBase(HtmlAttributeHolder):
         self._registered_types[type] = eclass
     
     def add_element(self, type, eid, *args, **kwargs):
+        if self.all_els.has_key(eid):
+            raise ValueError('element id "%s" already used' % eid)
         if type == 'file':
-            self.setAttribute('enctype', 'multipart/form-data')
-        element = self.createElement(type, eid, *args, **kwargs)
-        self.elements.add(element)
-        return element
+            self.set_attr('enctype', 'multipart/form-data')
+        return self._create_element(type, eid, *args, **kwargs)
     
-    def create_element(self, type, eid, *args, **kwargs):
+    def _create_element(self, type, eid, *args, **kwargs):
         try:
             eclass = self._registered_types[type]
         except KeyError:
@@ -72,16 +80,11 @@ class FormBase(HtmlAttributeHolder):
     def render(self):
         return self.renderer(self).render()
 
-    def is_submitted(self, submitValues=None):
-        if submitValues != None:
-            self.setSubmitValues(submitValues)
-        
+    def is_submitted(self):
         return self._is_submitted()
     
     def _is_submitted(self):
-        flag_value = getattr(self.elements, self._form_ident_field).getSubmitValue()
-
-        if flag_value:
+        if getattr(self, self._form_ident_field).is_submitted():
             return True
         return False
     
@@ -91,9 +94,9 @@ class FormBase(HtmlAttributeHolder):
         
         # look for any CancelElement that has a non-false submit value
         # which means that was the button clicked
-        for element in self.elements:
+        for element in self.submittable_els.values():
             if isinstance(element, CancelElement):
-                if element.getSubmitValue():
+                if element.is_submitted():
                     return True
         return False
     
@@ -123,26 +126,18 @@ class FormBase(HtmlAttributeHolder):
     
     def set_submitted(self, values):
         """ values should be dict or Werkzeug MultiDict"""
-        for element in self.elements:
-            if isinstance(element, FormFieldElementBase) and values.has_key(element.name):
-                try:
-                    value = values.getlist(element.name)
-                    if len(value) == 0:
-                        value = None
-                    elif len(value) == 1:
-                        value = value[0]
-                        
-                    element.setSubmitValue(value)
-                except AttributeError:
-                    element.setSubmitValue(values.get(element.name))
+        for key, el in self.submittable_els.items():
+            if values.has_key(key):
+                el.submittedval = values[key]
         
-        # this second loop is to make sure we set checkboxes and radio
-        # boxes to False if the form was submitted but the
-        # element wasn't passed in the POST
+        # this second loop is to make sure we clear checkboxes,
+        # LogicalGroupElements, and multi-selects if the form is submitted,
+        # they have a default value, but the field wasn't submitted
         if self._is_submitted():
-            for element in self.elements:
-                if element.getType() == 'checkbox' and values.has_key(element.name) == False:
-                    element.setSubmitValue(False)
+            for key, el in self.submittable_els.items():
+                if values.has_key(key) == False:
+                    if el.type == 'checkbox':
+                        element.submittedval = False
     
     def set_files(self, files):
         for name, obj in files.items():
@@ -164,11 +159,9 @@ class FormBase(HtmlAttributeHolder):
                 element.content_length = fsize
                 
     def set_defaults(self, values):
-        for element in self.elements:
-            try:
-                element.setDefaultValue(values[element.name])
-            except(KeyError):
-                pass
+        for key, el in self.defaultable_els.items():
+            if values.has_key(key):
+                el.defaultval = values[key]
     
     def get_values(self):
         "return a dictionary of element values"
@@ -177,7 +170,8 @@ class FormBase(HtmlAttributeHolder):
             if isinstance(element, FormFieldElementBase):
                 retval[element.name] = element.getValue()
         return retval
-
+    values = property(get_values)
+    
     def handle_exception(self, exc):
         exc_text = str(exc)
         found = False
@@ -185,81 +179,6 @@ class FormBase(HtmlAttributeHolder):
             if element.handle_exception(exc_text):
                 found = True
         return found
-    
-    # The functions below are for backwards compatibility
-        
-    def createElement(self, type, eid, *args, **kwargs):
-        return self.create_element(type, eid, *args, **kwargs)
-    
-    def addElement(self, type, eid, *args, **kwargs):
-        return self.add_element(type, eid, *args, **kwargs)
-    
-    def isSubmitted(self, submitValues=None):
-        return self.is_submitted(submitValues)
-    
-    def isCancel(self):
-        return self.is_cancel()
-    
-    def isValid(self):
-        return self.is_valid()
-    
-    def iscancel(self):
-        return self.is_cancel()
-    
-    def isvalid(self):
-        return self.is_valid()
-    
-    #*  HTML_QuickForm
-    #* accept
-    #* addFormRule
-    #* addGroup
-    #* addGroupRule
-    #* addRule
-    #* apiVersion
-    #* applyFilter
-    #* arrayMerge
-    #* createElement
-    #* defaultRenderer
-    #* elementExists
-    #* errorMessage
-    #* exportValue
-    #* exportValues
-    #* freeze
-    #* getElement
-    #* getElementError
-    #* getElementType
-    #* getElementValue
-    #* getMaxFileSize
-    #* getRegisteredRules
-    #* getRegisteredTypes
-    #* getRequiredNote
-    #* getSubmitValue
-    #* getSubmitValues
-    #* getValidationScript
-    #* insertElementBefore
-    #* isElementFrozen
-    #* isElementRequired
-    #* isError
-    #* isFrozen
-    #* isRuleRegistered
-    #* isSubmitted
-    #* isTypeRegistered
-    #* process
-    #* registerElementType
-    #* registerRule
-    #* removeElement
-    #* setConstants
-    #* setDatasource
-    #* setDefaults
-    #* setElementError
-    #* setJsWarnings
-    #* setMaxFileSize
-    #* setRequiredNote
-    #* toArray
-    #* toHtml
-    #* updateElementAttr
-    #* validate
-
 
 class Form(FormBase):
     """
