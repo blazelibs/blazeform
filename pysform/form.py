@@ -166,9 +166,8 @@ class FormBase(HtmlAttributeHolder):
     def get_values(self):
         "return a dictionary of element values"
         retval = {}
-        for element in self.elements:
-            if isinstance(element, FormFieldElementBase):
-                retval[element.name] = element.getValue()
+        for element in self.returning_els:
+            retval[element.id] = element.value
         return retval
     values = property(get_values)
     

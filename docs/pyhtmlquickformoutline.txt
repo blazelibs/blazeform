@@ -1,20 +1,20 @@
-ElementBase
+ElementBase (defaults)
     * get/set default
     * id (html attribute)
     * name (the name used to submit the element)
     * label
     * html attributes
     * render = True
--   HasValueElement
+-   HasValueElement (returns)
         * get value (will show up in form.get_values())
         * render_group
-    -   FormFieldElementBase
+    -   FormFieldElementBase (submitted, processing)
             * set/get submitted
             * notes
             * errors
             * exception handlers
             * processors (validators and/or filters)
-        -   InputElementBase
+        -   InputElementBase (renders)
             -   ButtonElement
             -   CheckboxElement (bool)
             -   FileElement
@@ -45,11 +45,14 @@ ElementBase
             * render = False
             * multi = True
             * not_in_render_group
-    -   PassThru
-        * render = ??
-        * if render == False, can not go in RenderGroup
--   DisplayElement
+    -   PassThru (not rendered)
+        * not rendered
+        * returns a value
+        -   Fixed
+            * like passthru, but renders like a StaticElement
+-   DisplayElement (defaults, render)
         * not_in_render_group
+        * don't return values
     -   StaticElement
     -   RenderGroupElement
             * wrap_in = (div, ul)
