@@ -83,5 +83,55 @@ class NotGivenBase(object):
         if other is None or isinstance(other, NotGivenBase):
             return True
         return False
-    
 NotGiven = NotGivenBase()
+
+class NotGivenIterBase(NotGivenBase):
+    def __str__(self):
+        return '[]'
+    
+    def __unicode__(self):
+        return u'[]'
+    
+    def __nonzero__(self):
+        return False
+    
+    def __ne__(self, other):
+        if other == [] or isinstance(other, NotGivenBase):
+            return False
+        return True
+    
+    def __eq__(self, other):
+        if other == [] or isinstance(other, NotGivenBase):
+            return True
+        return False
+    
+    # we also want to emulate an empty list
+    def __iter__(self):
+        return self
+    
+    def next(self):
+        raise StopIteration
+    
+    def __len__(self):
+        return 0
+NotGivenIter = NotGivenIterBase()
+
+def tolist(x, default=[]):
+    if x is None:
+        return default
+    if not isinstance(x, (list, tuple)):
+        return [x]
+    else:
+        return x
+    
+def is_iterable(possible_iterable):
+    if isinstance(possible_iterable, basestring):
+        return False
+    try:
+        iter(possible_iterable)
+        return True
+    except TypeError:
+        return False
+
+def is_notgiven(object):
+    return isinstance(object, NotGivenBase)

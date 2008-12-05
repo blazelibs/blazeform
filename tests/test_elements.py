@@ -5,7 +5,7 @@ from formencode.validators import Int
 
 from pysform import Form
 from pysform.element import TextElement
-from pysform.util import NotGiven
+from pysform.util import NotGiven, NotGivenIter
 
 class CommonTest(unittest.TestCase):
 
@@ -408,8 +408,13 @@ class CommonTest(unittest.TestCase):
             form.add_text('f2', 'Field', ())
         except TypeError, e:
             self.assertEqual('vtype should have been a string, got <type \'tuple\'> instead', str(e))
-
-    
+    #
+    #def from_python_exception(self):
+    #    # waht do we do with from_python validation problems, anything?  Right now
+    #    # they just throw an exception
+    #    el = Form('f').add_email('field', 'Field', defaultval='bad_email')
+    #    el.render()
+        
 class InputElementsTest(unittest.TestCase):
     
     def test_el_button(self):
@@ -557,6 +562,26 @@ class InputElementsTest(unittest.TestCase):
         el = form.add_element('text', 'field', 'Field')        
         el.submittedval = '12'
         self.assertEqual( el.value, '12')
+        
+    def test_el_confirm(self):
+        try:
+            Form('f').add_confirm('f')
+            self.fail('expected key error for missing "match"')
+        except KeyError:
+            pass
+        
+        html = '<input class="text" id="f-f" name="f" type="text" />'
+        f = Form('f')
+        pel = f.add_password('p', 'password')
+        cel = f.add_confirm('f', match='p')
+        self.assertEqual(str(cel()), html)
+        pel.submittedval = 'foo'
+        cel.submittedval = 'foo'
+        assert cel.is_valid()
+        pel.submittedval = 'bar'
+        cel.submittedval = 'foo'
+        assert not cel.is_valid()
+        assert cel.errors[0] == 'does not match field "password"'
 
     def test_el_date(self):
         html = '<input class="text" id="f-field" name="field" type="text" />'
@@ -661,10 +686,208 @@ class InputElementsTest(unittest.TestCase):
         self.assertEqual(el.value, 'http://foo.com')
         el.submittedval = 'foo'
         assert not el.is_valid()
-        
 
-# adding element of same name twice
-# from_python validation problems
+    def test_el_select(self):
+        html = \
+        '<select class="select" id="f-f" name="f">\n<option value="-2">Choose:'\
+        '</option>\n<option value="-1">-------------------------</option>\n'\
+        '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
+        o = [(1, 'a'), (2, 'b')]
+        el = Form('f').add_select('f', o)
+        self.assertEqual(str(el()), html)
+        
+        # custom choose name
+        html = \
+        '<select class="select" id="f-f" name="f">\n<option value="-2">test:'\
+        '</option>\n<option value="-1">-------------------------</option>\n'\
+        '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
+        el = Form('f').add_select('f', o, choose='test:')
+        self.assertEqual(str(el()), html)
+        
+        # no choose
+        html = \
+        '<select class="select" id="f-f" name="f">\n'\
+        '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
+        el = Form('f').add_select('f', o, choose=None)
+        self.assertEqual(str(el()), html)
+        
+        # default values
+        html = \
+        '<select class="select" id="f-f" name="f">\n'\
+        '<option selected="selected" value="1">a</option>\n<option value="2">'\
+        'b</option>\n</select>'
+        el = Form('f').add_select('f', o, defaultval=1, choose=None)
+        self.assertEqual(str(el()), html)
+        el = Form('f').add_select('f', o, defaultval='1', choose=None)
+        self.assertEqual(str(el()), html)
+        el = Form('f').add_select('f', o, defaultval=u'1', choose=None)
+        self.assertEqual(str(el()), html)
+        
+        # value
+        el = Form('f').add_select('f', o, if_empty=1)
+        self.assertEqual(el.value, 1)
+        el = Form('f').add_select('f', o, if_empty='1')
+        self.assertEqual(el.value, '1')
+        el = Form('f').add_select('f', o, if_empty=3)
+        assert not el.is_valid()
+        self.assertEqual( el.errors[0], 'the value did not come from the given options')
+        
+        # no auto validate
+        el = Form('f').add_select('f', o, if_empty=3, auto_validate=False)
+        assert el.is_valid()
+        
+        # conversion
+        el = Form('f').add_select('f', o, vtype='int', if_empty='1')
+        self.assertEqual(el.value, 1)
+        
+        # custom error message
+        el = Form('f').add_select('f', o, if_empty=3, error_msg='test')
+        assert not el.is_valid()
+        self.assertEqual( el.errors[0], 'test')
+        
+        # choose values are invalid only if a value is required
+        el = Form('f').add_select('f', o, if_empty=-2)
+        assert el.is_valid()
+        el = Form('f').add_select('f', o, if_empty=-2, required=True)
+        assert not el.is_valid()
+        
+        # custom invalid values
+        el = Form('f').add_select('f', o, if_empty=1, invalid=['2'])
+        assert el.is_valid()
+        el = Form('f').add_select('f', o, if_empty=1, invalid=['1', '2'])
+        assert not el.is_valid()
+        el = Form('f').add_select('f', o, if_empty=1, invalid=1)
+        assert not el.is_valid()
+        
+        # not submitted value when not required
+        el = Form('f').add_select('f', o)
+        el.is_valid()
+        assert el.is_valid()
+        assert el.value is NotGiven
+        
+        # "empty" value when required, but there is an empty value in the
+        # options.  It seems that required meaning 'must not be empty' should
+        # take precidence.
+        el = Form('f').add_select('f', o+[('', 'blank')], if_empty='', required=True)
+        assert not el.is_valid()
+
+        # make sure choose values do not get returned when required=False
+        el = Form('f').add_select('f', o, if_empty=1)
+        el.submittedval = -1
+        self.assertEqual(el.value, 1)
+        el = Form('f').add_select('f', o)
+        el.submittedval = -1
+        self.assertEqual(el.value, None)
+        
+        # make sure we do not accept multiple values if we aren't a multi
+        # select
+        el = Form('f').add_select('f', o, if_empty=[1,2])
+        assert not el.is_valid()
+        
+    def test_el_select_multi(self):
+        html = \
+        '<select class="select" id="f-f" multiple="multiple" name="f">\n'\
+        '<option value="-2">Choose:'\
+        '</option>\n<option value="-1">-------------------------</option>\n'\
+        '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
+        o = [(1, 'a'), (2, 'b')]
+        el = Form('f').add_select('f', o, multiple=True)
+        self.assertEqual(str(el()), html)
+        el = Form('f').add_select('f', o, multiple=1)
+        self.assertEqual(str(el()), html)
+        el = Form('f').add_select('f', o, multiple='multiple')
+        self.assertEqual(str(el()), html)
+        el = Form('f').add_select('f', o, multiple=False)
+        assert 'multiple' not in str(el())
+        
+        # single default values
+        html = \
+        '<select class="select" id="f-f" multiple="multiple" name="f">\n'\
+        '<option selected="selected" value="1">a</option>\n<option value="2">'\
+        'b</option>\n</select>'
+        el = Form('f').add_mselect('f', o, defaultval=1, choose=None)
+        self.assertEqual(str(el()), html)
+        el = Form('f').add_mselect('f', o, defaultval=[1,3], choose=None)
+        self.assertEqual(str(el()), html)
+        
+        # multiple default values
+        html = \
+        '<select class="select" id="f-f" multiple="multiple" name="f">\n'\
+        '<option selected="selected" value="1">a</option>\n'\
+        '<option selected="selected" value="2">'\
+        'b</option>\n</select>'
+        el = Form('f').add_mselect('f', o, defaultval=(1,2), choose=None)
+        self.assertEqual(str(el()), html)
+        el = Form('f').add_mselect('f', o, defaultval=[1,2], choose=None)
+        self.assertEqual(str(el()), html)
+    
+    def test_el_select_multi1(self):
+        o = [(1, 'a'), (2, 'b')]
+        # value
+        el = Form('f').add_mselect('f', o, if_empty=1)
+        self.assertEqual(el.value, [1])
+        el = Form('f').add_mselect('f', o, if_empty=[1,2])
+        self.assertEqual(el.value, [1,2])
+        el = Form('f').add_mselect('f', o, if_empty=['1','2'])
+        self.assertEqual(el.value, ['1', '2'])
+        el = Form('f').add_mselect('f', o, if_empty=[1,3])
+        assert not el.is_valid()
+        self.assertEqual( el.errors[0], 'the value did not come from the given options')
+        
+        # no auto validate
+        el = Form('f').add_mselect('f', o, if_empty=[1,3], auto_validate=False)
+        assert el.is_valid()
+        self.assertEqual(el.value, [1,3])
+        
+        # conversion
+        el = Form('f').add_mselect('f', o, vtype='int', if_empty=['1',2])
+        self.assertEqual(el.value, [1, 2])
+        
+        # choose values are invalid only if a value is required
+        el = Form('f').add_mselect('f', o, if_empty=(-2,1))
+        assert el.is_valid()
+        el = Form('f').add_mselect('f', o, if_empty=(-2, 1), required=True)
+        assert not el.is_valid()
+        
+        # custom invalid values
+        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=['2'])
+        assert el.is_valid()
+        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=['1', '2'])
+        assert not el.is_valid()
+        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=1)
+        assert not el.is_valid()
+        
+    def test_el_select_multi2(self):
+        o = [(1, 'a'), (2, 'b')]
+        # not submitted value when not required is OK.
+        # Should return NotGivenIter
+        el = Form('f').add_mselect('f', o)
+        assert el.is_valid()
+        assert el.value is NotGivenIter
+        for v in el.value:
+            self.fail('should emulate empty')
+        else:
+            assert True, 'should emulate empty'
+        assert el.value == []
+        
+        # "empty" value when required, but there is an empty value in the
+        # options.  It seems that required meaning 'must not be empty' should
+        # take precidence.
+        el = Form('f').add_mselect('f', o+[('', 'blank')], if_empty='', required=True)
+        assert not el.is_valid()
+        
+        # make sure choose values do not get returned when required=False
+        el = Form('f').add_mselect('f', o, if_empty=1)
+        el.submittedval = [-2, -1]
+        self.assertEqual(el.value, 1)
+        el = Form('f').add_mselect('f', o)
+        el.submittedval = [-1, -2]
+        self.assertEqual(el.value, [])
+        el = Form('f').add_mselect('f', o)
+        el.submittedval = [-1, 1]
+        self.assertEqual(el.value, [1])
+
+# from_python_exception test needs to be created
 
 # run the tests if module called directly
 if __name__ == "__main__":
