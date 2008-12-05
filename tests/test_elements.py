@@ -687,6 +687,7 @@ class InputElementsTest(unittest.TestCase):
         el.submittedval = 'foo'
         assert not el.is_valid()
 
+class SelectTest(unittest.TestCase):
     def test_el_select(self):
         html = \
         '<select id="f-f" name="f">\n<option value="-2">Choose:'\
@@ -886,7 +887,77 @@ class InputElementsTest(unittest.TestCase):
         el = Form('f').add_mselect('f', o)
         el.submittedval = [-1, 1]
         self.assertEqual(el.value, [1])
-
+        
+class OtherElementsTest(unittest.TestCase):
+    def test_el_textarea(self):
+        html = '<textarea cols="40" id="f-f" name="f" rows="7"></textarea>'
+        el = Form('f').add_textarea('f')
+        self.assertEqual(str(el()), html)
+        html = '<textarea cols="40" id="f-f" name="f" rows="7">foo</textarea>'
+        el = Form('f').add_textarea('f', defaultval='foo')
+        self.assertEqual(str(el()), html)
+        
+    def test_el_passthru(self):
+        f = Form('f')
+        f.add_text('text')
+        el = f.add_passthru('f', 'foo')
+        assert el.value == 'foo'
+        try:
+            el.render()
+            self.fail('passthru should not render')
+        except AttributeError:
+            pass
+        try:
+            el.submittedval = 'foo'
+            self.fail('passthru should not be submittable')
+        except NotImplementedError:
+            pass
+        # a submitted value should not affect the returned value
+        f.set_submitted({'f':'bar', 'text':'baz', 'f-submit-flag':'submitted'})
+        self.assertEqual(f.values, {'f':'foo', 'text':'baz', 'f-submit-flag':'submitted'})
+        
+        # need to test defaulting, passthru should also pick that up
+        f = Form('f')
+        f.add_text('text')
+        el = f.add_passthru('f')
+        f.set_defaults({'f':'foo'})
+        f.set_submitted({'f':'bar', 'text':'baz', 'f-submit-flag':'submitted'})
+        self.assertEqual(f.values, {'f':'foo', 'text':'baz', 'f-submit-flag':'submitted'})
+    
+    def test_el_fixed(self):
+        f = Form('f')
+        el = f.add_fixed('f', 'foo')
+        assert el() == 'foo'
+        
+    def test_el_static(self):
+        f = Form('f')
+        f.add_text('text')
+        el = f.add_static('f', 'label', 'foo')
+        assert el.render() == 'foo'
+        try:
+            assert el.value == 'foo'
+            self.fail('static should not have a value')
+        except NotImplementedError:
+            pass
+        
+        try:
+            el.submittedval = 'foo'
+            self.fail('static should not be submittable')
+        except NotImplementedError:
+            pass
+        
+        # the value should not show up in return values or be submittable
+        f.set_submitted({'f':'bar', 'text':'baz', 'f-submit-flag':'submitted'})
+        self.assertEqual(f.values, {'text':'baz', 'f-submit-flag':'submitted'})
+        
+        # need to test defaulting, passthru should also pick that up
+        f = Form('f')
+        f.add_text('text')
+        el = f.add_static('f', 'label')
+        f.set_defaults({'f':'foo'})
+        assert el() == 'foo'
+        
+        
 # from_python_exception test needs to be created
 
 # run the tests if module called directly

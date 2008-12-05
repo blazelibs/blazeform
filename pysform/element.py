@@ -87,9 +87,6 @@ class ElementBase(HtmlAttributeHolder):
     def _from_python_processing(self):
         self._displayval = self._defaultval
     
-    def __call__(self, **kwargs):
-        return self.render(**kwargs)
-    
     def getidattr(self):
         return self.form.element_id_formatter % {'form_name':self.form.name, 'element_id':self.id}
 
@@ -310,7 +307,10 @@ class InputElementBase(FormFieldElementBase):
         self.nameattr = None
         self.set_attr('class_', etype)
         self.etype = etype
-    
+
+    def __call__(self, **kwargs):
+        return self.render(**kwargs)
+        
     def render(self, **kwargs):
         if self.displayval and self.displayval is not NotGiven:
             self.set_attr('value', self.displayval)
@@ -344,6 +344,9 @@ class CheckboxElement(InputElementBase):
         self._submittedval = bool(value)
     submittedval = property(_get_submittedval, _set_submittedval)
     
+    def __call__(self, **kwargs):
+        return self.render(**kwargs)
+        
     def render(self, **kwargs):
         # have to override InputBase.render or it will put a value attribute
         # for a checkbox
@@ -513,6 +516,9 @@ class SelectElement(FormFieldElementBase):
         
             self._safeval = value
     
+    def __call__(self, **kwargs):
+        return self.render(**kwargs)
+        
     def render(self, **kwargs):
         if self.multiple:
             self.set_attr('multiple', 'multiple')
@@ -537,9 +543,93 @@ class TextAreaElement(FormFieldElementBase):
         kwargs['cols'] = kwargs.pop('cols', 40)
         FormFieldElementBase.__init__(self, *args, **kwargs)
     
+    def __call__(self, **kwargs):
+        return self.render(**kwargs)
+        
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        return tags.textarea(self.id, self.displayval, **self.attributes)
+        return tags.textarea(self.id, self.displayval or '', **self.attributes)
+form_elements['textarea'] = TextAreaElement
+
+class PassThruElement(HasValueElement):
+    """
+    This element is a non-rendering element that simply allows you to set
+    a value and get that same value as .value.  It is impossible
+    for this field to be set by submitted values, so .value is safe as long
+    as your original was correct.
+    """
+    def __init__(self, form, eid, defaultval=NotGiven, *args, **kwargs):
+        HasValueElement.__init__(self, form, eid, NotGiven, defaultval, *args, **kwargs)
+        
+    def _bind_to_form(self):
+        f = self.form
+        f.all_els[self.id] = self
+        f.defaultable_els[self.id] = self
+        f.returning_els.append(self)
+    
+    def _get_submittedval(self):
+        raise NotImplementedError('element does not allow submitted values')
+    def _set_submittedval(self, value):
+        raise NotImplementedError('element does not allow submitted values')
+    submittedval = property(_get_submittedval, _set_submittedval)
+    
+    def _get_value(self):
+        return self.defaultval
+    value = property(_get_value)
+form_elements['passthru'] = PassThruElement
+
+class FixedElement(PassThruElement):
+    """
+    Like PassThruElement, but renders like a StaticElement
+    """
+
+    def _bind_to_form(self):
+        # todo: not sure why I can't use PassThruElement._bind_to_form here
+        # but I can't I get errors about needing to be a PassThru instance
+        # instead of FixedElement
+        f = self.form
+        f.all_els[self.id] = self
+        f.defaultable_els[self.id] = self
+        f.returning_els.append(self)
+        f.render_els.append(self)
+    
+    def __call__(self, **kwargs):
+        return self.render(**kwargs)
+        
+    def render(self, **kwargs):
+        return self.value
+form_elements['fixed'] = FixedElement
+
+class StaticElement(ElementBase):
+    """
+    This element renders, but does not take submitted values or return values.
+    It is for display/rendering purposes only.
+    """
+    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, *args, **kwargs):
+        ElementBase.__init__(self, form, eid, label, defaultval, *args, **kwargs)
+        
+    def _bind_to_form(self):
+        f = self.form
+        f.all_els[self.id] = self
+        f.defaultable_els[self.id] = self
+        f.render_els.append(self)
+    
+    def _get_submittedval(self):
+        raise NotImplementedError('element does not allow submitted values')
+    def _set_submittedval(self, value):
+        raise NotImplementedError('element does not allow submitted values')
+    submittedval = property(_get_submittedval, _set_submittedval)
+    
+    def _get_value(self):
+        raise NotImplementedError('element does not have a value')
+    value = property(_get_value)
+    
+    def __call__(self, **kwargs):
+        return self.render(**kwargs)
+        
+    def render(self, **kwargs):
+        return self.displayval
+form_elements['static'] = StaticElement
 
 class FileElement(InputElementBase):
     def __init__(self, *args, **kwargs):
@@ -628,15 +718,6 @@ class FileElement(InputElementBase):
     
     def addValidator(self, *args, **kwargs):
         raise NotImplementedError('FileElement does not support addValidator()')
-
-class StaticValueElement(InputElementBase):
-    def __init__(self, form, eid, displayName=None, length=None, **kwargs):
-        InputElementBase.__init__(self, form, eid, displayName, **kwargs)
-        self.setType('static-value')
-
-    def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        return self.currentValue()
 
 class StaticElement(ElementBase):
     """
