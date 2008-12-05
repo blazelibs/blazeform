@@ -98,7 +98,16 @@ class CommonFormUsageTest(unittest.TestCase):
         post = {'login-submit-flag': 'submitted', 'username':'test2'}
         f.set_submitted(post)
         self.assertEqual('<input class="text" id="login-username" name="username" type="text" value="test2" />', str(f.username.render()))
-        
+    
+    def test_dup_fields(self):
+        f = Form('f')
+        f.add_text('f')
+        try:
+            f.add_text('f')
+            self.fail('should not be able to add elements with the same id')
+        except ValueError:
+            pass
+
 # run the tests if module called directly
 if __name__ == "__main__":
     unittest.main()

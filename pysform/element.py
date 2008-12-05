@@ -1,9 +1,12 @@
 from os import path
 import cgi
 from webhelpers.html import HTML
+from webhelpers.html.tags import select
 import formencode
 import formencode.validators as fev
-from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven
+from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
+        tolist, NotGivenIter, is_notgiven
+from pysform.processors import Confirm, Select, MultiValues
 
 form_elements = {}
 
@@ -38,6 +41,8 @@ class Label(object):
         return self.render(**kwargs)
     
     def __str__(self):
+        if self.value is NotGiven:
+            return self.element.id
         return self.value
 
 class ElementBase(HtmlAttributeHolder):
@@ -154,7 +159,7 @@ class FormFieldElementBase(HasValueElement):
     submittedval = property(_get_submittedval, _set_submittedval)
     
     def _get_displayval(self):
-        if self.submittedval is NotGiven:
+        if is_notgiven(self.submittedval):
             return HasValueElement._get_displayval(self)
         return self.submittedval
     displayval = property(_get_displayval)
@@ -197,14 +202,14 @@ class FormFieldElementBase(HasValueElement):
             value = value.strip()
         
         # if nothing was submitted, but we have an if_missing, substitute
-        if value is NotGiven and self.if_missing is not NotGiven:
+        if is_notgiven(value) and self.if_missing is not NotGiven:
             value = self.if_missing
         
         # handle empty or missing submit value with if_empty
         if is_empty(value) and self.if_empty is not NotGiven:
             value = self.if_empty
         # standardize all empty values as None if if_empty not given
-        elif is_empty(value) and value is not NotGiven:
+        elif is_empty(value) and not is_notgiven(value):
             value = None  
 
         # process required
@@ -213,13 +218,14 @@ class FormFieldElementBase(HasValueElement):
             self.add_error('"%s" is required' % self.label)
         
         # process processors
-        for validator, msg in self.processors:
+        for processor, msg in self.processors:
             try:
-                value = validator.to_python(value)
+                processor = MultiValues(processor)
+                value = processor.to_python(value, self)
             except formencode.Invalid, e:
                 valid = False
                 self.add_error((msg or str(e)))
-            
+
         # If its empty, there is no reason to run the converters.  By default,
         # the validators don't do anything if the value is empty and they WILL
         # try to convert our NotGiven value, which we want to avoid.  Therefore,
@@ -238,8 +244,9 @@ class FormFieldElementBase(HasValueElement):
                 elif self._vtype in ('unicode', 'uni'):
                     tvalidator = fev.UnicodeString
                 try:
-                    value = tvalidator.to_python(value)
-                except (formencode.Invalid, ValueError), e:
+                    tvalidator = MultiValues(tvalidator, multi_check=False)
+                    value = tvalidator.to_python(value, self)
+                except formencode.Invalid, e:
                     valid = False
                     self.add_error(str(e))
 
@@ -278,6 +285,7 @@ class FormFieldElementBase(HasValueElement):
                 processor = formencode.validators.Wrapper(to_python=processor)
             else:
                 raise TypeError('processor must be a Formencode validator or a callable')
+
         self.processors.append((processor, msg))
         
     def add_handler(self, exception_txt, error_msg, exc_type=None):
@@ -393,6 +401,13 @@ class TextElement(InputElementBase):
         self.add_processor(fev.MaxLength(len))
 form_elements['text'] = TextElement
 
+class ConfirmElement(TextElement):
+    def __init__(self, *args, **kwargs):
+        match = kwargs.pop('match')
+        TextElement.__init__(self, *args, **kwargs)
+        self.add_processor(Confirm(self.form.all_els[match]))
+form_elements['confirm'] = ConfirmElement
+
 class DateElement(TextElement):
     def __init__(self, *args, **kwargs):
         vargs = multi_pop(kwargs, 'accept_day', 'month_style', 'datetime_module')
@@ -444,13 +459,17 @@ form_elements['url'] = URLElement
 
 class SelectElement(FormFieldElementBase):
     """
-    Class to dynamically create an HTML SELECT.  Includes methods for working
-    with the select's OPTIONS.
+    Class to dynamically create an HTML select.  Includes methods for working
+    with the select's options.
     """
-    def __init__(self, form, eid, options, displayName=None, choose='Choose:', auto_validate=True, invalid_msg='Please select a valid option', required = False, **kwargs):
-        FormFieldElementBase.__init__(self, form, eid, displayName, required=required, **kwargs)
-        self.setType('select')
-        self.options_orig = options
+    def __init__(self, form, eid, options, label=NotGiven, vtype = NotGiven,
+                 defaultval=NotGiven, strip=True, choose='Choose:',
+                 auto_validate=True, invalid = [], error_msg = None,
+                 required = False, **kwargs):
+        self.multiple = bool(kwargs.pop('multiple', False))
+        FormFieldElementBase.__init__(self, 'select', form, eid, label,
+                vtype, defaultval, strip, required=required, **kwargs)
+
         self.options = options
         self.choose = None
         if choose:
@@ -458,32 +477,56 @@ class SelectElement(FormFieldElementBase):
                 self.choose = choose
             else:
                 self.choose = [(-2, choose), (-1, '-'*25)]
+                if required:
+                    invalid = [-2, -1] + tolist(invalid)
                
             self.options = self.choose + options
         
-        if auto_validate:
+        if auto_validate: 
             if required:
-                self.addValidator(Select(self.options_orig), invalid_msg)
+                self.add_processor(Select(self.options, invalid), error_msg)
             else:
-                self.addValidator(Select(self.options), invalid_msg)
+                # NotGiven is a valid option as long as a value isn't required
+                ok_values = self.options + [(NotGiven, 0)] + [(NotGivenIter, 0)]
+                self.add_processor(Select(ok_values, invalid), error_msg)
     
-    def getSubmitValue(self):
+    def _to_python_processing(self):
         """
-            if choose was true but required false, strip out the values
-            that came from the choose and return None instead
+            if "choose" value was chosen, we need to return an emtpy
+            value appropriate to `multi`
         """
-        value = self.submittedValue
-        if self.choose:
-            choose = [unicode(d[0]) for d in self.choose]
-            if not self.required:
-                if value in choose:
-                    return None
-        return value
+        do_processing = bool(self._valid == None)
+        FormFieldElementBase._to_python_processing(self)
+        if do_processing and not is_notgiven(self._safeval):
+            value = self._safeval
+            # stip out choose values
+            if self.multiple:
+                values = set(value)
+                choose = set((-1, -2))
+                value = list(values.difference(choose))
+            else:
+                if value in (-1, -2):
+                    value = None
+            
+            # re-apply if_empty settings
+            if is_empty(value) and self.if_empty is not NotGiven:
+                value = self.if_empty
+        
+            self._safeval = value
     
     def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html.tags import select
-        return select(self.name, self.currentValue(), self.options, **self.attributes)
+        if self.multiple:
+            self.set_attr('multiple', 'multiple')
+        self.set_attrs(**kwargs)
+        return select(self.id, self.displayval or None, self.options, **self.attributes)
+form_elements['select'] = SelectElement
+
+class MultiSelectElement(SelectElement):
+    def __init__(self, *args, **kwargs):
+        kwargs['multiple'] = True
+        SelectElement.__init__(self, *args, **kwargs)
+        self.submittedval = NotGivenIter
+form_elements['mselect'] = MultiSelectElement
 
 class TextAreaElement(FormFieldElementBase):
     """
