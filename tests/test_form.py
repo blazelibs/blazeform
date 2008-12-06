@@ -90,7 +90,6 @@ class CommonFormUsageTest(unittest.TestCase):
         #f.set_submitted(post)
         self.assertEqual('<input class="text" id="login-username" name="username" type="text" value="test1" />', str(f.username.render()))
         
-    
     def test_submit(self):
         f = Form('login')
         f.add_element('text', 'username', 'User Name')

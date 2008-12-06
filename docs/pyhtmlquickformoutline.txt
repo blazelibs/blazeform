@@ -147,3 +147,5 @@ ElementBase (defaults)
         and get the wrapper along with css classes for alternating colors, etc.
     * for modules with validators, have a default_notes argument that defaults to True
     * form "sections"
+    * logical groups and render groups should have something in common, it
+        would be common to want five radios in the same "row"

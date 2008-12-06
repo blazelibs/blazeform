@@ -141,7 +141,7 @@ class FormFieldElementBase(HasValueElement):
                     raise ValueError('invalid vtype "%s"' % vtype)
             except AttributeError, e:
                 raise TypeError('vtype should have been a string, got %s instead' % type(vtype))
-        self._vtype = vtype
+        self.vtype = vtype
         
     def _get_submittedval(self):
         return self._submittedval
@@ -230,16 +230,16 @@ class FormFieldElementBase(HasValueElement):
         # just skip the conversion.
         if not is_empty(value):
             # process type conversion
-            if self._vtype is not NotGiven:
-                if self._vtype in ('boolean', 'bool'):
+            if self.vtype is not NotGiven:
+                if self.vtype in ('boolean', 'bool'):
                     tvalidator = formencode.compound.Any(fev.Bool(), fev.StringBoolean())
-                elif self._vtype in ('integer', 'int'):
+                elif self.vtype in ('integer', 'int'):
                     tvalidator = fev.Int
-                elif self._vtype in ('number', 'num', 'float'):
+                elif self.vtype in ('number', 'num', 'float'):
                     tvalidator = fev.Number
-                elif self._vtype in ('str', 'string'):
+                elif self.vtype in ('str', 'string'):
                     tvalidator = fev.String
-                elif self._vtype in ('unicode', 'uni'):
+                elif self.vtype in ('unicode', 'uni'):
                     tvalidator = fev.UnicodeString
                 try:
                     tvalidator = MultiValues(tvalidator, multi_check=False)
@@ -333,8 +333,8 @@ class CheckboxElement(InputElementBase):
         InputElementBase.__init__(self, 'checkbox', *args, **kwargs)
         
         # some sane defaults for a checkbox IMO
-        if self._vtype is NotGiven:
-            self._vtype = 'bool'
+        if self.vtype is NotGiven:
+            self.vtype = 'bool'
         if self.if_empty is NotGiven:
             self.if_empty = False
         if self.defaultval is NotGiven:
@@ -562,10 +562,13 @@ class LogicalGroupElement(FormFieldElementBase):
     def __init__(self, *args, **kwargs):
         self.auto_validate = kwargs.pop('auto_validate', True)
         self.error_msg = kwargs.pop('error_msg', None)
+        self.invalid = kwargs.pop('invalid', [])
         FormFieldElementBase.__init__(self, *args, **kwargs)
+        
         self.multiple = True
         self.members = {}
         self.to_python_first = True
+        self.submittedval = NotGivenIter
         
     def _get_defaultval(self):
         return self._defaultval
@@ -590,7 +593,8 @@ class LogicalGroupElement(FormFieldElementBase):
         self._submittedval = value
         
         # use self.value to make sure processing gets done
-        self._set_members(self.value)
+        if value:
+            self._set_members(self.value)
     submittedval = property(_get_submittedval, _set_submittedval)
 
     def _to_python_processing(self):
@@ -603,10 +607,10 @@ class LogicalGroupElement(FormFieldElementBase):
             if self.auto_validate:
                 options = list(self.members.items())
                 if self.required:
-                    self.add_processor(Select(options), self.error_msg)
+                    self.add_processor(Select(options, self.invalid), self.error_msg)
                 else:
                     # NotGiven is a valid option as long as a value isn't required
-                    self.add_processor(Select(options + [(NotGivenIter, 0)]), self.error_msg)
+                    self.add_processor(Select(options + [(NotGivenIter, 0)], self.invalid), self.error_msg)
         FormFieldElementBase._to_python_processing(self)
     
     def _set_members(self, values):
