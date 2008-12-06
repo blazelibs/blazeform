@@ -5,7 +5,9 @@ from formencode.validators import Int
 
 from pysform import Form
 from pysform.element import TextElement
-from pysform.util import NotGiven, NotGivenIter
+from pysform.util import NotGiven, NotGivenIter, literal
+
+L = literal
 
 class CommonTest(unittest.TestCase):
 
@@ -827,6 +829,8 @@ class SelectTest(unittest.TestCase):
         # value
         el = Form('f').add_mselect('f', o, if_empty=1)
         self.assertEqual(el.value, [1])
+        el = Form('f').add_mselect('f', o, if_empty=1, auto_validate=False)
+        self.assertEqual(el.value, [1])
         el = Form('f').add_mselect('f', o, if_empty=[1,2])
         self.assertEqual(el.value, [1,2])
         el = Form('f').add_mselect('f', o, if_empty=['1','2'])
@@ -890,9 +894,9 @@ class SelectTest(unittest.TestCase):
         
 class OtherElementsTest(unittest.TestCase):
     def test_el_textarea(self):
-        html = '<textarea cols="40" id="f-f" name="f" rows="7"></textarea>'
+        html = '<textarea class="foo" cols="40" id="f-f" name="f" rows="7"></textarea>'
         el = Form('f').add_textarea('f')
-        self.assertEqual(str(el()), html)
+        self.assertEqual(str(el(class_='foo')), html)
         html = '<textarea cols="40" id="f-f" name="f" rows="7">foo</textarea>'
         el = Form('f').add_textarea('f', defaultval='foo')
         self.assertEqual(str(el()), html)
@@ -926,14 +930,14 @@ class OtherElementsTest(unittest.TestCase):
     
     def test_el_fixed(self):
         f = Form('f')
-        el = f.add_fixed('f', 'foo')
-        assert el() == 'foo'
+        el = f.add_fixed('f', 'foo', title='baz')
+        self.assertEqual( el(class_='bar'), L('<div class="bar" id="f-f" title="baz">foo</div>'))
         
     def test_el_static(self):
         f = Form('f')
         f.add_text('text')
         el = f.add_static('f', 'label', 'foo')
-        assert el.render() == 'foo'
+        assert el.render() == L('<div id="f-f">foo</div>')
         try:
             assert el.value == 'foo'
             self.fail('static should not have a value')
@@ -955,9 +959,230 @@ class OtherElementsTest(unittest.TestCase):
         f.add_text('text')
         el = f.add_static('f', 'label')
         f.set_defaults({'f':'foo'})
-        assert el() == 'foo'
+        self.assertEqual(el(), L('<div id="f-f">foo</div>'))
+    
+    def test_el_header(self):
+        el = Form('f').add_header('f', 'heading')
+        assert el.render() == L('<h3 id="f-f">heading</h3>')
+    
+        # different header
+        el = Form('f').add_header('f', 'heading', 'h2')
+        assert el.render() == L('<h2 id="f-f">heading</h2>')
         
+        # with attributes
+        el = Form('f').add_header('f', 'foo', title='baz')
+        self.assertEqual( el(class_='bar'), L('<h3 class="bar" id="f-f" title="baz">foo</h3>'))
+
+class LogicalElementsTest(unittest.TestCase):
+    
+    def test_mcheckbox(self):
+        not_checked = L('<input class="checkbox" id="f-f" name="thegroup" type="checkbox" />')
+        checked = L('<input checked="checked" class="checkbox" id="f-f" name="thegroup" type="checkbox" />')
+
+        el = Form('f').add_mcheckbox('f', 'label', group='thegroup' )
+        self.assertEqual(el(), not_checked)
+        el = Form('f').add_mcheckbox('f', 'label', group='thegroup', checked=True)
+        self.assertEqual(el(), checked)
+        el = Form('f').add_mcheckbox('f', 'label', group='thegroup')
+        self.assertEqual(el(checked='checked'), checked)
         
+        not_checked = L('<input class="checkbox" id="f-f" name="thegroup" type="checkbox" value="foo" />')
+        checked = L('<input checked="checked" class="checkbox" id="f-f" name="thegroup" type="checkbox" value="foo" />')
+
+        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup')
+        self.assertEqual(el(), not_checked)
+        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup', checked=True)
+        self.assertEqual(el(), checked)
+        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup')
+        self.assertEqual(el(checked='checked'), checked)
+        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup')
+        el.chosen = True
+        self.assertEqual(el(), checked)
+        
+        # can't have to elements in same group with same value
+        f = Form('f')
+        el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
+        try:
+            f.add_mcheckbox('f2', 'label', 'foo', 'thegroup')
+        except ValueError:
+            pass
+        
+        # elements should not take submit values
+        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup')
+        try:
+            el.submittedval = False
+            self.fail('should not accept submittedval')
+        except NotImplementedError:
+            pass
+        el.form.set_submitted({'f':'test'})
+        
+        # test the elements getting chosen by setting form defaults
+        f = Form('f')
+        el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
+        el2 = f.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
+        assert el1.chosen == el2.chosen == False
+        f.set_defaults({'thegroup':'foo'})
+        assert el1.chosen
+        assert not el2.chosen
+        f.set_defaults({'thegroup':['foo', 'bar']})
+        assert el1.chosen
+        assert el2.chosen
+        # it was chosen, but should "undo" when set again
+        f.set_defaults({'thegroup':'foo'})
+        assert el1.chosen
+        assert not el2.chosen
+        
+        # test the elements getting chosen by form submissions
+        f = Form('f')
+        el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
+        el2 = f.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
+        assert el1.chosen == el2.chosen == False
+        f.set_submitted({'thegroup':'foo'})
+        assert el1.chosen
+        assert not el2.chosen
+        f.set_submitted({'thegroup':['foo', 'bar']})
+        assert el1.chosen
+        assert el2.chosen
+        # it was chosen, but should "undo" when set again
+        f.set_submitted({'thegroup':'foo'})
+        assert el1.chosen
+        assert not el2.chosen
+    
+    def test_mcheckbox2(self):
+        # test integer values
+        f = Form('f')
+        el1 = f.add_mcheckbox('f1', 'label', 1, 'thegroup')
+        el2 = f.add_mcheckbox('f2', 'label', 2, 'thegroup')
+        assert el1.chosen == el2.chosen == False
+        f.set_submitted({'thegroup':1})
+        assert el1.chosen
+        assert not el2.chosen
+        f.set_submitted({'thegroup':'1'})
+        assert el1.chosen
+        assert not el2.chosen
+        f.set_submitted({'thegroup':[1, '2']})
+        assert el1.chosen
+        assert el2.chosen
+        
+    def test_radio(self):
+        not_selected= L('<input class="radio" id="f-f" name="thegroup" type="radio" />')
+        selected = L('<input class="radio" id="f-f" name="thegroup" selected="selected" type="radio" />')
+
+        el = Form('f').add_radio('f', 'label', group='thegroup' )
+        self.assertEqual(el(), not_selected)
+        el = Form('f').add_radio('f', 'label', group='thegroup', selected=True)
+        self.assertEqual(el(), selected)
+        el = Form('f').add_radio('f', 'label', group='thegroup')
+        self.assertEqual(el(selected='selected'), selected)
+        
+        not_selected= L('<input class="radio" id="f-f" name="thegroup" type="radio" value="foo" />')
+        selected = L('<input class="radio" id="f-f" name="thegroup" selected="selected" type="radio" value="foo" />')
+
+        el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
+        self.assertEqual(el(), not_selected)
+        el = Form('f').add_radio('f', 'label', 'foo', 'thegroup', selected=True)
+        self.assertEqual(el(), selected)
+        el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
+        self.assertEqual(el(selected='selected'), selected)
+        el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
+        el.chosen = True
+        self.assertEqual(el(), selected)
+
+class LogicalElementsTest2(unittest.TestCase):
+    def setUp(self):
+        self.f = f = Form('f')
+        self.el1 = f.add_mcheckbox('f1', 'label', 1, 'thegroup')
+        self.el2 = f.add_mcheckbox('f2', 'label', 2, 'thegroup')
+        self.el3 = f.add_mcheckbox('f3', 'label', 3, 'thegroup')
+        self.gel = f.thegroup
+        
+    def test_1(self):
+        self.gel.if_empty=1
+        self.assertEqual(self.gel.value, [1])
+
+    def test_2(self):
+        self.gel.if_empty=[1,2]
+        self.assertEqual(self.gel.value, [1,2])
+
+    def test_3(self):
+        self.gel.if_empty=['1', '2']
+        self.assertEqual(self.gel.value, ['1', '2'])
+
+    def test_4(self):
+        self.gel.if_empty=[1,4]
+        assert not self.gel.is_valid()
+        self.assertEqual(self.gel.errors[0], 'the value did not come from the given options')
+
+    def test_5(self):
+        self.gel.if_empty=[1,4]
+        self.gel.auto_validate = False
+        assert self.gel.value == [1,4]
+
+    def test_6(self):
+        # custom error message
+        self.gel.if_empty=[1,4]
+        self.gel.error_msg = 'test'
+        assert not self.gel.is_valid()
+        self.assertEqual(self.gel.errors[0], 'test')
+
+    def test_7(self):
+        # conversion
+        self.gel.if_empty=['1', 2]
+        self.gel._vtype = 'int'
+        self.assertEqual(self.gel.value, [1, 2])
+        
+        # test notgiven
+        return
+        
+        # conversion
+        el = Form('f').add_mselect('f', o, vtype='int', if_empty=['1',2])
+        self.assertEqual(el.value, [1, 2])
+        
+        # choose values are invalid only if a value is required
+        el = Form('f').add_mselect('f', o, if_empty=(-2,1))
+        assert el.is_valid()
+        el = Form('f').add_mselect('f', o, if_empty=(-2, 1), required=True)
+        assert not el.is_valid()
+        
+        # custom invalid values
+        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=['2'])
+        assert el.is_valid()
+        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=['1', '2'])
+        assert not el.is_valid()
+        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=1)
+        assert not el.is_valid()
+        
+    def test_el_select_multi2(self):
+        o = [(1, 'a'), (2, 'b')]
+        # not submitted value when not required is OK.
+        # Should return NotGivenIter
+        el = Form('f').add_mselect('f', o)
+        assert el.is_valid()
+        assert el.value is NotGivenIter
+        for v in el.value:
+            self.fail('should emulate empty')
+        else:
+            assert True, 'should emulate empty'
+        assert el.value == []
+        
+        # "empty" value when required, but there is an empty value in the
+        # options.  It seems that required meaning 'must not be empty' should
+        # take precidence.
+        el = Form('f').add_mselect('f', o+[('', 'blank')], if_empty='', required=True)
+        assert not el.is_valid()
+        
+        # make sure choose values do not get returned when required=False
+        el = Form('f').add_mselect('f', o, if_empty=1)
+        el.submittedval = [-2, -1]
+        self.assertEqual(el.value, 1)
+        el = Form('f').add_mselect('f', o)
+        el.submittedval = [-1, -2]
+        self.assertEqual(el.value, [])
+        el = Form('f').add_mselect('f', o)
+        el.submittedval = [-1, 1]
+        self.assertEqual(el.value, [1])
+
+# test setting attributes for each element with a render()
 # from_python_exception test needs to be created
 
 # run the tests if module called directly

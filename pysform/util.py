@@ -1,3 +1,5 @@
+from webhelpers.html import literal
+
 class HtmlAttributeHolder(object):
     def __init__(self, **kwargs):
         #: a dictionary that represents html attributes

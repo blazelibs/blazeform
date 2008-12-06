@@ -62,7 +62,7 @@ class MultiValues(FancyValidator):
             if not multiple:
                 if is_iterable(value):
                     raise Invalid(self.message('nonmultiple', state), value, state)
-                
+
         # now apply the validator to the value
         if not multiple or is_notgiven(value):
             return self.validator.to_python(value, state)
