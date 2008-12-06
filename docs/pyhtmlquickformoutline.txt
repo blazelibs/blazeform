@@ -58,7 +58,7 @@ ElementBase (defaults)
             * wrap_in = (div, ul)
     -   HeaderElement
             * no label
--   InLogicalGroupElement
+-   InLogicalGroupElement (render only based on bool)
         -   RadioElement
         -   CheckboxGroupElement
 
@@ -146,3 +146,4 @@ ElementBase (defaults)
         flexibility in the layout process and could do element.render_row()
         and get the wrapper along with css classes for alternating colors, etc.
     * for modules with validators, have a default_notes argument that defaults to True
+    * form "sections"

@@ -4,7 +4,7 @@ from webhelpers.html import HTML, tags
 import formencode
 import formencode.validators as fev
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
-        tolist, NotGivenIter, is_notgiven
+        tolist, NotGivenIter, is_notgiven, is_iterable
 from pysform.processors import Confirm, Select, MultiValues
 
 form_elements = {}
@@ -143,7 +143,6 @@ class FormFieldElementBase(HasValueElement):
                 raise TypeError('vtype should have been a string, got %s instead' % type(vtype))
         self._vtype = vtype
         
-    
     def _get_submittedval(self):
         return self._submittedval
     def _set_submittedval(self, value):
@@ -219,6 +218,11 @@ class FormFieldElementBase(HasValueElement):
             except formencode.Invalid, e:
                 valid = False
                 self.add_error((msg or str(e)))
+        else:
+            # we rely on MultiValues for this, but if no processor,
+            # it doesn't get called
+            if getattr(self, 'multiple', False) and not is_iterable(value):
+                value = tolist(value)
 
         # If its empty, there is no reason to run the converters.  By default,
         # the validators don't do anything if the value is empty and they WILL
@@ -551,6 +555,76 @@ class TextAreaElement(FormFieldElementBase):
         return tags.textarea(self.id, self.displayval or '', **self.attributes)
 form_elements['textarea'] = TextAreaElement
 
+class LogicalGroupElement(FormFieldElementBase):
+    """
+        used to support MultiCheckboxElement and RadioElement
+    """
+    def __init__(self, *args, **kwargs):
+        self.auto_validate = kwargs.pop('auto_validate', True)
+        self.error_msg = kwargs.pop('error_msg', None)
+        FormFieldElementBase.__init__(self, *args, **kwargs)
+        self.multiple = True
+        self.members = {}
+        self.to_python_first = True
+        
+    def _get_defaultval(self):
+        return self._defaultval
+    def _set_defaultval(self, value):
+        self._displayval = NotGiven
+        self._defaultval = value
+        
+        # if you do this every time, then ElementBase ends up
+        # setting this value in it's __init__, but that happens before
+        # _submittedval is created in FormFieldElementBase, and we get an error
+        if value:
+            # call displayval to make sure any _from_python processing gets done
+            displayval = FormFieldElementBase._get_displayval(self)
+            self._set_members(displayval)
+    defaultval = property(_get_defaultval, _set_defaultval)
+
+    def _get_submittedval(self):
+        return self._submittedval
+    def _set_submittedval(self, value):
+        self._valid = None
+        self.errors = []
+        self._submittedval = value
+        
+        # use self.value to make sure processing gets done
+        self._set_members(self.value)
+    submittedval = property(_get_submittedval, _set_submittedval)
+
+    def _to_python_processing(self):
+        """
+            we may need to add a processor, but this can't happen in init
+            because we want to allow more members to be added
+        """
+        if self.to_python_first:
+            self.to_python_first = False
+            if self.auto_validate:
+                options = list(self.members.items())
+                if self.required:
+                    self.add_processor(Select(options), self.error_msg)
+                else:
+                    # NotGiven is a valid option as long as a value isn't required
+                    self.add_processor(Select(options + [(NotGivenIter, 0)]), self.error_msg)
+        FormFieldElementBase._to_python_processing(self)
+    
+    def _set_members(self, values):
+        # convert to dict with unicode keys so our comparisons are always
+        # the same type
+        values = dict([(unicode(v), 1) for v in tolist(values)])
+        # based on our values, set our members to chosen or not chosen
+        for key, el in self.members.items():
+            if values.has_key(unicode(key)):
+                el.chosen = True
+            else:
+                el.chosen = False
+
+    def add_member(self, el):
+        if self.members.has_key(el.displayval):
+            raise ValueError('a member of this group already exists with value "%s"' % el.displayval)
+        self.members[el.displayval] = el
+
 class PassThruElement(HasValueElement):
     """
     This element is a non-rendering element that simply allows you to set
@@ -597,7 +671,8 @@ class FixedElement(PassThruElement):
         return self.render(**kwargs)
         
     def render(self, **kwargs):
-        return self.value
+        self.set_attrs(**kwargs)
+        return HTML.tag('div', self.value, **self.attributes)
 form_elements['fixed'] = FixedElement
 
 class StaticElement(ElementBase):
@@ -628,8 +703,94 @@ class StaticElement(ElementBase):
         return self.render(**kwargs)
         
     def render(self, **kwargs):
-        return self.displayval
+        self.set_attrs(**kwargs)
+        return HTML.tag('div', self.displayval or '', **self.attributes)
 form_elements['static'] = StaticElement
+
+class HeaderElement(StaticElement):
+    """
+    A rendering element used for adding headers to a form
+    
+    Headers will normally be rendered differently than other static elements,
+    hence they have their own class
+    """
+    def __init__(self, form, eid, defaultval, level='h3', *args, **kwargs):
+        StaticElement.__init__(self, form, eid, label=NotGiven, defaultval=defaultval, *args, **kwargs)
+        self.level = level
+        
+    def render(self, **kwargs):
+        self.set_attrs(**kwargs)
+        return HTML.tag(self.level, self.displayval, **self.attributes)
+form_elements['header'] = HeaderElement
+
+class LogicalSupportElement(ElementBase):
+    """
+        a checkbox for "group" use.  `defaultval` is what goes in the "value"
+        attribute.  `chosen` is set by the parent LogicalGroupElement when
+        it's submitval is set.
+        
+        these elements are used to support LogicalGroupElement
+    """
+    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, *args, **kwargs):
+        ElementBase.__init__(self, form, eid, label, defaultval, *args, **kwargs)
+        if isinstance(group, basestring):
+            self.lgroup = getattr(form, group, None)
+            if not self.lgroup:
+                self.lgroup = LogicalGroupElement(form, group)
+        elif not isinstance(group, LogicalGroupElement):
+            raise TypeError('lgroup should be a string or LogicalGroupElement')
+        else:
+            self.lgroup = group
+        self.lgroup.add_member(self)
+        self.chosen = False
+        self.chosen_attr = 'checked'
+    
+    def _bind_to_form(self):
+        f = self.form
+        f.all_els[self.id] = self
+        f.defaultable_els[self.id] = self
+        f.render_els.append(self)
+    
+    def _get_submittedval(self):
+        raise NotImplementedError('element does not allow submitted values')
+    def _set_submittedval(self, value):
+        raise NotImplementedError('element does not allow submitted values')
+    submittedval = property(_get_submittedval, _set_submittedval)
+    
+    def _get_value(self):
+        raise NotImplementedError('element does not have a value')
+    value = property(_get_value)
+    
+    def __call__(self, **kwargs):
+        return self.render(**kwargs)
+    
+    def render(self, **kwargs):
+        self.set_attrs(**kwargs)
+        if self.displayval:
+            self.set_attr('value', self.displayval)
+        self.set_attr('class_', self.etype)
+        if self.chosen:
+            self.set_attr(self.chosen_attr, self.chosen_attr)
+        self.set_attr('name', self.lgroup.id)
+        return HTML.input(type=self.etype, **self.attributes)
+
+class MultiCheckboxElement(LogicalSupportElement):
+    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, checked=False, *args, **kwargs):
+        chosen = bool(checked)
+        LogicalSupportElement.__init__(self, form, eid, label, defaultval, group, *args, **kwargs)
+        self.chosen = chosen
+        self.chosen_attr = 'checked'
+        self.etype = 'checkbox'
+form_elements['mcheckbox'] = MultiCheckboxElement
+
+class RadioElement(LogicalSupportElement):
+    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, selected=False, *args, **kwargs):
+        chosen = bool(selected)
+        LogicalSupportElement.__init__(self, form, eid, label, defaultval, group, *args, **kwargs)
+        self.chosen = chosen
+        self.chosen_attr = 'selected'
+        self.etype = 'radio'
+form_elements['radio'] = RadioElement
 
 class FileElement(InputElementBase):
     def __init__(self, *args, **kwargs):
@@ -719,63 +880,6 @@ class FileElement(InputElementBase):
     def addValidator(self, *args, **kwargs):
         raise NotImplementedError('FileElement does not support addValidator()')
 
-class StaticElement(ElementBase):
-    """
-    class for static HTML fields in the form.
-    
-    A static element is an element that cannot have a submit value and thus
-    cannot change due to user input. Such elements are usually used to improve
-    form presentation.
-    """
-    def __init__(self, form, eid, displayName, **kwargs):
-        # initialize the base element
-        LabelElementBase.__init__(self, form, eid, displayName, **kwargs)
-        self.setType('static')
-    
-    def setSubmitValue(self, value):
-        """
-        DOES NOTHING: a static element silently ignores a call to setSubmitValue()
-        """
-        pass
-        
-    def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        return self.getDefaultValue()
-        #from webhelpers.html import HTML
-        #attr = self.getAttributes()
-        #return HTML.div(self.getDefaultValue(), **attr)
-    
-    def isValid(self):
-        """
-        just returns true since static elements are not validated
-        """
-        return True
-
-class PassThruElement(FormFieldElementBase):
-    """
-    allows us to pass a non-rendered value through the form without the user
-    being able to touch it
-    """
-    def __init__(self, form, eid, value=None, displayName=None, **kwargs):
-        FormFieldElementBase.__init__(self, form, eid, displayName, value=value, hasLabel=False, **kwargs)
-        self.setType('passthru')
-        self.render = False
-        self.pt_value = value
-
-    def setSubmitValue(self, value):
-        pass
-    
-    def render(self, **kwargs):
-        return ''
-    
-    def isValid(self):
-        """
-        just returns true since static elements are not validated
-        """
-        return True
-    
-    def getValue(self):
-        return self.pt_value
 
 class GroupElement(StaticElement):
     """
@@ -799,23 +903,4 @@ class GroupElement(StaticElement):
         attr = self.getAttributes()
         return HTML.div(self.getDefaultValue(), **attr)
 
-
-class HeaderElement(StaticElement):
-    """
-    A pseudo-element used for adding headers to a form
-    
-    Headers will normally be rendered differently than other static elements,
-    hence they have their own class
-    """
-    def __init__(self, form, eid, value=None, element='h3', **kwargs):
-        # initialize the base element
-        StaticElement.__init__(self, form, eid, None, value=value, **kwargs)
-        self.setType('header')
-        self.element_type = element
-        
-    def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html import HTML
-        attr = self.getAttributes()
-        return HTML.tag(self.element_type, self.getDefaultValue(), **attr)
 
