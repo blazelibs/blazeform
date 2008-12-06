@@ -19,7 +19,7 @@ class Select(FancyValidator):
         soptions = set([unicode(d[0]) for d in self.options])
         sinvalid = set([unicode(d) for d in tolist(self.invalid)])
         svalues = set([unicode(d) for d in tolist(values)])
-
+ 
         if len(sinvalid.intersection(svalues)) != 0:
             raise Invalid(self.message('invalid', state), values, state)
 

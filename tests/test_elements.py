@@ -1094,6 +1094,7 @@ class LogicalElementsTest2(unittest.TestCase):
         self.el1 = f.add_mcheckbox('f1', 'label', 1, 'thegroup')
         self.el2 = f.add_mcheckbox('f2', 'label', 2, 'thegroup')
         self.el3 = f.add_mcheckbox('f3', 'label', 3, 'thegroup')
+        self.el3 = f.add_mcheckbox('f4', 'label', '', 'thegroup')
         self.gel = f.thegroup
         
     def test_1(self):
@@ -1128,60 +1129,68 @@ class LogicalElementsTest2(unittest.TestCase):
     def test_7(self):
         # conversion
         self.gel.if_empty=['1', 2]
-        self.gel._vtype = 'int'
+        self.gel.vtype = 'int'
         self.assertEqual(self.gel.value, [1, 2])
-        
-        # test notgiven
-        return
-        
-        # conversion
-        el = Form('f').add_mselect('f', o, vtype='int', if_empty=['1',2])
-        self.assertEqual(el.value, [1, 2])
-        
-        # choose values are invalid only if a value is required
-        el = Form('f').add_mselect('f', o, if_empty=(-2,1))
-        assert el.is_valid()
-        el = Form('f').add_mselect('f', o, if_empty=(-2, 1), required=True)
-        assert not el.is_valid()
-        
+
+    def test_8(self):
         # custom invalid values
-        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=['2'])
-        assert el.is_valid()
-        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=['1', '2'])
-        assert not el.is_valid()
-        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=1)
-        assert not el.is_valid()
+        self.gel.if_empty=(1, 2)
+        self.gel.invalid = ['3']
+        assert self.gel.is_valid()
+
+    def test_9(self):
+        # custom invalid values
+        self.gel.if_empty=(1, 2)
+        self.gel.invalid = '3'
+        assert self.gel.is_valid()
         
-    def test_el_select_multi2(self):
-        o = [(1, 'a'), (2, 'b')]
+    def test_10(self):
+        # custom invalid values
+        self.gel.if_empty=(1, 2)
+        self.gel.invalid = ['2']
+        assert not self.gel.is_valid()
+
+    def test_11(self):
+        # custom invalid values
+        self.gel.if_empty=(1, 2)
+        self.gel.invalid = '2'
+        assert not self.gel.is_valid()
+        
+    def test_12(self):
+        # custom invalid values
+        self.gel.if_empty=(1, 2)
+        self.gel.invalid = ['2','3']
+        assert not self.gel.is_valid()
+        
+    def test_13(self):
         # not submitted value when not required is OK.
         # Should return NotGivenIter
-        el = Form('f').add_mselect('f', o)
-        assert el.is_valid()
-        assert el.value is NotGivenIter
-        for v in el.value:
-            self.fail('should emulate empty')
-        else:
-            assert True, 'should emulate empty'
-        assert el.value == []
+        self.gel.is_valid()
+        assert self.gel.is_valid()
         
+    def test_14(self):
+        # value required
+        self.gel.required=True
+        assert not self.gel.is_valid()
+        
+    def test_15(self):
         # "empty" value when required, but there is an empty value in the
         # options.  It seems that required meaning 'must not be empty' should
         # take precidence.
-        el = Form('f').add_mselect('f', o+[('', 'blank')], if_empty='', required=True)
-        assert not el.is_valid()
+        self.gel.required=True
+        self.gel.if_empty=''
+        assert not self.gel.is_valid()
         
-        # make sure choose values do not get returned when required=False
-        el = Form('f').add_mselect('f', o, if_empty=1)
-        el.submittedval = [-2, -1]
-        self.assertEqual(el.value, 1)
-        el = Form('f').add_mselect('f', o)
-        el.submittedval = [-1, -2]
-        self.assertEqual(el.value, [])
-        el = Form('f').add_mselect('f', o)
-        el.submittedval = [-1, 1]
-        self.assertEqual(el.value, [1])
+    def test_16(self):
+        # custom processor
+        def validator(value):
+            raise ValueError('test')
+        self.gel.if_empty = 1
+        self.gel.add_processor(validator)
+        assert not self.gel.is_valid()
+    
 
+# need to test adding group first and then members
 # test setting attributes for each element with a render()
 # from_python_exception test needs to be created
 
