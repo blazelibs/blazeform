@@ -1193,7 +1193,3 @@ class LogicalElementsTest2(unittest.TestCase):
 # need to test adding group first and then members
 # test setting attributes for each element with a render()
 # from_python_exception test needs to be created
-
-# run the tests if module called directly
-if __name__ == "__main__":
-    unittest.main()
