@@ -33,7 +33,7 @@ class Label(object):
     
     def render(self, **kwargs):
         if isinstance(self.element, FormFieldElementBase):
-            kwargs['for'] = self.element.getId()
+            kwargs['for'] = self.element.getidattr()
         return HTML.label(self.value, **kwargs)
     
     def __call__(self, **kwargs):
@@ -374,15 +374,23 @@ form_elements['image'] = ImageElement
 class ResetElement(InputElementBase):
     def __init__(self, *args, **kwargs):
         InputElementBase.__init__(self, 'reset', *args, **kwargs)
+        if self.defaultval is NotGiven:
+            self.defaultval = 'Reset'
 form_elements['reset'] = ResetElement
 
 class SubmitElement(InputElementBase):
     def __init__(self, *args, **kwargs):
         InputElementBase.__init__(self, 'submit', *args, **kwargs)
+        if self.defaultval is NotGiven:
+            self.defaultval = 'Submit'
+            
 form_elements['submit'] = SubmitElement
 
 class CancelElement(SubmitElement):
-    pass
+    def __init__(self, *args, **kwargs):
+        InputElementBase.__init__(self, 'submit', *args, **kwargs)
+        if self.defaultval is NotGiven:
+            self.defaultval = 'Cancel'
 form_elements['cancel'] = CancelElement
 
 class TextElement(InputElementBase):
@@ -636,8 +644,8 @@ class PassThruElement(HasValueElement):
     for this field to be set by submitted values, so .value is safe as long
     as your original was correct.
     """
-    def __init__(self, form, eid, defaultval=NotGiven, *args, **kwargs):
-        HasValueElement.__init__(self, form, eid, NotGiven, defaultval, *args, **kwargs)
+    def __init__(self, form, eid, defaultval=NotGiven, label=NotGiven, **kwargs):
+        HasValueElement.__init__(self, form, eid, label, defaultval, **kwargs)
         
     def _bind_to_form(self):
         f = self.form
@@ -660,6 +668,8 @@ class FixedElement(PassThruElement):
     """
     Like PassThruElement, but renders like a StaticElement
     """
+    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
+        PassThruElement.__init__(self, form, eid, defaultval, label, **kwargs)
 
     def _bind_to_form(self):
         # todo: not sure why I can't use PassThruElement._bind_to_form here
