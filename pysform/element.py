@@ -4,7 +4,7 @@ from webhelpers.html import HTML, tags
 import formencode
 import formencode.validators as fev
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
-        tolist, NotGivenIter, is_notgiven, is_iterable
+        tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar
 from pysform.processors import Confirm, Select, MultiValues
 
 form_elements = {}
@@ -577,6 +577,13 @@ class LogicalGroupElement(FormFieldElementBase):
         self.members = {}
         self.to_python_first = True
         self.submittedval = NotGivenIter
+    
+    def _bind_to_form(self):
+        f = self.form
+        f.all_els[self.id] = self
+        f.defaultable_els[self.id] = self
+        f.submittable_els[self.id] = self
+        f.returning_els.append(self)
         
     def _get_defaultval(self):
         return self._defaultval
@@ -721,6 +728,32 @@ class StaticElement(ElementBase):
         return HTML.tag('div', self.displayval or '', **self.attributes)
 form_elements['static'] = StaticElement
 
+class GroupElement(StaticElement, ElementRegistrar):
+    """
+    HTML class for a form element group
+    
+    Groups can be used both for visual grouping of the elements (e.g. putting
+    "Submit" and "Reset" buttons in one row or two text fields for first and
+    last name in one row).
+    """
+    def __init__(self, form, eid, label=NotGiven, **kwargs):
+        StaticElement.__init__(self, form, eid, label, NotGiven, **kwargs)
+        
+        # needed for add_* methods
+        self.all_els = form.all_els
+        self._registered_types = form._registered_types
+        
+        # duplicate form variables for when the elements "bind" to us
+        self.defaultable_els = form.defaultable_els
+        self.submittable_els = form.submittable_els
+        self.returning_els = form.returning_els
+        self.element_id_formatter = form.element_id_formatter
+        self.name = form.name
+        
+        # but we keep the rendering elements to ourself
+        self.render_els = []
+form_elements['elgroup'] = GroupElement
+
 class HeaderElement(StaticElement):
     """
     A rendering element used for adding headers to a form
@@ -728,8 +761,8 @@ class HeaderElement(StaticElement):
     Headers will normally be rendered differently than other static elements,
     hence they have their own class
     """
-    def __init__(self, form, eid, defaultval, level='h3', *args, **kwargs):
-        StaticElement.__init__(self, form, eid, label=NotGiven, defaultval=defaultval, *args, **kwargs)
+    def __init__(self, form, eid, defaultval, level='h3', **kwargs):
+        StaticElement.__init__(self, form, eid, label=NotGiven, defaultval=defaultval, **kwargs)
         self.level = level
         
     def render(self, **kwargs):
@@ -893,28 +926,5 @@ class FileElement(InputElementBase):
     
     def addValidator(self, *args, **kwargs):
         raise NotImplementedError('FileElement does not support addValidator()')
-
-
-class GroupElement(StaticElement):
-    """
-    HTML class for a form element group
-    
-    Groups can be used both for visual grouping of the elements (e.g. putting "Submit" and "Reset" buttons on one line), grouping of the elements with the same name (e.g. groups of checkboxes and radio buttons) and logical grouping of the elements (e.g. group for person's name consisting of two text fields for first and last name).
-    """
-    def __init__(self, form, eid, displayName=None, **kwargs):
-        StaticElement.__init__(self, form, eid, displayName, **kwargs)
-        self.setType('group')
-        self.elements = ElementHolder()
-    
-    def addElement(self, type, eid, *args, **kwargs):
-        element = self.form.createElement(type, eid, *args, **kwargs)
-        self.elements.add(element)
-        return element
-
-    def render(self, **kwargs):
-        self._renderPrep(kwargs)
-        from webhelpers.html import HTML
-        attr = self.getAttributes()
-        return HTML.div(self.getDefaultValue(), **attr)
 
 
