@@ -1,6 +1,7 @@
 import unittest
 import datetime
 import warnings
+from pysutils import DumbObject
 from formencode.validators import Int
 
 from pysform import Form
@@ -14,32 +15,32 @@ class CommonTest(unittest.TestCase):
     def test_render(self):
         html = '<input class="text" id="f-username" name="username" type="text" />'
         form = Form('f')
-        el = form.add_element('text', 'username', 'User Name')
+        el = form.add_text('username', 'User Name')
         self.assertEqual(html, str(form.username.render()))
         self.assertEqual(el.label.render(), L('<label for="f-username">User Name</label>'))
         
     def test_implicit_render(self):
         html = '<input class="text" id="f-username" name="username" type="text" />'
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         self.assertEqual(html, str(form.username()))
         
     def test_attr_render(self):
         html = '<input baz="bar" class="text foo bar" id="f-username" name="username" type="text" />'
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         self.assertEqual(html, str(form.username(class_='text foo bar', baz='bar')))
 
     def test_text_with_default(self):
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
-        form.add_element('text', 'username', 'User Name', defaultval='bar')
+        form.add_text('username', 'User Name', defaultval='bar')
         self.assertEqual(html, str(form.username.render()))
     
     def test_text_with_default2(self):
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         form.set_defaults({'username':'bar'})
         self.assertEqual(html, str(form.username.render()))
     
@@ -47,7 +48,7 @@ class CommonTest(unittest.TestCase):
         # make sure the submit value shows up in the form
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         form.set_submitted({'username':'bar'})
         self.assertEqual(html, str(form.username.render()))
     
@@ -55,7 +56,7 @@ class CommonTest(unittest.TestCase):
         # submitted should take precidence over default
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
         form.set_submitted({'username':'bar'})
         self.assertEqual(html, str(form.username.render()))
@@ -64,13 +65,13 @@ class CommonTest(unittest.TestCase):
         # default values do not show up in .value, they only show up when
         # rendering
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
         self.assertEqual(None, form.username.value)
     
     def test_submitted_value(self):
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
         form.set_submitted({'username':'bar'})
         self.assertEqual('bar', form.username.value)
@@ -79,7 +80,7 @@ class CommonTest(unittest.TestCase):
         # test that NotGiven == None and is what we get when nothing
         # submitted
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         self.assertEqual(None, form.username.value)
         
         # make sure the value we get really is NotGiven
@@ -154,18 +155,18 @@ class CommonTest(unittest.TestCase):
         
     def test_blank_submit_value(self):
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         form.set_submitted({'username':''})
         self.assertEqual(None, form.username.value)
         
         form = Form('f')
-        form.add_element('text', 'username', 'User Name', if_empty='')
+        form.add_text('username', 'User Name', if_empty='')
         form.set_submitted({'username':''})
         self.assertEqual('', form.username.value)
     
     def test_is_submitted(self):
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
         self.assertEqual(False, form.username.is_submitted())
         
@@ -174,9 +175,12 @@ class CommonTest(unittest.TestCase):
     
     def test_required(self):
         form = Form('f')
-        el = form.add_element('text', 'username', 'User Name', required=True)
+        el = form.add_text('username', 'User Name', required=True)
         self.assertEqual(True, el.required)
         self.assertEqual(False, form.username.is_valid())
+        
+        # check error message
+        self.assertEqual('"User Name" is required', el.errors[0])
         
         # setting submitted should reset _valid to None, which causes the
         # processing to happen again
@@ -186,10 +190,17 @@ class CommonTest(unittest.TestCase):
         
         el.submittedval = 'foo'
         self.assertEqual(True, form.username.is_valid())
+        
+        # error message without label sould default to element id
+        form = Form('f')
+        el = form.add_text('username', required=True)
+        self.assertEqual(False, form.username.is_valid())
+        self.assertEqual('"username" is required', el.errors[0])
+        
     
     def test_invalid_value(self):
         form = Form('f')
-        el = form.add_element('text', 'username', 'User Name', required=True)
+        el = form.add_text('username', 'User Name', required=True)
         try:
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
@@ -232,7 +243,7 @@ class CommonTest(unittest.TestCase):
         
         v = validator()
         form = Form('f')
-        el = form.add_element('text', 'username', 'User Name', if_empty='bar')
+        el = form.add_text('username', 'User Name', if_empty='bar')
         el.add_processor(v)
         self.assertEqual(True, form.username.is_valid())
         self.assertEqual(1, v.vcalled)
@@ -253,14 +264,14 @@ class CommonTest(unittest.TestCase):
 
     def test_error_messages(self):
         form = Form('f')
-        el = form.add_element('text', 'username', 'User Name', required=True)
+        el = form.add_text('username', 'User Name', required=True)
         self.assertEqual(False, form.username.is_valid())
         self.assertEqual(len(el.errors), 1)
         self.assertEqual('"User Name" is required', el.errors[0])
         
         # formencode message
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', if_empty='test')
+        el = form.add_text('field', 'Field', if_empty='test')
         el.add_processor(Int)
         self.assertEqual(False, el.is_valid())
         self.assertEqual(len(el.errors), 1)
@@ -268,7 +279,7 @@ class CommonTest(unittest.TestCase):
         
         # custom message
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', if_empty='test')
+        el = form.add_text('field', 'Field', if_empty='test')
         el.add_processor(Int, 'int required')
         self.assertEqual(False, el.is_valid())
         self.assertEqual(len(el.errors), 1)
@@ -285,20 +296,20 @@ class CommonTest(unittest.TestCase):
         
     def test_notes(self):
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field')
+        el = form.add_text('field', 'Field')
         el.add_note('test note')
         self.assertEqual(el.notes[0], 'test note')
     
     def test_handlers(self):
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field')
+        el = form.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg')
         assert el.handle_exception(Exception('text exception'))
         self.assertEqual(el.errors[0], 'test error msg')
         
         # make sure second exception works too
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field')
+        el = form.add_text('field', 'Field')
         el.add_handler('not it', '')
         el.add_handler('text exception', 'test error msg')
         assert el.handle_exception(Exception('text exception'))
@@ -306,21 +317,21 @@ class CommonTest(unittest.TestCase):
         
         # specifying exception type
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field')
+        el = form.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg', Exception)
         assert el.handle_exception(Exception('text exception'))
         self.assertEqual(el.errors[0], 'test error msg')
         
         # right message, wrong type
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field')
+        el = form.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg', ValueError)
         assert not el.handle_exception(Exception('text exception'))
         self.assertEqual(len(el.errors), 0)
         
         # wrong message
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field')
+        el = form.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg', Exception)
         assert not el.handle_exception(Exception('text'))
         self.assertEqual(len(el.errors), 0)
@@ -328,75 +339,75 @@ class CommonTest(unittest.TestCase):
     def test_conversion(self):
         # without form submission, we get empty value
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', 'bool')
+        el = form.add_text('field', 'Field', 'bool')
         self.assertEqual( el.value, None)
         
         # default values do not get processed, they are for display only
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', 'bool', '1')
+        el = form.add_text('field', 'Field', 'bool', '1')
         self.assertEqual( el.value, None)
         
         # submission gets converted
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', 'bool')
+        el = form.add_text('field', 'Field', 'bool')
         el.submittedval = '1'
         self.assertEqual( el.value, True)
         
         # conversion turned off
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field')
+        el = form.add_text('field', 'Field')
         el.submittedval = '1'
         self.assertEqual( el.value, '1')
         
         # conversion with if_empty
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', 'bool', if_empty=False)
+        el = form.add_text('field', 'Field', 'bool', if_empty=False)
         el.submittedval = '1'
         self.assertEqual( el.value, True)
         
         # conversion with if_empty
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', 'bool', if_empty=False)
+        el = form.add_text('field', 'Field', 'bool', if_empty=False)
         el.submittedval = None
         self.assertEqual( el.value, False)
         
         # conversion with if_empty
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', 'bool', if_empty=True)
+        el = form.add_text('field', 'Field', 'bool', if_empty=True)
         el.submittedval = False
         self.assertEqual( el.value, False)
         
         # conversion with if_empty
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', 'bool', if_empty='1')
+        el = form.add_text('field', 'Field', 'bool', if_empty='1')
         self.assertEqual( el.value, True)
         
     def test_type_strings(self):
 
         form = Form('f')
-        form.add_element('text', 'f1', 'Field', 'bool', if_empty='1.25')
+        form.add_text('f1', 'Field', 'bool', if_empty='1.25')
         self.assertEqual(form.f1.value, True)
-        form.add_element('text', 'f2', 'Field', 'boolean', if_empty='1.25')
+        form.add_text('f2', 'Field', 'boolean', if_empty='1.25')
         self.assertEqual(form.f2.value, True)
-        form.add_element('text', 'f3', 'Field', 'int', if_empty='1')
+        form.add_text('f3', 'Field', 'int', if_empty='1')
         self.assertEqual(form.f3.value, 1)
-        form.add_element('text', 'f4', 'Field', 'integer', if_empty='1')
+        form.add_text('f4', 'Field', 'integer', if_empty='1')
         self.assertEqual(form.f4.value, 1)
-        form.add_element('text', 'f5', 'Field', 'num', if_empty='1.25')
+        form.add_text('f5', 'Field', 'num', if_empty='1.25')
         self.assertEqual(form.f5.value, 1.25)
-        form.add_element('text', 'f6', 'Field', 'number', if_empty='1.25')
+        form.add_text('f6', 'Field', 'number', if_empty='1.25')
         self.assertEqual(form.f6.value, 1.25)
-        form.add_element('text', 'f7', 'Field', 'float', if_empty='1.25')
+        form.add_text('f7', 'Field', 'float', if_empty='1.25')
         self.assertEqual(form.f7.value, 1.25)
-        form.add_element('text', 'f8', 'Field', 'str', if_empty='1.25')
+        form.add_text('f8', 'Field', 'str', if_empty='1.25')
         self.assertEqual(form.f8.value, '1.25')
-        form.add_element('text', 'f9', 'Field', 'string', if_empty='1.25')
+        form.add_text('f9', 'Field', 'string', if_empty='1.25')
         self.assertEqual(form.f9.value, '1.25')
-        form.add_element('text', 'f10', 'Field', 'uni', if_empty='1.25')
+        form.add_text('f10', 'Field', 'uni', if_empty='1.25')
         self.assertEqual(form.f10.value, u'1.25')
-        form.add_element('text', 'f11', 'Field', 'unicode', if_empty='1.25')
+        form.add_text('f11', 'Field', 'unicode', if_empty='1.25')
         self.assertEqual(form.f11.value, u'1.25')
-        form.add_element('text', 'f12', 'Field', 'bool', if_empty='false')
+        form.add_text('f12', 'Field', 'bool', if_empty='false')
         self.assertEqual(form.f12.value, False)
         
         # test invalid vtype
@@ -558,12 +569,12 @@ class InputElementsTest(unittest.TestCase):
     def test_el_text(self):
         html = '<input class="text" id="f-field" name="field" type="text" />'
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field')
+        el = form.add_text('field', 'Field')
         self.assertEqual(str(el()), html)
         
         html = '<input class="text" id="f-field" maxlength="1" name="field" type="text" />'
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field', maxlength=1)
+        el = form.add_text('field', 'Field', maxlength=1)
         self.assertEqual(str(el()), html)
         el.submittedval = '1'
         self.assertEqual( el.value, '1')
@@ -574,7 +585,7 @@ class InputElementsTest(unittest.TestCase):
         
         # no validator
         form = Form('f')
-        el = form.add_element('text', 'field', 'Field')        
+        el = form.add_text('field', 'Field')        
         el.submittedval = '12'
         self.assertEqual( el.value, '12')
         
@@ -640,6 +651,7 @@ class InputElementsTest(unittest.TestCase):
         assert not el.is_valid()
         
         try:
+            import pydns
             el = Form('f').add_email('field', 'Field', resolve_domain=True)
             el.submittedval = 'bob@ireallyhopethisdontexistontheweb.com'
             assert not el.is_valid()
@@ -1223,6 +1235,109 @@ class LogicalElementsTest2(unittest.TestCase):
         self.gel.add_processor(validator)
         assert not self.gel.is_valid()
     
+class FileUploadsTest(unittest.TestCase):
+    
+    def test_html(self):
+        html = L('<input class="file" id="f-f" name="f" type="file" />')
+        el = Form('f').add_file('f')
+        self.assertEqual(el(), html)
+
+    def test_defaults(self):
+        el = Form('f').add_file('f')
+        self.assertEqual(el.defaultval, NotGiven)
+        self.assertEqual(el.displayval, NotGiven)
+        # setting to not given is ok
+        el.defaultval = NotGiven
+        # setting to anything else is a problem
+        try:
+            el.defaultval = 'foo'
+            self.fail('file element should not support default values')
+        except NotImplementedError, e:
+            self.assertEqual(str(e), 'FileElement doesn\'t support default values')
+    
+    def test_submitted(self):
+        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length='10')
+        el = Form('f').add_file('f')
+        el.submittedval = tosub
+        assert el.is_valid()
+        self.assertEqual(el.value.file_name, tosub.filename)
+        self.assertEqual(el.value.content_type, tosub.content_type)
+        self.assertEqual(el.value.content_length, tosub.content_length)
+    
+    def test_maxsize(self):
+        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        el = Form('f').add_file('f')
+        el.maxsize(5)
+        el.submittedval = tosub
+        assert not el.is_valid(), 'max size validation should have failed'
+        assert el.errors[0] == 'file too big (10), max size 5'
+        
+        el = Form('f').add_file('f')
+        el.maxsize(15)
+        el.submittedval = tosub
+        assert el.is_valid(), 'max size validation should have been ok'
+    
+    def test_allowexts(self):
+        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        el = Form('f').add_file('f')
+        el.allow_extension('txt')
+        el.submittedval = tosub
+        assert el.is_valid()
+        
+        el = Form('f').add_file('f')
+        el.allow_extension('.txt')
+        el.submittedval = tosub
+        assert el.is_valid()
+        
+        el = Form('f').add_file('f')
+        el.allow_extension('pdf', 'doc')
+        el.submittedval = tosub
+        assert not el.is_valid()
+        self.assertEqual(el.errors[0], 'extension ".txt" not allowed')
+    
+    def test_denyexts(self):
+        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        el = Form('f').add_file('f')
+        el.deny_extension('txt')
+        el.submittedval = tosub
+        assert not el.is_valid()
+        
+        el = Form('f').add_file('f')
+        el.deny_extension('.txt', '.pdf')
+        el.submittedval = tosub
+        assert not el.is_valid()
+        assert el.errors[0] == 'extension ".txt" not permitted'
+        
+        el = Form('f').add_file('f')
+        el.deny_extension('pdf', 'doc')
+        el.submittedval = tosub
+        assert el.is_valid()
+        
+    def test_allowtypes(self):
+        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        el = Form('f').add_file('f')
+        el.allow_type('text/plain')
+        el.submittedval = tosub
+        assert el.is_valid()
+        
+        el = Form('f').add_file('f')
+        el.allow_type('text/css', 'text/javascript')
+        el.submittedval = tosub
+        assert not el.is_valid()
+        self.assertEqual(el.errors[0], 'content type "text/plain" not allowed')
+        
+    def test_denytypes(self):
+        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        el = Form('f').add_file('f')
+        el.deny_type('text/plain')
+        el.submittedval = tosub
+        assert not el.is_valid()
+        self.assertEqual(el.errors[0], 'content type "text/plain" not permitted')
+        
+        el = Form('f').add_file('f')
+        el.deny_type('text/css', 'text/javascript')
+        el.submittedval = tosub
+        assert el.is_valid()
 
 # need to test adding group first and then members
 # test setting attributes for each element with a render()

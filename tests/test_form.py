@@ -1,8 +1,12 @@
 import unittest
 from webhelpers.html.builder import literal
+from pysutils import DumbObject
 
 from pysform import Form
 from pysform.element import TextElement
+from pysform.util import NotGivenIter, literal
+
+L = literal
 
 class TypeRegistrationTest(unittest.TestCase):  
     def setUp(self):
@@ -35,7 +39,7 @@ class CommonFormUsageTest(unittest.TestCase):
         most basic usage of a form
         """
         form = Form('login')
-        form.add_element('text', 'username', 'User Name')
+        form.add_text('username', 'User Name')
         self.assertEqual(self.render_html, str(form.username.render()))
 
     def testForm4(self):
@@ -44,7 +48,7 @@ class CommonFormUsageTest(unittest.TestCase):
         self.assertEqual(self.render_html, str(form.username.render()))
         self.assertEqual(self.render_html, str(el.render()))
     
-    def testForm5(self):
+    def test_formencoding(self):
         """ensure form has correct encoding for file uploads"""
         
         f1 = Form('login')
@@ -54,6 +58,12 @@ class CommonFormUsageTest(unittest.TestCase):
         f2 = Form('pictures')
         f2.add_file('picture', 'Picture')
         assert "multipart/form-data" in f2.render()
+        
+        # make sure this works with grouped elements
+        f = Form('f')
+        fg = f.add_elgroup('file-group')
+        fg.add_file('picture', 'Picture')
+        assert "multipart/form-data" in f.render()
         
     def test_submit_validation(self):
         f1 = Form('login')
@@ -84,20 +94,61 @@ class CommonFormUsageTest(unittest.TestCase):
     
     def test_default(self):
         f = Form('login')
-        f.add_element('text', 'username', 'User Name')
-        f.set_defaults({'username':'test1'})
-        #post = {'login-submit-flag': 'submitted'}
-        #f.set_submitted(post)
+        f.add_text('username', 'User Name')
+        f.add_file('file')
+        filesub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        f.set_defaults({'username':'test1', 'file':filesub})
         self.assertEqual('<input class="text" id="login-username" name="username" type="text" value="test1" />', str(f.username.render()))
         
     def test_submit(self):
         f = Form('login')
-        f.add_element('text', 'username', 'User Name')
+        f.add_text('username', 'User Name')
         f.set_defaults({'username':'test1'})
         post = {'login-submit-flag': 'submitted', 'username':'test2'}
         f.set_submitted(post)
         self.assertEqual('<input class="text" id="login-username" name="username" type="text" value="test2" />', str(f.username.render()))
+        assert f.get_values() == {'username': 'test2', 'login-submit-flag': 'submitted'}
     
+    def test_blank_checkbox(self):
+        html = L('<input checked="checked" class="checkbox" id="login-disabled" name="disabled" type="checkbox" />')
+        f = Form('login')
+        el = f.add_checkbox('disabled', 'Disabled', defaultval=True)
+        self.assertEqual(el(), html)
+        post = {'login-submit-flag': 'submitted'}
+        f.set_submitted(post)
+        dvalue = f.get_values()['disabled']
+        assert dvalue is False
+        
+        # should unset on re-post after a blank submit
+        html = L('<input class="checkbox" id="login-disabled" name="disabled" type="checkbox" />')
+        self.assertEqual(el(), html)
+        
+    def test_blank_multiselect(self):
+        f = Form('login')
+        options = [(1, 'one'), (2, 'two')]
+        el = f.add_mselect('numlist', options, 'Disabled', defaultval=2)
+        assert 'selected="selected"' in el()
+        post = {'login-submit-flag': 'submitted'}
+        f.set_submitted(post)
+        assert not f.get_values()['numlist']
+        
+        # should unset on re-post after a blank submit
+        assert 'selected="selected"' not in el()
+        
+    def test_blank_multicheckbox(self):
+        f = Form('login')
+        el1 = f.add_mcheckbox('mcheck1', 'Check 1', 1, 'cgroup1', checked=True)
+        el2 = f.add_mcheckbox('mcheck2', 'Check 2', 2, 'cgroup1', checked=True )
+        assert 'checked="checked"' in el1()
+        assert 'checked="checked"' in el2()
+        post = {'login-submit-flag': 'submitted'}
+        f.set_submitted(post)
+        assert not f.get_values()['cgroup1']
+        
+        # should unset on re-post after a blank submit
+        assert 'checked="checked"' not in el1()
+        assert 'checked="checked"' not in el2()
+        
     def test_dup_fields(self):
         f = Form('f')
         f.add_text('f')

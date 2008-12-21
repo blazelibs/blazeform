@@ -8,7 +8,7 @@ except ImportError:
 
 setup(
     name = "pysform",
-    version = "0.1",
+    version = "0.1dev",
     description = "A library for generating and validating HTML forms",
     author = "Randy Syring",
     author_email = "randy@rcs-comp.com",
@@ -17,6 +17,7 @@ setup(
     packages=['pysform'],
     install_requires = [
         "FormEncode>=1.2",
+        "pysutils>=dev",
         "WebHelpers>=0.6.4"
     ],
     zip_safe=False

@@ -1,6 +1,7 @@
-from pysform.element import form_elements, FormFieldElementBase, \
-    FileElement, CancelElement
+from pysform.element import form_elements, CancelElement, CheckboxElement, \
+        MultiSelectElement, LogicalGroupElement
 from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
+from pysform.file_upload_translators import WerkzeugTranslator
 
 class FormBase(HtmlAttributeHolder, ElementRegistrar):
     """
@@ -9,6 +10,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
     
     def __init__(self, name, action='', **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
+        ElementRegistrar.__init__(self, self, self)
         
         self.name = name       
         # include a hidden field so we can check if this form was submitted
@@ -24,6 +26,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         self.action = action
         # our validators and converters
         self.processors = []
+        # file upload translator
+        self.fu_translator = WerkzeugTranslator
         
         # element holders
         self.all_els = {}
@@ -34,7 +38,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         
         # init actions
         self.register_elements(form_elements)
-        self.add_element('hidden', self._form_ident_field, value='submitted')
+        self.add_hidden(self._form_ident_field, value='submitted')
     
     def register_elements(self, dic):
         for type, eclass in dic.items():
@@ -44,16 +48,18 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         if self._registered_types.has_key(type):
             raise ValueError('type "%s" is already registered' % type)
         self._registered_types[type] = eclass
-        
-    def add_element(self, type, eid, *args, **kwargs):
-        if type == 'file':
-            self.set_attr('enctype', 'multipart/form-data')
-        return ElementRegistrar.add_element(self, type, eid, *args, **kwargs)
-        
+
     def render(self):
         return self.renderer(self).render()
 
     def is_submitted(self):
+        """ In a normal workflow, is_submitted will only be called once and is
+        therefore a good method to override if something needs to happen
+        after __init__ but before anything else.  However, we also need to
+        to use is_submitted internally, but would prefer to make it a little
+        more user friendly.  Therefore, we do this and use _is_submitted
+        internally.
+        """
         return self._is_submitted()
     
     def _is_submitted(self):
@@ -98,38 +104,24 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         return valid
     
     def set_submitted(self, values):
-        """ values should be dict or Werkzeug MultiDict"""
+        """ values should be dict like """
         for key, el in self.submittable_els.items():
             if values.has_key(key):
                 el.submittedval = values[key]
         
         # this second loop is to make sure we clear checkboxes,
         # LogicalGroupElements, and multi-selects if the form is submitted,
-        # they have a default value, but the field wasn't submitted
+        # they have a default value, but the field wasn't submitted.
+        #
+        # It can't be done above because _is_submitted() can't be trusted until
+        # we are certain all submitted values have been processed.
         if self._is_submitted():
             for key, el in self.submittable_els.items():
-                if values.has_key(key) == False:
-                    if el.type == 'checkbox':
-                        element.submittedval = False
-    
-    def set_files(self, files):
-        for name, obj in files.items():
-            try:
-                fname = obj.filename
-                ftype = obj.content_type
-                fsize = obj.content_length
-            except AttributeError:
-                try:
-                    fname = obj['filename']
-                    ftype = obj['content_type']
-                    fsize = obj['content_length']
-                except KeyError:
-                    raise TypeError('`files` parameter was given an unrecognized object.  Expecting "filename", "content_type", and "content_length" as either attributes or keys.')
-            element = getattr(self.elements, name, None)
-            if isinstance(element, FileElement):
-                element.file_name = fname
-                element.content_type = ftype
-                element.content_length = fsize
+                if not values.has_key(key):
+                    if isinstance(el, CheckboxElement):
+                        el.submittedval = False
+                    if isinstance(el, (MultiSelectElement, LogicalGroupElement)):
+                        el.submittedval = []
                 
     def set_defaults(self, values):
         for key, el in self.defaultable_els.items():
@@ -154,7 +146,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
 
 class Form(FormBase):
     """
-    Main form class using default HTML renderer
+    Main form class using default HTML renderer and Werkzeug file upload
+    translator
     """
     def __init__(self, name, **kwargs):        
         # make the form's name the id

@@ -4,7 +4,8 @@ from webhelpers.html import HTML, tags
 import formencode
 import formencode.validators as fev
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
-        tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar
+        tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, \
+        is_given
 from pysform.processors import Confirm, Select, MultiValues
 
 form_elements = {}
@@ -64,12 +65,7 @@ class ElementBase(HtmlAttributeHolder):
         self._bind_to_form()
     
     def _bind_to_form(self):
-        f = self.form
-        f.all_els[self.id] = self
-        f.defaultable_els[self.id] = self
-        f.render_els.append(self)
-        f.submittable_els[self.id] = self
-        f.returning_els.append(self)
+        self.form.bind_element(self)
     
     def _get_defaultval(self):
         return self._defaultval
@@ -356,10 +352,117 @@ class CheckboxElement(InputElementBase):
         # for a checkbox
         if self.displayval and self.displayval is not NotGiven:
             self.set_attr('checked', 'checked')
+        else:
+            try:
+                self.del_attr('checked')
+            except KeyError:
+                pass
         self.set_attr('name', self.nameattr or self.id)
         self.set_attrs(**kwargs)
         return HTML.input(type=self.etype, **self.attributes)
 form_elements['checkbox'] = CheckboxElement
+
+class FileElement(InputElementBase):
+    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+        InputElementBase.__init__(self, 'file', form, eid, label, vtype, defaultval, strip, **kwargs)
+        
+        # validation related
+        self._allowed_exts = []
+        self._allowed_types = []
+        self._denied_exts = []
+        self._denied_types = []
+        self._maxsize = NotGiven
+    
+    def _bind_to_form(self):
+        self.form.bind_element(self, default=False)
+        
+    def _get_defaultval(self):
+        return NotGiven
+    def _set_defaultval(self, value):
+        if is_given(value):
+            raise NotImplementedError('FileElement doesn\'t support default values')
+    defaultval = property(_get_defaultval, _set_defaultval)
+
+    def _get_displayval(self):
+        return NotGiven
+    displayval = property(_get_displayval)
+    
+    def _get_submittedval(self):
+        return self._submittedval
+    def _set_submittedval(self, value):
+        self._valid = None
+        self.errors = []
+        self._submittedval = self.form.fu_translator(value)
+    submittedval = property(_get_submittedval, _set_submittedval)
+    
+    def maxsize(self, size):
+        "set the maximum allowed file upload size"
+        self._maxsize = size
+    
+    def allow_extension(self, *args):
+        "allowed extensions, (with or without dots)"
+        self._allowed_exts.extend([('.%s' % a.lstrip('.').lower()) for a in args])
+    
+    def deny_extension(self, *args):
+        "denied extensions, (with or without dots)"
+        self._denied_exts.extend([('.%s' % a.lstrip('.').lower()) for a in args])
+    
+    def allow_type(self, *args):
+        "allowed mime type strings"
+        self._allowed_types.extend(args)
+    
+    def deny_type(self, *args):
+        "denied mime type strings"
+        self._denied_types.extend(args)
+    
+    def _to_python_processing(self):
+         # if the value has already been processed, don't process it again
+        if self._valid != None:
+            return
+        
+        valid = True
+        value = self.submittedval
+        
+        # process required
+        if self.required and (
+            not value.file_name or not value.content_type or
+            not value.content_length):
+            valid = False
+            self.add_error('"%s" is required' % self.label)
+        
+        if value.file_name is not None:
+            _ , ext = path.splitext(value.file_name)
+            ext  = ext.lower()
+            if self._allowed_exts and ext not in self._allowed_exts:
+                valid = False
+                self.add_error('extension "%s" not allowed' % ext)
+            
+            if self._denied_exts and ext in self._denied_exts:
+                valid = False
+                self.add_error('extension "%s" not permitted' % ext)
+        
+        if value.content_type is not None:
+            if self._allowed_types and value.content_type not in self._allowed_types:
+                valid = False
+                self.add_error('content type "%s" not allowed' % value.content_type)
+            
+            if self._denied_types and value.content_type in self._denied_types:
+                valid = False
+                self.add_error('content type "%s" not permitted' % value.content_type)
+        
+        if self._maxsize:
+            if value.content_length > self._maxsize:
+                valid = False
+                self.add_error('file too big (%s), max size %s' %
+                               (value.content_length, self._maxsize))
+                
+        self._valid = valid
+        if valid:
+            self._safeval = self.submittedval
+    
+    def add_validator(self, *args, **kwargs):
+        raise NotImplementedError('FileElement does not support add_validator()')
+form_elements['file'] = FileElement
 
 class HiddenElement(InputElementBase):
     def __init__(self, *args, **kwargs):
@@ -577,13 +680,9 @@ class LogicalGroupElement(FormFieldElementBase):
         self.members = {}
         self.to_python_first = True
         self.submittedval = NotGivenIter
-    
+
     def _bind_to_form(self):
-        f = self.form
-        f.all_els[self.id] = self
-        f.defaultable_els[self.id] = self
-        f.submittable_els[self.id] = self
-        f.returning_els.append(self)
+        self.form.bind_element(self, render=False)
         
     def _get_defaultval(self):
         return self._defaultval
@@ -608,7 +707,7 @@ class LogicalGroupElement(FormFieldElementBase):
         self._submittedval = value
         
         # use self.value to make sure processing gets done
-        if value:
+        if is_given(value):
             self._set_members(self.value)
     submittedval = property(_get_submittedval, _set_submittedval)
 
@@ -632,6 +731,7 @@ class LogicalGroupElement(FormFieldElementBase):
         # convert to dict with unicode keys so our comparisons are always
         # the same type
         values = dict([(unicode(v), 1) for v in tolist(values)])
+
         # based on our values, set our members to chosen or not chosen
         for key, el in self.members.items():
             if values.has_key(unicode(key)):
@@ -653,12 +753,9 @@ class PassThruElement(HasValueElement):
     """
     def __init__(self, form, eid, defaultval=NotGiven, label=NotGiven, **kwargs):
         HasValueElement.__init__(self, form, eid, label, defaultval, **kwargs)
-        
+
     def _bind_to_form(self):
-        f = self.form
-        f.all_els[self.id] = self
-        f.defaultable_els[self.id] = self
-        f.returning_els.append(self)
+        self.form.bind_element(self, render=False, submit=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -679,14 +776,7 @@ class FixedElement(PassThruElement):
         PassThruElement.__init__(self, form, eid, defaultval, label, **kwargs)
 
     def _bind_to_form(self):
-        # todo: not sure why I can't use PassThruElement._bind_to_form here
-        # but I can't I get errors about needing to be a PassThru instance
-        # instead of FixedElement
-        f = self.form
-        f.all_els[self.id] = self
-        f.defaultable_els[self.id] = self
-        f.returning_els.append(self)
-        f.render_els.append(self)
+        self.form.bind_element(self, submit=False)
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
@@ -703,12 +793,9 @@ class StaticElement(ElementBase):
     """
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, *args, **kwargs):
         ElementBase.__init__(self, form, eid, label, defaultval, *args, **kwargs)
-        
+
     def _bind_to_form(self):
-        f = self.form
-        f.all_els[self.id] = self
-        f.defaultable_els[self.id] = self
-        f.render_els.append(self)
+        self.form.bind_element(self, submit=False, retval=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -738,12 +825,10 @@ class GroupElement(StaticElement, ElementRegistrar):
     """
     def __init__(self, form, eid, label=NotGiven, **kwargs):
         StaticElement.__init__(self, form, eid, label, NotGiven, **kwargs)
-        
-        # needed for add_* methods
-        self.all_els = form.all_els
-        self._registered_types = form._registered_types
-        
+        ElementRegistrar.__init__(self, form, self)
+
         # duplicate form variables for when the elements "bind" to us
+        self.all_els = form.all_els
         self.defaultable_els = form.defaultable_els
         self.submittable_els = form.submittable_els
         self.returning_els = form.returning_els
@@ -793,10 +878,7 @@ class LogicalSupportElement(ElementBase):
         self.chosen_attr = 'checked'
     
     def _bind_to_form(self):
-        f = self.form
-        f.all_els[self.id] = self
-        f.defaultable_els[self.id] = self
-        f.render_els.append(self)
+        self.form.bind_element(self, submit=False, retval=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -812,13 +894,18 @@ class LogicalSupportElement(ElementBase):
         return self.render(**kwargs)
     
     def render(self, **kwargs):
-        self.set_attrs(**kwargs)
         if self.displayval:
             self.set_attr('value', self.displayval)
         self.set_attr('class_', self.etype)
         if self.chosen:
             self.set_attr(self.chosen_attr, self.chosen_attr)
+        else:
+            try:
+                self.del_attr(self.chosen_attr)
+            except KeyError:
+                pass
         self.set_attr('name', self.lgroup.id)
+        self.set_attrs(**kwargs)
         return HTML.input(type=self.etype, **self.attributes)
 
 class MultiCheckboxElement(LogicalSupportElement):
@@ -839,92 +926,5 @@ class RadioElement(LogicalSupportElement):
         self.etype = 'radio'
 form_elements['radio'] = RadioElement
 
-class FileElement(InputElementBase):
-    def __init__(self, *args, **kwargs):
-        InputElementBase.__init__(self, 'file', *args, **kwargs)
-        self.content_type = None
-        self.file_name = None
-        self._allowed_exts = []
-        self._allowed_types = []
-        self._denied_exts = []
-        self._denied_types = []
-        self._maxsize = None
-        
-    def maxsize(self, size):
-        self._maxsize = size
-    
-    def allow_extension(self, *args):
-        "allowed extensions"
-        self._allowed_exts.extend([('.%s' % a.lstrip('.').lower()) for a in args])
-    
-    def deny_extension(self, *args):
-        "denied extensions, without dots"
-        self._denied_exts.extend(args)
-    
-    def allow_type(self, *args):
-        self._allowed_types.extend(args)
-    
-    def deny_type(self, *args):
-        self._denied_types.extend(args)
-        
-    def setDefaultValue(self, value):
-        # file element does not have default values
-        pass
-
-    def getDefaultValue(self, value):
-        # file element does not have default values
-        pass
-    
-    def setSubmitValue(self, value):
-        raise NotImplementedError('FileElement does not impliment setSubmitValue()')
-        
-    def getSubmitValue(self):
-        raise NotImplementedError('FileElement does not impliment getSubmitValue()')
-    
-    def currentValue(self):
-        raise NotImplementedError('FileElement does not impliment currentValue()')
-    
-    def getValue(self):
-        if self.file_name and self.content_type:
-            return True
-        return False
-    
-    def _processValue(self):
-        valid = True
-        
-        # process required
-        if self.required and (not self.file_name or not self.content_type):
-            valid = False
-            self.addError('"%s" is required' % self.getDisplayName())
-        
-        if self.file_name is not None:
-            _ , ext = path.splitext(self.file_name)
-            ext  = ext.lower()
-            if self._allowed_exts and ext not in self._allowed_exts:
-                valid = False
-                self.addError('extension "%s" not allowed, must be one of: %s' % (ext, ', '.join(self._allowed_exts)))
-            
-            if self._denied_exts and ext in self._denied_exts:
-                valid = False
-                self.addError('extension "%s" not permitted' % ext)
-        
-        if self.content_type is not None:
-            if self._allowed_types and self.content_type not in self._allowed_types:
-                valid = False
-                self.addError('content type "%s" not allowed, must be one of: %s' % (self.content_type, ', '.join(self._allowed_types)))
-            
-            if self._denied_types and self.content_type in self._denied_types:
-                valid = False
-                self.addError('content type "%s" not permitted' % self.content_type)
-        
-        if self._maxsize:
-            if self.content_length > self._maxsize:
-                valid = False
-                self.addError('file too big, max size %d' % self._maxsize)
-                
-        self._valid = valid
-    
-    def addValidator(self, *args, **kwargs):
-        raise NotImplementedError('FileElement does not support addValidator()')
 
 
