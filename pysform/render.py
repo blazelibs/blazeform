@@ -1,171 +1,199 @@
 
-class BaseRenderer(object):
-    
-    def __init__(self, form):
-        self.form = form
-        self.output = []
-        self.element_count = 0
-        
-    def startForm(self):
-        return ''
-    
-    def finishForm(self):
-        return ''
-    
-    def startGroup(self):
-        return ''
-    
-    def finishGroup(self):
-        return ''
-    
-    def renderElement(self, element):
-        return ''
+from pysform.form import FormBase
+from pysform.util import StringIndentHelper
+from pysform import element
+from webhelpers.html import tags
+from webhelpers.html.builder import make_tag
 
+class FormRenderer(object):
+    def __init__(self, element):
+        self.element = element
+        self.output = StringIndentHelper()
+        self.header_section_open = False
+        
+    def begin(self):
+        attr = self.element.get_attrs()
+        self.output.inc(tags.form(self.element.action, **attr))
+    
     def render(self):
-        self.output.append(self.startForm())
-        for element in self.form.render_els:
-            self.element_count += 1
-            self.output.append(self.renderElement(element))
-        self.output.append(self.finishForm())
-        
-        return '\n'.join(self.output)
-# renderElement
-# renderHeader
-# renderHidden
-# renderHtml
+        self.begin()
+        on_first = True
+        on_alt = False
+        for child in self.element.render_els:
+            if isinstance(child, element.HeaderElement):
+                if self.header_section_open:
+                    self.output.dec('</div>')
+                    on_first = True
+                hstr = '<div id="%s-section" class="header-section">' % child.getidattr()
+                self.output.inc(hstr)
+                self.header_section_open = True
+            rcls = get_renderer(child)
+            r = rcls(child, self.output, on_first, on_alt, 'row')
+            r.render()
+            if r.uses_alt:
+                on_alt = not on_alt
+            if r.uses_first:
+                on_first = False
+        self.end()
+        return self.output.get()
+    
+    def end(self):
+        if self.header_section_open:
+            self.output.dec('</div>')
+        self.output.dec('</form>')
 
 
-class CssRenderer(BaseRenderer):
-    def __init__(self, form):
-        BaseRenderer.__init__(self, form)
-        
-        self.first = True
-        self.alt_count = 0
-        
-        from util import StringIndentHelper
-        self.ind = StringIndentHelper()
-        self.hidden_fields = StringIndentHelper()
-        self.hidden_fields.level = 1
-        self.div_open = False
-        
-    def renderFirstClass(self):
-        if self.first == True:
+class Renderer(object):
+    def __init__(self, element, output, is_first, is_alt, wrap_type):
+        self.element = element
+        self.output = output
+        self.wrap_type = wrap_type
+        self.uses_alt = False
+        self.uses_first = False
+        self.is_first = is_first
+        self.is_alt = is_alt
+            
+    def first_class(self):
+        if self.is_first:
             return ' first'
         return ''
     
-    def renderAltClass(self):
-        if self.alt_count % 2 == 0:
+    def alt_class(self):
+        if self.is_alt:
             return ' even'
         return ' odd'
     
-    def startForm(self):
-        from webhelpers.html.tags import form
-        attr = self.form.get_attrs()
-        self.ind.inc(form(self.form.action, **attr))
-        return self.ind.get()
-    
-    def finishForm(self):
-        if self.div_open:
-            self.ind.dec('</div>')
-        from webhelpers.html.tags import end_form
-        self.ind.dec(end_form())
-        return '%s\n%s' % (self.hidden_fields.get(), self.ind.get() )
-    
-    def renderElement(self, element):
-        try:
-            if element.type == 'header':
-                return self.renderHeader(element)
-            elif element.type == 'static':
-                self.alt_count += 1
-                return self.renderStatic(element)
-            elif element.type == 'hidden':
-                return self.renderHidden(element)
-            elif element.type == 'suasdfbmit':
-                self.alt_count += 1
-                return self.renderSubmit(element)
-            elif element.type == 'group':
-                self.alt_count += 1
-                return self.renderGroup(element)
-            elif element.type == 'passthru':
-                return ''
-            else:
-                self.alt_count += 1
-                return self.renderField(element)
-        finally:
-            non_first_reset_elements = ('header', 'hidden', 'passthru')
-            if element.type not in non_first_reset_elements:
-                self.first = False
-    
-    def renderField(self, element):
-        first_class = self.renderFirstClass()
-        alt_class = self.renderAltClass()
-        self.ind.inc('<div class="row %s%s%s">' % (element.type, first_class, alt_class))
-        
-        try:
-            self.ind(element.label())
-            no_label_class = ''
-        except AttributeError:
-            no_label_class = ' no-label'
-    
-        self.ind.inc('<div class="field-wrapper%s">' % (no_label_class, ))
-        if element.required:
-            self.ind('<span class="required-star">*</span>')
-        self.ind(element())
-        
-        # field notes
-        if len(element.notes) == 1:
-            self.ind('<p class="note">%s</p>' % (element.notes[0], ))
-        elif len(element.notes) > 1:
-            self.ind.inc('<ul class="notes">')
-            for msg in element.notes:
-                self.ind('<li>%s</li>' % (msg, ))
-            self.ind.dec('</ul>')
-            
-        # field errors
-        if len(element.errors) == 1:
-            self.ind('<p class="error">%s</p>' % (element.errors[0], ))
-        elif len(element.errors) > 1:
-            self.ind.inc('<ul class="errors">')
-            for msg in element.errors:
-                self.ind('<li>%s</li>' % (msg, ))
-            self.ind.dec('</ul>')
-        self.ind.dec('</div>')
-        self.ind.dec('</div>')
-        return self.ind.get()
-    
-    def renderSubmit(self, element):
-        first_class = self.renderFirstClass()
-        alt_class = self.renderAltClass()
-        self.ind.inc('<div class="row buttons-only%s%s">' % (first_class, alt_class))    
-        self.ind(element())
-        self.ind.dec('</div>')
-        return self.ind.get()
-    
-    def renderHidden(self, element):
-        self.hidden_fields(element())
-        return ''
-    
-    def renderHeader(self, element):
-        if self.div_open:
-            self.ind.dec('</div>')
-        self.div_open = True
-        # reset first so that the next element gets the first class
-        self.first = True
-        # alternate rows should start over after a header is rendered
-        self.alt_count = 0
-        self.ind('<div id="%s-wrapper">' % element.id)
-        self.ind(element())
-        # opening div is closed either at next header or at end of form
-        return self.ind.get()
-    
-    def renderGroup(self, element):
-        for el in element.elements:
-            self.ind(el())
-        return self.ind.get()
-    
-    def renderStatic(self, element):
-        self.ind(element())
-        return self.ind.get()
+    def begin(self):
+        pass
+    def render(self):
+        self.begin()
+        self.output(self.element.render())
+        self.end()
+    def end(self):
+        pass
 
-    def _indent(self, level):
-        return '    '*level
+class FieldRenderer(Renderer):
+    def __init__(self, element, output, is_first, is_alt, wrap_type):
+        Renderer.__init__(self, element, output, is_first, is_alt, wrap_type)
+        self.uses_first = True
+        self.uses_alt = True
+    def begin(self):
+        self.begin_row()
+        self.label()
+        self.field_wrapper()
+        self.required()
+    def begin_row(self):
+        self.output.inc('<div id="%s-%s" class="%s%s%s">' %
+                (self.element.getidattr(), self.wrap_type, self.wrap_type,
+                 self.alt_class(), self.first_class())
+            )
+    def label(self):
+        if self.element.label.value:
+            self.element.label.value += ':'
+            self.output(self.element.label())
+            self.no_label_class = ''
+        else:
+           self.no_label_class = ' no-label'
+    def field_wrapper(self):
+        self.output.inc('<div id="%s-fw" class="field-wrapper%s">' %
+                            (self.element.getidattr(), self.no_label_class))
+    def required(self):
+        if self.element.required:
+            self.output('<span class="required-star">*</span>')
+    def notes(self):
+        if len(self.element.notes) == 1:
+            self.output('<p class="note">%s</p>' % self.element.notes[0])
+        elif len(self.element.notes) > 1:
+            self.output.inc('<ul class="notes">')
+            for msg in self.element.notes:
+                self.output('<li>%s</li>' % msg)
+            self.output.dec('</ul>')
+    def errors(self):
+        if len(self.element.errors) == 1:
+            self.output('<p class="error">%s</p>' % self.element.errors[0])
+        elif len(self.element.errors) > 1:
+            self.output.inc('<ul class="errors">')
+            for msg in self.element.errors:
+                self.output('<li>%s</li>' % msg)
+            self.output.dec('</ul>')
+    def end(self):
+        # close field wrapper
+        self.output.dec('</div>')
+        # close row
+        self.output.dec('</div>')
+        
+        
+class InputRenderer(FieldRenderer):
+    def begin_row(self):
+        self.output.inc('<div id="%s-%s" class="%s %s%s%s">' %
+                (self.element.getidattr(), self.wrap_type, self.element.etype,
+                 self.wrap_type, self.alt_class(), self.first_class())
+            )
+
+class StaticRenderer(FieldRenderer):
+    def required(self):
+        pass
+
+class GroupRenderer(StaticRenderer):
+    
+    def begin_row(self):
+        attrs = self.element.get_attrs()
+        attrs['id'] = '%s-%s' % (self.element.getidattr(), self.wrap_type)
+        class_str = '%s%s%s' % (self.wrap_type, self.alt_class(), self.first_class())
+        if attrs.get('class_'):
+            attrs['class_'] += ' ' + class_str
+        else:
+            attrs['class_'] = class_str
+        # make_tag should not close the div
+        attrs['_closed'] = False
+        self.output.inc(make_tag('div', **attrs))
+    def field_wrapper(self):
+        self.output.inc('<div id="%s-fw" class="group-wrapper%s">' %
+                            (self.element.getidattr(), self.no_label_class))
+    def render(self):
+        self.begin()
+        self.render_children()
+        #self.output.dec('</div>')
+        self.end()
+    
+    def render_children(self):
+        on_first = True
+        on_alt = False
+        for child in self.element.render_els:
+            r = get_renderer(child)
+            rcls = get_renderer(child)
+            r = rcls(child, self.output, on_first, on_alt, 'grpel')
+            r.render()
+            if r.uses_alt:
+                on_alt = not on_alt
+            if r.uses_first:
+                on_first = False
+
+def get_renderer(el):
+    plain = (
+        element.HiddenElement,
+        element.HeaderElement,
+    )
+    field = (
+        element.SelectElement,
+        element.TextAreaElement,
+    )
+    static = (
+        element.FixedElement,
+        element.StaticElement,
+        element.RadioElement,
+        element.MultiCheckboxElement,
+    )
+    if isinstance(el, FormBase):
+        return FormRenderer(el)
+    elif isinstance(el, element.GroupElement):
+        return GroupRenderer
+    elif isinstance(el, plain):
+        return Renderer
+    elif isinstance(el, element.InputElementBase):
+        return InputRenderer
+    elif isinstance(el, field):
+        return FieldRenderer
+    elif isinstance(el, static):
+        return StaticRenderer
+    print el

@@ -1,8 +1,8 @@
 from pysform.element import form_elements, FormFieldElementBase, \
     FileElement, CancelElement
-from pysform.util import HtmlAttributeHolder, NotGiven
+from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
 
-class FormBase(HtmlAttributeHolder):
+class FormBase(HtmlAttributeHolder, ElementRegistrar):
     """
     Base class for forms.
     """
@@ -36,23 +36,6 @@ class FormBase(HtmlAttributeHolder):
         self.register_elements(form_elements)
         self.add_element('hidden', self._form_ident_field, value='submitted')
     
-    def __getattr__(self, name):
-        """
-            we want to enable add_* methods on the form object
-            that correspond to elements we have available
-        """
-        if name.startswith('add_'):
-            type = name.replace('add_', '')
-            func = self.add_element
-        elif self.all_els.has_key(name):
-            return self.all_els[name]
-        else:
-            raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
-        
-        def wrapper(eid, *args, **kwargs):
-            return func(type, eid, *args, **kwargs)
-        return wrapper
-    
     def register_elements(self, dic):
         for type, eclass in dic.items():
             self.register_element_type(type, eclass)
@@ -61,22 +44,12 @@ class FormBase(HtmlAttributeHolder):
         if self._registered_types.has_key(type):
             raise ValueError('type "%s" is already registered' % type)
         self._registered_types[type] = eclass
-    
+        
     def add_element(self, type, eid, *args, **kwargs):
-        if self.all_els.has_key(eid):
-            raise ValueError('element id "%s" already used' % eid)
         if type == 'file':
             self.set_attr('enctype', 'multipart/form-data')
-        return self._create_element(type, eid, *args, **kwargs)
-    
-    def _create_element(self, type, eid, *args, **kwargs):
-        try:
-            eclass = self._registered_types[type]
-        except KeyError:
-            raise ValueError('"%s" is not a registered element type' % type)
+        return ElementRegistrar.add_element(self, type, eid, *args, **kwargs)
         
-        return eclass(self, eid, *args, **kwargs)
-
     def render(self):
         return self.renderer(self).render()
 
@@ -190,8 +163,9 @@ class Form(FormBase):
             
         FormBase.__init__(self, name, **kwargs)
         
-        from render import CssRenderer
-        self.renderer = CssRenderer
+        # import here or we get circular import problems
+        from pysform.render import get_renderer
+        self.renderer = get_renderer
 
         
         

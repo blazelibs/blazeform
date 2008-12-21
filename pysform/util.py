@@ -137,3 +137,35 @@ def is_iterable(possible_iterable):
 
 def is_notgiven(object):
     return isinstance(object, NotGivenBase)
+    
+class ElementRegistrar(object):
+        
+    def __getattr__(self, name):
+        """
+            we want to enable add_* methods on the object
+            that correspond to elements we have available
+        """
+        if name.startswith('add_'):
+            type = name.replace('add_', '')
+            func = self.add_element
+        elif self.all_els.has_key(name):
+            return self.all_els[name]
+        else:
+            raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
+        
+        def wrapper(eid, *args, **kwargs):
+            return func(type, eid, *args, **kwargs)
+        return wrapper
+    
+    def add_element(self, type, eid, *args, **kwargs):
+        if self.all_els.has_key(eid):
+            raise ValueError('element id "%s" already used' % eid)
+        return self._create_element(type, eid, *args, **kwargs)
+    
+    def _create_element(self, type, eid, *args, **kwargs):
+        try:
+            eclass = self._registered_types[type]
+        except KeyError:
+            raise ValueError('"%s" is not a registered element type' % type)
+        
+        return eclass(self, eid, *args, **kwargs)

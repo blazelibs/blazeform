@@ -1116,7 +1116,12 @@ class LogicalElementsTest(unittest.TestCase):
             self.fail('should have got duplicate value assertion')
         except ValueError, e:
             self.assertEqual(str(e), 'a member of this group already exists with value "None"')
-            
+    
+    def test_non_rendering(self):
+        f = Form('f')
+        el = f.add_radio('radio1', 'Radio 1', group='rgroup1' )
+        assert el.lgroup not in f.render_els, 'logical group is trying to render'
+    
 class LogicalElementsTest2(unittest.TestCase):
     def setUp(self):
         self.f = f = Form('f')
