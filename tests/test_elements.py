@@ -14,8 +14,9 @@ class CommonTest(unittest.TestCase):
     def test_render(self):
         html = '<input class="text" id="f-username" name="username" type="text" />'
         form = Form('f')
-        form.add_element('text', 'username', 'User Name')
+        el = form.add_element('text', 'username', 'User Name')
         self.assertEqual(html, str(form.username.render()))
+        self.assertEqual(el.label.render(), L('<label for="f-username">User Name</label>'))
         
     def test_implicit_render(self):
         html = '<input class="text" id="f-username" name="username" type="text" />'
@@ -528,18 +529,30 @@ class InputElementsTest(unittest.TestCase):
         self.assertEqual(str(el()), html)
 
     def test_el_reset(self):
-        html = '<input class="reset" id="f-field" name="field" type="reset" />'
+        html = '<input class="reset" id="f-field" name="field" type="reset" value="Reset" />'
         el = Form('f').add_reset('field', 'Field')
+        self.assertEqual(str(el()), html)
+        
+        html = '<input class="reset" id="f-field" name="field" type="reset" value="r" />'
+        el = Form('f').add_reset('field', 'Field', defaultval='r')
         self.assertEqual(str(el()), html)
 
     def test_el_submit(self):
-        html = '<input class="submit" id="f-field" name="field" type="submit" />'
+        html = '<input class="submit" id="f-field" name="field" type="submit" value="Submit" />'
         el = Form('f').add_submit('field', 'Field')
+        self.assertEqual(str(el()), html)
+        
+        html = '<input class="submit" id="f-field" name="field" type="submit" value="s" />'
+        el = Form('f').add_submit('field', 'Field', defaultval='s')
         self.assertEqual(str(el()), html)
 
     def test_el_cancel(self):
-        html = '<input class="submit" id="f-field" name="field" type="submit" />'
+        html = '<input class="submit" id="f-field" name="field" type="submit" value="Cancel" />'
         el = Form('f').add_cancel('field', 'Field')
+        self.assertEqual(str(el()), html)
+        
+        html = '<input class="submit" id="f-field" name="field" type="submit" value="c" />'
+        el = Form('f').add_cancel('field', 'Field', defaultval='c')
         self.assertEqual(str(el()), html)
 
     def test_el_text(self):
@@ -930,8 +943,15 @@ class OtherElementsTest(unittest.TestCase):
     
     def test_el_fixed(self):
         f = Form('f')
-        el = f.add_fixed('f', 'foo', title='baz')
+        el = f.add_fixed('f', defaultval='foo', title='baz')
         self.assertEqual( el(class_='bar'), L('<div class="bar" id="f-f" title="baz">foo</div>'))
+        
+        # we want to be able to use a label on fixed elements
+        f = Form('f')
+        el = f.add_fixed('f', 'Foo', 'foo', title='baz')
+        self.assertEqual( el.label(), L('<label>Foo</label>'))
+        self.assertEqual( el(class_='bar'), L('<div class="bar" id="f-f" title="baz">foo</div>'))
+        
         
     def test_el_static(self):
         f = Form('f')
