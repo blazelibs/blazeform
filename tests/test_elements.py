@@ -1108,6 +1108,15 @@ class LogicalElementsTest(unittest.TestCase):
         el.chosen = True
         self.assertEqual(el(), selected)
 
+    def test_dup_values(self):
+        f = Form('f')
+        el = f.add_radio('radio1', 'Radio 1', group='rgroup1' )
+        try:
+            el = f.add_radio('radio2', 'Radio 2', group='rgroup1' )
+            self.fail('should have got duplicate value assertion')
+        except ValueError, e:
+            self.assertEqual(str(e), 'a member of this group already exists with value "None"')
+            
 class LogicalElementsTest2(unittest.TestCase):
     def setUp(self):
         self.f = f = Form('f')
