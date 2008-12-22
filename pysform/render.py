@@ -117,6 +117,8 @@ class FieldRenderer(Renderer):
                 self.output('<li>%s</li>' % msg)
             self.output.dec('</ul>')
     def end(self):
+        self.notes()
+        self.errors()
         # close field wrapper
         self.output.dec('</div>')
         # close row
@@ -133,7 +135,11 @@ class InputRenderer(FieldRenderer):
 class StaticRenderer(FieldRenderer):
     def required(self):
         pass
-
+    def notes(self):
+        pass
+    def errors(self):
+        pass
+    
 class GroupRenderer(StaticRenderer):
     
     def begin_row(self):
