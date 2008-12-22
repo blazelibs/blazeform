@@ -1,4 +1,4 @@
-from formencode.validators import *
+from formencode.validators import FancyValidator
 from formencode import Invalid
 from pysform.util import tolist, is_iterable, is_notgiven
 
@@ -38,8 +38,12 @@ class Confirm(FancyValidator):
         'notequal': 'does not match field "%(field)s"'
         }
 
+    def is_empty(self, value):
+        """need to override, otherwise validate_python never gets called"""
+        return False
+    
     def validate_python(self, value, state):
-        if self.tomatch.value != value:
+        if self.tomatch.is_valid() and self.tomatch.value != value:
             raise Invalid(self.message('notequal', state, field=str(self.tomatch.label)), value, state)
 
     
@@ -54,6 +58,14 @@ class MultiValues(FancyValidator):
     messages = {
         'nonmultiple': 'this field does not accept more than one value'
         }
+    
+    def is_empty(self, value):
+        """ need this so our confirm element can function correctly """
+        if isinstance(self.validator, FancyValidator):
+            return self.validator.is_empty(value)
+        # None and '' are "empty"
+        return value is None or value == '' or (
+            isinstance(value, (list, tuple, dict)) and not value)
     
     def _to_python(self, value, state):
         field = state

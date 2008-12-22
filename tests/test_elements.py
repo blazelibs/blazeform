@@ -602,7 +602,9 @@ class InputElementsTest(unittest.TestCase):
         except KeyError:
             pass
         
-        html = '<input class="text" id="f-f" name="f" type="text" />'
+        # match password
+        html = '<input class="password" id="f-f" name="f" type="password" />'
+        vhtml = '<input class="password" id="f-f" name="f" type="password" value="foo" />'
         f = Form('f')
         pel = f.add_password('p', 'password')
         cel = f.add_confirm('f', match='p')
@@ -610,10 +612,49 @@ class InputElementsTest(unittest.TestCase):
         pel.submittedval = 'foo'
         cel.submittedval = 'foo'
         assert cel.is_valid()
+        self.assertEqual(str(cel()), html)
         pel.submittedval = 'bar'
         cel.submittedval = 'foo'
         assert not cel.is_valid()
         assert cel.errors[0] == 'does not match field "password"'
+        pel.default_ok = True
+        self.assertEqual(str(cel()), vhtml)
+        
+        #match non-password field
+        html = '<input class="text" id="f-f" name="f" type="text" />'
+        vhtml = '<input class="text" id="f-f" name="f" type="text" value="foo" />'
+        f = Form('f')
+        pel = f.add_text('e', 'email')
+        cel = f.add_confirm('f', match=pel)
+        self.assertEqual(str(cel()), html)
+        pel.submittedval = 'foo'
+        cel.submittedval = 'foo'
+        assert cel.is_valid()
+        self.assertEqual(str(cel()), vhtml)
+        pel.submittedval = 'bar'
+        cel.submittedval = 'foo'
+        assert not cel.is_valid()
+        assert cel.errors[0] == 'does not match field "email"'
+    
+    def test_el_confirm_empty(self):
+        # empty confirm value
+        f = Form('f')
+        pel = f.add_password('p', 'password')
+        cel = f.add_confirm('f', match='p')
+        pel.submittedval = 'bar'
+        cel.submittedval = ''
+        assert not cel.is_valid()
+        assert cel.errors[0] == 'does not match field "password"'
+        
+    def test_el_confirm_invalid(self):
+        # empty confirm value
+        f = Form('f')
+        pel = f.add_password('p', 'password', required=True)
+        cel = f.add_confirm('f', match='p')
+        pel.submittedval = ''
+        cel.submittedval = ''
+        assert not pel.is_valid()
+        assert cel.is_valid()
 
     def test_el_date(self):
         html = '<input class="text" id="f-field" name="field" type="text" />'
