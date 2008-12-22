@@ -528,7 +528,24 @@ class ConfirmElement(TextElement):
     def __init__(self, *args, **kwargs):
         match = kwargs.pop('match')
         TextElement.__init__(self, *args, **kwargs)
-        self.add_processor(Confirm(self.form.all_els[match]))
+        if isinstance(match, basestring):
+            self.mel = self.form.all_els[match]
+        else:
+            self.mel = match
+        # do we need to act like a password element?
+        if isinstance(self.mel, PasswordElement):
+            # override the type
+            self.etype = 'password'
+            # class attribute set already, override that too
+            self.set_attr('class_', 'password')
+                
+        self.add_processor(Confirm(self.mel))
+        
+    def _get_displayval(self):
+        if isinstance(self.mel, PasswordElement) and not self.mel.default_ok:
+            return None
+        return TextElement._get_displayval(self)
+    displayval = property(_get_displayval)
 form_elements['confirm'] = ConfirmElement
 
 class DateElement(TextElement):
