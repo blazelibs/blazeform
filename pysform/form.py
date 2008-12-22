@@ -1,3 +1,4 @@
+import formencode
 from pysform.element import form_elements, CancelElement, CheckboxElement, \
         MultiSelectElement, LogicalGroupElement
 from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
@@ -24,10 +25,14 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         self.element_id_formatter = '%(form_name)s-%(element_id)s'
         # the form's action attribute
         self.action = action
-        # our validators and converters
-        self.processors = []
+        # our validators
+        self.validators = []
         # file upload translator
         self.fu_translator = WerkzeugTranslator
+        # form errors
+        self.errors = []
+        # exception handlers
+        self.exception_handlers = []
         
         # element holders
         self.all_els = {}
@@ -67,6 +72,9 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
             return True
         return False
     
+    def add_error(self, msg):
+        self.errors.append(msg)
+    
     def is_cancel(self):
         if not self.is_submitted():
             return False
@@ -79,32 +87,50 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                     return True
         return False
     
-    def add_validator(self, validator):
-        self.validators.append(validator)
-    
+    def add_validator(self, validator, msg = None):
+        """
+            form level validators are only validators, no manipulation of
+            values can take place.  The validator should be a formencode
+            validator or a callable.  If a callable, the callable should take
+            one argument, the form object.  It should raise an exception
+            to indicate in invalid condition.
+            
+            def validator(form):
+                if form.myfield.is_valid():
+                    if form.myfield.value != 'foo':
+                        raise ValueError('My Field: must have "foo" as value')
+        """
+        if not formencode.is_validator(validator):
+            if callable(validator):
+                validator = formencode.validators.Wrapper(to_python=validator)
+            else:
+                raise TypeError('validator must be a Formencode validator or a callable')
+        self.validators.append((validator, msg))
+
     def is_valid(self):
         if not self.is_submitted():
             return False
         valid = True
         
         # element validation
-        for element in self.elements:
-            if not element.isValid():
+        for element in self.submittable_els.values():
+            if not element.is_valid():
                 valid = False
         
         # whole form validation
-        values = self.get_values()
-        for validator in self.validators:
-            result = validator(values)
-            if isinstance(result, dict) and len(result) > 0:
-                for elname in result:
-                    self.elements.__getattr__(elname).addError(result[elname])
+        for validator, msg in self.validators:
+            try:
+                value = validator.to_python(self)
+            except formencode.Invalid, e:
                 valid = False
-        
+                self.add_error((msg or str(e)))
+
         return valid
     
     def set_submitted(self, values):
         """ values should be dict like """
+        self.errors = []
+        
         for key, el in self.submittable_els.items():
             if values.has_key(key):
                 el.submittedval = values[key]
@@ -134,13 +160,22 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         return retval
     values = property(get_values)
     
+    def add_handler(self, exception_txt, error_msg, exc_type=None):
+        self.exception_handlers.append((exception_txt, error_msg, exc_type))
+
     def handle_exception(self, exc):
-        exc_text = str(exc)
-        found = False
-        for element in self.elements:
-            if element.handle_exception(exc_text):
-                found = True
-        return found
+        # try element handlers first
+        for el in self.submittable_els.values():
+            if el.handle_exception(exc):
+                return True
+        # try our own handlers
+        for looking_for, error_msg, exc_type in self.exception_handlers:
+            if looking_for in str(exc) and (exc_type is None or isinstance(exc, exc_type)):
+                self._valid = False
+                self.add_error(error_msg)
+                return True
+        # if we get here, the exception wasn't handled, just return False
+        return False
 
 class Form(FormBase):
     """
