@@ -528,7 +528,13 @@ class InputElementsTest(unittest.TestCase):
         self.assertEqual(el.value, 0)
         el = Form('f').add_checkbox('f', 'f', 'int')
         self.assertEqual(el.value, 0)
-
+    
+    def test_el_checkbox_req(self):
+        # required value: requires special handling b/c we get
+        # None for a checkbox when its missing
+        el = Form('f').add_checkbox('f', 'f', 'int', required=True)
+        assert not el.is_valid()
+        
     def test_el_hidden(self):
         html = '<input class="hidden" id="f-field" name="field" type="hidden" />'
         el = Form('f').add_hidden('field', 'Field')

@@ -173,6 +173,9 @@ class FormFieldElementBase(HasValueElement):
                 value = processor.from_python(value)
         self._displayval = value
     
+    def required_empty_test(self, value):
+        return is_empty(value)
+    
     def _to_python_processing(self):
         """
         filters, validates, and converts the submitted value based on
@@ -202,7 +205,7 @@ class FormFieldElementBase(HasValueElement):
             value = None  
 
         # process required
-        if self.required and is_empty(value):
+        if self.required and self.required_empty_test(value):
             valid = False
             self.add_error('"%s" is required' % self.label)
         
@@ -343,6 +346,9 @@ class CheckboxElement(InputElementBase):
         self.errors = []
         self._submittedval = bool(value)
     submittedval = property(_get_submittedval, _set_submittedval)
+    
+    def required_empty_test(self, value):
+        return not bool(value)
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
