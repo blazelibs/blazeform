@@ -138,9 +138,9 @@ class CommonFormUsageTest(unittest.TestCase):
     def test_blank_multicheckbox(self):
         f = Form('login')
         el1 = f.add_mcheckbox('mcheck1', 'Check 1', 1, 'cgroup1', checked=True)
-        el2 = f.add_mcheckbox('mcheck2', 'Check 2', 2, 'cgroup1', checked=True )
+        el2 = f.add_mcheckbox('mcheck2', 'Check 2', 2, 'cgroup1')
         assert 'checked="checked"' in el1()
-        assert 'checked="checked"' in el2()
+        assert 'checked="checked"' not in el2()
         post = {'login-submit-flag': 'submitted'}
         f.set_submitted(post)
         assert not f.get_values()['cgroup1']
@@ -148,6 +148,20 @@ class CommonFormUsageTest(unittest.TestCase):
         # should unset on re-post after a blank submit
         assert 'checked="checked"' not in el1()
         assert 'checked="checked"' not in el2()
+        
+    def test_blank_radio(self):
+        f = Form('login')
+        el1 = f.add_radio('radio1', 'Radio 1', 1, 'rgroup1', selected=True)
+        el2 = f.add_radio('radio2', 'Radio 2', 2, 'rgroup1')
+        assert 'selected="selected"' in el1()
+        assert 'selected="selected"' not in el2()
+        post = {'login-submit-flag': 'submitted'}
+        f.set_submitted(post)
+        assert not f.get_values()['rgroup1']
+        
+        # should unset on re-post after a blank submit
+        assert 'selected="selected"' not in el1()
+        assert 'selected="selected"' not in el2()
         
     def test_dup_fields(self):
         f = Form('f')

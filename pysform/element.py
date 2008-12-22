@@ -670,13 +670,13 @@ class LogicalGroupElement(FormFieldElementBase):
     """
         used to support MultiCheckboxElement and RadioElement
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, is_multiple, *args, **kwargs):
         self.auto_validate = kwargs.pop('auto_validate', True)
         self.error_msg = kwargs.pop('error_msg', None)
         self.invalid = kwargs.pop('invalid', [])
         FormFieldElementBase.__init__(self, *args, **kwargs)
         
-        self.multiple = True
+        self.multiple = is_multiple
         self.members = {}
         self.to_python_first = True
         self.submittedval = NotGivenIter
@@ -707,7 +707,7 @@ class LogicalGroupElement(FormFieldElementBase):
         self._submittedval = value
         
         # use self.value to make sure processing gets done
-        if is_given(value):
+        if is_given(value) and self.is_valid():
             self._set_members(self.value)
     submittedval = property(_get_submittedval, _set_submittedval)
 
@@ -868,7 +868,7 @@ class LogicalSupportElement(ElementBase):
         if isinstance(group, basestring):
             self.lgroup = getattr(form, group, None)
             if not self.lgroup:
-                self.lgroup = LogicalGroupElement(form, group)
+                self.lgroup = LogicalGroupElement(self.is_multiple, form, group)
         elif not isinstance(group, LogicalGroupElement):
             raise TypeError('lgroup should be a string or LogicalGroupElement')
         else:
@@ -911,6 +911,7 @@ class LogicalSupportElement(ElementBase):
 class MultiCheckboxElement(LogicalSupportElement):
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, checked=False, *args, **kwargs):
         chosen = bool(checked)
+        self.is_multiple = True
         LogicalSupportElement.__init__(self, form, eid, label, defaultval, group, *args, **kwargs)
         self.chosen = chosen
         self.chosen_attr = 'checked'
@@ -920,6 +921,7 @@ form_elements['mcheckbox'] = MultiCheckboxElement
 class RadioElement(LogicalSupportElement):
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, selected=False, *args, **kwargs):
         chosen = bool(selected)
+        self.is_multiple = False
         LogicalSupportElement.__init__(self, form, eid, label, defaultval, group, *args, **kwargs)
         self.chosen = chosen
         self.chosen_attr = 'selected'

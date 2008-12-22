@@ -1031,7 +1031,7 @@ class LogicalElementsTest(unittest.TestCase):
         el.chosen = True
         self.assertEqual(el(), checked)
         
-        # can't have to elements in same group with same value
+        # can't have two elements in same group with same value
         f = Form('f')
         el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
         try:
@@ -1047,7 +1047,8 @@ class LogicalElementsTest(unittest.TestCase):
         except NotImplementedError:
             pass
         el.form.set_submitted({'f':'test'})
-        
+    
+    def test_mcheckbox2(self):
         # test the elements getting chosen by setting form defaults
         f = Form('f')
         el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
@@ -1063,24 +1064,31 @@ class LogicalElementsTest(unittest.TestCase):
         f.set_defaults({'thegroup':'foo'})
         assert el1.chosen
         assert not el2.chosen
-        
+    
+    def test_mcheckbox3(self):    
         # test the elements getting chosen by form submissions
         f = Form('f')
         el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
         el2 = f.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_submitted({'thegroup':'foo'})
+        assert f.thegroup.value == ['foo']
         assert el1.chosen
         assert not el2.chosen
         f.set_submitted({'thegroup':['foo', 'bar']})
+        assert f.thegroup.value == ['foo', 'bar']
         assert el1.chosen
         assert el2.chosen
         # it was chosen, but should "undo" when set again
         f.set_submitted({'thegroup':'foo'})
         assert el1.chosen
         assert not el2.chosen
+        # both should unset
+        f.set_submitted({'f-submit-flag': 'submitted'})
+        assert not el1.chosen
+        assert not el2.chosen
     
-    def test_mcheckbox2(self):
+    def test_mcheckbox4(self):
         # test integer values
         f = Form('f')
         el1 = f.add_mcheckbox('f1', 'label', 1, 'thegroup')
@@ -1119,6 +1127,65 @@ class LogicalElementsTest(unittest.TestCase):
         el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
         el.chosen = True
         self.assertEqual(el(), selected)
+    
+    def test_radio2(self):
+        # test the elements getting chosen by setting form defaults
+        f = Form('f')
+        el1 = f.add_radio('f1', 'label', 'foo', 'thegroup')
+        el2 = f.add_radio('f2', 'label', 'bar', 'thegroup')
+        assert el1.chosen == el2.chosen == False
+        f.set_defaults({'thegroup':'foo'})
+        assert el1.chosen
+        assert not el2.chosen
+        f.set_defaults({'thegroup':['foo', 'bar']})
+        assert el1.chosen
+        assert el2.chosen
+        # it was chosen, but should "undo" when set again
+        f.set_defaults({'thegroup':'foo'})
+        assert el1.chosen
+        assert not el2.chosen
+    
+    def test_radio3(self):    
+        # test the elements getting chosen by form submissions
+        f = Form('f')
+        el1 = f.add_radio('f1', 'label', 'foo', 'thegroup')
+        el2 = f.add_radio('f2', 'label', 'bar', 'thegroup')
+        assert el1.chosen == el2.chosen == False
+        f.set_submitted({'thegroup':'foo'})
+        assert f.thegroup.value == 'foo'
+        assert el1.chosen
+        assert not el2.chosen
+        # a radio shouldn't accept multiple values, the children will not
+        # be affected
+        f.set_submitted({'thegroup':['foo', 'bar']})
+        assert el1.chosen
+        assert not el2.chosen
+        assert not f.thegroup.is_valid()
+        assert f.thegroup.errors[0] == 'this field does not accept more than one value'
+        # it was chosen, but should "undo" when set again
+        f.set_submitted({'thegroup':'bar'})
+        assert not el1.chosen
+        assert el2.chosen
+        # both should unset
+        f.set_submitted({'f-submit-flag': 'submitted'})
+        assert not el1.chosen
+        assert not el2.chosen
+    
+    def test_mradio4(self):
+        # test integer values
+        f = Form('f')
+        el1 = f.add_radio('f1', 'label', 1, 'thegroup')
+        el2 = f.add_radio('f2', 'label', 2, 'thegroup')
+        assert el1.chosen == el2.chosen == False
+        f.set_submitted({'thegroup':1})
+        assert el1.chosen
+        assert not el2.chosen
+        f.set_submitted({'thegroup':'1'})
+        assert el1.chosen
+        assert not el2.chosen
+        f.set_submitted({'thegroup':'2'})
+        assert not el1.chosen
+        assert el2.chosen
 
     def test_dup_values(self):
         f = Form('f')
