@@ -1,35 +1,30 @@
-ElementBase (defaults)
+
+WARNING: this is not up to date
+
+ElementBase
     * get/set default
     * id (html attribute)
     * name (the name used to submit the element)
     * label
     * html attributes
     * render = True
--   HasValueElement (returns)
+-   ReturnValueElement
         * get value (will show up in form.get_values())
         * render_group
-    -   FormFieldElementBase (submitted, processing)
+    -   FormFieldElementBase
             * set/get submitted
             * notes
             * errors
             * exception handlers
             * processors (validators and/or filters)
-        -   InputElementBase (renders)
+        -   InputElementBase
             -   ButtonElement
             -   CheckboxElement (bool)
-            -   FileElement
-                * no set default
-                * set submitted will have to take into account various configs
-                * get value returns
-                    * size
-                    * name
-                    * type
-                    * ext
-                    * file_obj
+            -   FileElement (probably somewhere else)
             -   HiddenElement
             -   ImageElement
-            -   ResetElement
             -   SubmitElement
+                    ResetElement
                     CancelElement
             -   TextElement
                     ConfirmElement
@@ -45,20 +40,17 @@ ElementBase (defaults)
             * render = False
             * multi = True
             * not_in_render_group
-    -   PassThru (not rendered)
-        * not rendered
-        * returns a value
-        -   Fixed
-            * like passthru, but renders like a StaticElement
--   DisplayElement (defaults, render)
+    -   PassThru
+        * render = ??
+        * if render == False, can not go in RenderGroup
+-   DisplayElement
         * not_in_render_group
-        * don't return values
     -   StaticElement
     -   RenderGroupElement
             * wrap_in = (div, ul)
     -   HeaderElement
             * no label
--   InLogicalGroupElement (render only based on bool)
+-   InLogicalGroupElement
         -   RadioElement
         -   CheckboxGroupElement
 
@@ -107,21 +99,12 @@ ElementBase (defaults)
     * to_process (submitted_value or display_value)
     * value
     
-== Workflow ==
-                                                            [form reload]
-                                              ,------<-----------<-----------<--------------<---------<------
-                                              |                                                              |
-    * default -> from_python (to form) -> <has submit?> -> display -> submit -> to_python (from form) -> <valid?>
-    * is submit -> if_missing -> if_empty -> validate -> safe value
-    
-
 == Multi-Value ==
     * makes us use a list for validation/return values
 
 == Need Logical Group ==
     * checkbox
     * radiobutton
-    * submit buttons (multiple with same name, but different values)
 
 == All HTML Elements ==
     * Input
@@ -145,10 +128,3 @@ ElementBase (defaults)
     * would we like to do a "render row" feature, that way we would have more
         flexibility in the layout process and could do element.render_row()
         and get the wrapper along with css classes for alternating colors, etc.
-    * for modules with validators, have a default_notes argument that defaults to True
-    * form "sections"
-    * logical groups and render groups should have something in common, it
-        would be common to want five radios in the same "row"
-    * because of how we are setting submit values, if we get a None value
-        submitted, our checkboxes/radios won't get unset and will show up
-        on a re-post as checked, even when they were unchecked already
