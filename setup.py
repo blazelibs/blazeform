@@ -94,6 +94,11 @@ The example application is very unpolished and may contain bugs.  Its just a
 very rough first draft.  The pysform code was engineered much more thoughtfully
 :).
 
+Questions & Comments
+---------------------
+
+Please visit: http://groups.google.com/group/pyslibs
+
 Current Status
 ---------------
 
@@ -119,6 +124,11 @@ setup(
     author = "Randy Syring",
     author_email = "randy@rcs-comp.com",
     url='http://pypi.python.org/pypi/pysform',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+      ],
     license='BSD',
     packages=['pysform'],
     install_requires = [
