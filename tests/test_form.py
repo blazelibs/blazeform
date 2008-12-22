@@ -172,6 +172,94 @@ class CommonFormUsageTest(unittest.TestCase):
         except ValueError:
             pass
 
+    def test_is_valid(self):
+        f = Form('f')
+        f.add_text('f')
+        # wasn't submitted, so not valid
+        assert not f.is_valid()
+        f.set_submitted({'f-submit-flag': 'submitted'})
+        assert f.is_valid()
+        
+        f = Form('f')
+        f.add_text('f', required=True)
+        # wasn't submitted, so not valid
+        assert not f.is_valid()
+        f.set_submitted({'f-submit-flag': 'submitted'})
+        assert not f.is_valid()
+        f.set_submitted({'f-submit-flag': 'submitted', 'f':'foo'})
+        assert f.is_valid()
+    
+    def test_form_validators(self):
+        def validator(form):
+            if form.myfield.is_valid():
+                if form.myfield.value != 'foo':
+                    raise ValueError('My Field: must be "foo", not "%s"' % form.myfield.value)
+        f = Form('f')
+        f.add_text('myfield', 'My Field')
+        f.add_validator(validator)
+        f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'bar'})
+        assert not f.is_valid()
+        self.assertEqual(f.errors[0], 'My Field: must be "foo", not "bar"')
+        f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'foo'})
+        assert f.is_valid()
+        assert len(f.errors) == 0
+        
+        # custom message
+        f = Form('f')
+        f.add_text('myfield', 'My Field')
+        f.add_validator(validator, 'value incorrect')
+        f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'bar'})
+        assert not f.is_valid()
+        self.assertEqual(f.errors[0], 'value incorrect')
+    
+    def test_exception_handling(self):
+        # works with an element handler
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler('text exception', 'test error msg')
+        assert form.handle_exception(Exception('text exception'))
+        self.assertEqual(el.errors[0], 'test error msg')
+        
+        # make sure exception on second field works
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler('not it', '')
+        el2 = form.add_text('field2', 'Field')
+        el2.add_handler('text exception', 'test error msg')
+        assert form.handle_exception(Exception('text exception'))
+        self.assertEqual(el2.errors[0], 'test error msg')
+        
+        # form exceptions
+        f = Form('f')
+        f.add_handler('text exception', 'test error msg')
+        assert f.handle_exception(Exception('text exception'))
+        self.assertEqual(f.errors[0], 'test error msg')
+        
+        # make sure second exception works too
+        f = Form('f')
+        f.add_handler('not it', '')
+        f.add_handler('text exception', 'test error msg')
+        assert f.handle_exception(Exception('text exception'))
+        self.assertEqual(f.errors[0], 'test error msg')
+        
+        # specifying exception type
+        f = Form('f')
+        f.add_handler('text exception', 'test error msg', Exception)
+        assert f.handle_exception(Exception('text exception'))
+        self.assertEqual(f.errors[0], 'test error msg')
+        
+        # right message, wrong type
+        f = Form('f')
+        f.add_handler('text exception', 'test error msg', ValueError)
+        assert not f.handle_exception(Exception('text exception'))
+        self.assertEqual(len(f.errors), 0)
+        
+        # wrong message
+        f = Form('f')
+        f.add_handler('text exception', 'test error msg', Exception)
+        assert not f.handle_exception(Exception('text'))
+        self.assertEqual(len(f.errors), 0)
+        
 # run the tests if module called directly
 if __name__ == "__main__":
     unittest.main()
