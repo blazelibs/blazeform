@@ -118,10 +118,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         if self._is_submitted():
             for key, el in self.submittable_els.items():
                 if not values.has_key(key):
-                    if isinstance(el, CheckboxElement):
-                        el.submittedval = False
-                    if isinstance(el, (MultiSelectElement, LogicalGroupElement)):
-                        el.submittedval = []
+                    if isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
+                        el.submittedval = None
                 
     def set_defaults(self, values):
         for key, el in self.defaultable_els.items():

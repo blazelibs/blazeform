@@ -52,7 +52,7 @@ class MultiValues(FancyValidator):
     multi_check = True
     __unpackargs__ = ('validator','multi_check')
     messages = {
-        'nonmultiple': 'this field does not accept more than one value"'
+        'nonmultiple': 'this field does not accept more than one value'
         }
     
     def _to_python(self, value, state):
