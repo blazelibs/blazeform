@@ -123,7 +123,9 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                 value = validator.to_python(self)
             except formencode.Invalid, e:
                 valid = False
-                self.add_error((msg or str(e)))
+                msg = (msg or str(e))
+                if msg:
+                    self.add_error(msg)
 
         return valid
     
