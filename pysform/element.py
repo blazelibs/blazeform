@@ -6,7 +6,7 @@ import formencode.validators as fev
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
         tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, \
         is_given
-from pysform.processors import Confirm, Select, MultiValues
+from pysform.processors import Confirm, Select, MultiValues, Wrapper
 from pysform.exceptions import ElementInvalid
 
 form_elements = {}
@@ -277,7 +277,7 @@ class FormFieldElementBase(HasValueElement):
     def add_processor(self, processor, msg = None):
         if not formencode.is_validator(processor):
             if callable(processor):
-                processor = formencode.validators.Wrapper(to_python=processor)
+                processor = Wrapper(to_python=processor)
             else:
                 raise TypeError('processor must be a Formencode validator or a callable')
 

@@ -3,6 +3,7 @@ from pysform.element import form_elements, CancelElement, CheckboxElement, \
         MultiSelectElement, LogicalGroupElement
 from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
 from pysform.file_upload_translators import WerkzeugTranslator
+from pysform.processors import Wrapper
 
 class FormBase(HtmlAttributeHolder, ElementRegistrar):
     """
@@ -102,7 +103,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         """
         if not formencode.is_validator(validator):
             if callable(validator):
-                validator = formencode.validators.Wrapper(to_python=validator)
+                validator = Wrapper(to_python=validator)
             else:
                 raise TypeError('validator must be a Formencode validator or a callable')
         self.validators.append((validator, msg))

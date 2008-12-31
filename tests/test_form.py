@@ -5,6 +5,7 @@ from pysutils import DumbObject
 from pysform import Form
 from pysform.element import TextElement
 from pysform.util import NotGivenIter, literal
+from pysform.exceptions import ValueInvalid, ElementInvalid
 
 L = literal
 
@@ -193,7 +194,7 @@ class CommonFormUsageTest(unittest.TestCase):
         def validator(form):
             if form.myfield.is_valid():
                 if form.myfield.value != 'foo':
-                    raise ValueError('My Field: must be "foo", not "%s"' % form.myfield.value)
+                    raise ValueInvalid('My Field: must be "foo", not "%s"' % form.myfield.value)
         f = Form('f')
         f.add_text('myfield', 'My Field')
         f.add_validator(validator)
@@ -211,6 +212,24 @@ class CommonFormUsageTest(unittest.TestCase):
         f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'bar'})
         assert not f.is_valid()
         self.assertEqual(f.errors[0], 'value incorrect')
+    
+    def test_validator_recursion(self):
+        """
+            referencing .value from that field's validator causes a recursion
+        """
+        f = Form('f')
+        def validator(form):
+            try:
+                foo = f.myfield.value
+            except ElementInvalid, e:
+                raise ValueInvalid(e)
+        el = f.add_text('myfield', 'My Field', maxlength=1)
+        el.add_processor(validator)
+        f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'12'})
+        try:
+            assert not f.is_valid()
+        except RuntimeError, e:
+            assert 'maximum recursion depth exceeded' == str(e)
     
     def test_exception_handling(self):
         # works with an element handler

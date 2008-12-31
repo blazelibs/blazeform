@@ -7,6 +7,7 @@ from formencode.validators import Int
 from pysform import Form
 from pysform.element import TextElement
 from pysform.util import NotGiven, NotGivenIter, literal
+from pysform.exceptions import ValueInvalid
 
 L = literal
 
@@ -1362,7 +1363,7 @@ class LogicalElementsTest2(unittest.TestCase):
     def test_16(self):
         # custom processor
         def validator(value):
-            raise ValueError('test')
+            raise ValueInvalid('test')
         self.gel.if_empty = 1
         self.gel.add_processor(validator)
         assert not self.gel.is_valid()
