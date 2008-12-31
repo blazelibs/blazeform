@@ -5,5 +5,5 @@ class ElementInvalid(Exception):
         Exception.__init__(self, desc)
 
 class ValueInvalid(Exception):
-    def __init__(self, desc):
+    def __init__(self, desc=''):
         Exception.__init__(self, desc)
