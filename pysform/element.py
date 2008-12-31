@@ -7,11 +7,9 @@ from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
         tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, \
         is_given
 from pysform.processors import Confirm, Select, MultiValues
+from pysform.exceptions import ElementInvalid
 
 form_elements = {}
-
-class ElementInvalid(Exception):
-    pass
 
 class Label(object):
     """
@@ -156,7 +154,7 @@ class FormFieldElementBase(HasValueElement):
     def _get_value(self):
         self._to_python_processing()
         if self._valid != True:
-            raise ElementInvalid('tried to access element\'s "value" attribute, but element is invalid')
+            raise ElementInvalid(self.label)
         return self._safeval
     value = property(_get_value)
 

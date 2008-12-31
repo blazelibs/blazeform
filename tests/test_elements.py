@@ -205,7 +205,7 @@ class CommonTest(unittest.TestCase):
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
         except Exception, e:
-            if str(e) != 'tried to access element\'s "value" attribute, but element is invalid':
+            if str(e) != '"value" attribute accessed, but element "User Name" is invalid':
                 raise
         
         el.submittedval = ''
@@ -213,7 +213,7 @@ class CommonTest(unittest.TestCase):
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
         except Exception, e:
-            if str(e) != 'tried to access element\'s "value" attribute, but element is invalid':
+            if str(e) != '"value" attribute accessed, but element "User Name" is invalid':
                 raise
         
         el.submittedval = None
@@ -221,7 +221,7 @@ class CommonTest(unittest.TestCase):
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
         except Exception, e:
-            if str(e) != 'tried to access element\'s "value" attribute, but element is invalid':
+            if str(e) != '"value" attribute accessed, but element "User Name" is invalid':
                 raise
         
         el.submittedval = '0'
