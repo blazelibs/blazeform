@@ -1,6 +1,7 @@
 from formencode.validators import FancyValidator
 from formencode import Invalid
 from pysform.util import tolist, is_iterable, is_notgiven
+from pysform.exceptions import ValueInvalid
 
 class Select(FancyValidator):
     """
@@ -84,3 +85,43 @@ class MultiValues(FancyValidator):
                 retval.append(self.validator.to_python(v, state))
             return retval
 
+class Wrapper(FancyValidator):
+
+    """
+    Used to convert functions to validator/converters.
+
+    You can give a simple function for `to_python`, `from_python`,
+    `validate_python` or `validate_other`.  If that function raises an
+    ValueInvalid exception, the value is considered invalid.  Whatever value
+    the function returns is considered the converted value.
+
+    Unlike validators, the `state` argument is not used.
+
+    """
+
+    func_to_python = None
+    func_from_python = None
+    func_validate_python = None
+    func_validate_other = None
+
+    def __init__(self, *args, **kw):
+        for n in ['to_python', 'from_python', 'validate_python',
+                  'validate_other']:
+            if kw.has_key(n):
+                kw['func_%s' % n] = kw[n]
+                del kw[n]
+        FancyValidator.__init__(self, *args, **kw)
+        self._to_python = self.wrap(self.func_to_python)
+        self._from_python = self.wrap(self.func_from_python)
+        self.validate_python = self.wrap(self.func_validate_python)
+        self.validate_other = self.wrap(self.func_validate_other)
+
+    def wrap(self, func):
+        if not func:
+            return None
+        def result(value, state, func=func):
+            try:
+                return func(value)
+            except ValueInvalid, e:
+                raise Invalid(str(e), {}, value, state)
+        return result
