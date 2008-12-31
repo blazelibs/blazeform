@@ -963,6 +963,21 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_mselect('f', o)
         el.submittedval = [-1, 1]
         self.assertEqual(el.value, [1])
+        el = Form('f').add_mselect('f', o)
+        el.submittedval = [-2]
+        self.assertEqual(el.value, [])
+        el.submittedval = -2
+        self.assertEqual(el.value, [])
+        el.submittedval = [u'-2']
+        self.assertEqual(el.value, [])
+        el.submittedval = ['-2']
+        self.assertEqual(el.value, [])
+        
+        # choose values should not get stripped out when choose=False
+        o = [(1, 'a'), (-2, 'b')]
+        el = Form('f').add_mselect('f', o, choose=False)
+        el.submittedval = [-2]
+        self.assertEqual(el.value, [-2])
         
 class OtherElementsTest(unittest.TestCase):
     def test_el_textarea(self):
