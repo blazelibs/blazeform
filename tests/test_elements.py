@@ -205,7 +205,7 @@ class CommonTest(unittest.TestCase):
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
         except Exception, e:
-            if str(e) != 'element value is not valid':
+            if str(e) != 'tried to access element\'s "value" attribute, but element is invalid':
                 raise
         
         el.submittedval = ''
@@ -213,7 +213,7 @@ class CommonTest(unittest.TestCase):
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
         except Exception, e:
-            if str(e) != 'element value is not valid':
+            if str(e) != 'tried to access element\'s "value" attribute, but element is invalid':
                 raise
         
         el.submittedval = None
@@ -221,7 +221,7 @@ class CommonTest(unittest.TestCase):
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
         except Exception, e:
-            if str(e) != 'element value is not valid':
+            if str(e) != 'tried to access element\'s "value" attribute, but element is invalid':
                 raise
         
         el.submittedval = '0'
@@ -906,6 +906,9 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_mselect('f', o, if_empty=[1,2])
         self.assertEqual(el.value, [1,2])
         el = Form('f').add_mselect('f', o, if_empty=['1','2'])
+        self.assertEqual(el.value, ['1', '2'])
+        el = Form('f').add_mselect('f', o)
+        el.submittedval = ['1','2']
         self.assertEqual(el.value, ['1', '2'])
         el = Form('f').add_mselect('f', o, if_empty=[1,3])
         assert not el.is_valid()

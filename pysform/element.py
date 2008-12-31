@@ -156,7 +156,7 @@ class FormFieldElementBase(HasValueElement):
     def _get_value(self):
         self._to_python_processing()
         if self._valid != True:
-            raise ElementInvalid('element value is not valid')
+            raise ElementInvalid('tried to access element\'s "value" attribute, but element is invalid')
         return self._safeval
     value = property(_get_value)
 
