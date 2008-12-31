@@ -637,15 +637,13 @@ class SelectElement(FormFieldElementBase):
         """
         do_processing = bool(self._valid == None)
         FormFieldElementBase._to_python_processing(self)
-        if do_processing and not is_notgiven(self._safeval):
+        if self.choose and do_processing and not is_notgiven(self._safeval):
             value = self._safeval
-            # stip out choose values
+            # strip out choose values
             if self.multiple:
-                values = set(value)
-                choose = set((-1, -2))
-                value = list(values.difference(choose))
+                value = [v for v in value if unicode(v) not in (u'-1', u'-2')]
             else:
-                if value in (-1, -2):
+                if unicode(value) in (u'-1', u'-2'):
                     value = None
             
             # re-apply if_empty settings
