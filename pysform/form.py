@@ -4,6 +4,7 @@ from pysform.element import form_elements, CancelElement, CheckboxElement, \
 from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
 from pysform.file_upload_translators import WerkzeugTranslator
 from pysform.processors import Wrapper
+from pysform.exceptions import ElementInvalid
 
 class FormBase(HtmlAttributeHolder, ElementRegistrar):
     """
@@ -127,6 +128,13 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                 msg = (msg or str(e))
                 if msg:
                     self.add_error(msg)
+            except ElementInvalid, e:
+                # since we are getting an ElementInvalid exception, that means
+                # our validator needed the value of an element to complete
+                # validation, but that element is invalid.  In that case,
+                # our form will already be invalid, but we don't want to issue
+                # an error
+                valid = False
 
         return valid
     

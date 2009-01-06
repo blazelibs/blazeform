@@ -229,7 +229,21 @@ class CommonFormUsageTest(unittest.TestCase):
         try:
             assert not f.is_valid()
         except RuntimeError, e:
-            assert 'maximum recursion depth exceeded' == str(e)
+            assert 'maximum recursion depth exceeded' in str(e), str(e)
+            
+    def test_validator_element_invalid(self):
+        """
+            If a validator references an invalid element, then we don't let
+            that exception propogate
+        """
+        f = Form('f')
+        def validator(form):
+            foo = f.f1.value
+        el = f.add_text('f1', 'f1', maxlength=1)
+        el = f.add_text('f2', 'f2')
+        f.add_validator(validator)
+        f.set_submitted({'f-submit-flag': 'submitted', 'f1':'12'})
+        assert not f.is_valid()
     
     def test_exception_handling(self):
         # works with an element handler
