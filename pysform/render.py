@@ -135,8 +135,6 @@ class InputRenderer(FieldRenderer):
 class StaticRenderer(FieldRenderer):
     def required(self):
         pass
-    def notes(self):
-        pass
     def errors(self):
         pass
     

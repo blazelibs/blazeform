@@ -56,7 +56,10 @@ class ElementBase(HtmlAttributeHolder):
         self.id = eid
         self.label = Label(self, label)
         self.form = form
-    
+
+        #: a list of user messages for this field (C{str})
+        self.notes = []
+        
         self.defaultval = defaultval
         self.set_attr('id', self.getidattr())
 
@@ -84,6 +87,11 @@ class ElementBase(HtmlAttributeHolder):
     def getidattr(self):
         return self.form.element_id_formatter % {'form_name':self.form.name, 'element_id':self.id}
 
+    def add_note(self, note, escape = True):
+        if escape:
+            note = cgi.escape(note)
+        self.notes.append(note)
+    
 class HasValueElement(ElementBase):
     def __init__(self, *args, **kwargs):
         ElementBase.__init__(self, *args, **kwargs)
@@ -114,8 +122,6 @@ class FormFieldElementBase(HasValueElement):
         self._safeval = NotGiven
         #: a list of error messages for this field (C{str})
         self.errors = []
-        #: a list of user messages for this field (C{str})
-        self.notes = []
         #: validators/converters
         self.processors = []
         #: whether or not this field is valid, None means the field has not been processed yet
@@ -268,11 +274,6 @@ class FormFieldElementBase(HasValueElement):
     
     def add_error(self, error):
         self.errors.append(error)
-    
-    def add_note(self, note, escape = True):
-        if escape:
-            note = cgi.escape(note)
-        self.notes.append(note)
     
     def add_processor(self, processor, msg = None):
         if not formencode.is_validator(processor):
