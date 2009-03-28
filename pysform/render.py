@@ -1,6 +1,6 @@
 
 from pysform.form import FormBase
-from pysform.util import StringIndentHelper
+from pysform.util import StringIndentHelper, NotGiven
 from pysform import element
 from webhelpers.html import tags
 from webhelpers.html.builder import make_tag
@@ -71,6 +71,13 @@ class Renderer(object):
         self.end()
     def end(self):
         pass
+
+class HeaderRenderer(Renderer):
+    def render(self):
+        self.begin()
+        if self.element.defaultval is not NotGiven:
+            self.output(self.element.render())
+        self.end()
 
 class FieldRenderer(Renderer):
     def __init__(self, element, output, is_first, is_alt, wrap_type):
@@ -176,7 +183,6 @@ class GroupRenderer(StaticRenderer):
 def get_renderer(el):
     plain = (
         element.HiddenElement,
-        element.HeaderElement,
     )
     field = (
         element.SelectElement,
@@ -192,6 +198,8 @@ def get_renderer(el):
         return FormRenderer(el)
     elif isinstance(el, element.GroupElement):
         return GroupRenderer
+    elif isinstance(el, element.HeaderElement):
+        return HeaderRenderer
     elif isinstance(el, plain):
         return Renderer
     elif isinstance(el, element.InputElementBase):

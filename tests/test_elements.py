@@ -699,7 +699,7 @@ class InputElementsTest(unittest.TestCase):
         assert not el.is_valid()
         
         try:
-            import pydns
+            import DNS
             el = Form('f').add_email('field', 'Field', resolve_domain=True)
             el.submittedval = 'bob@ireallyhopethisdontexistontheweb.com'
             assert not el.is_valid()
@@ -1070,6 +1070,10 @@ class OtherElementsTest(unittest.TestCase):
         # with attributes
         el = Form('f').add_header('f', 'foo', title='baz')
         self.assertEqual( el(class_='bar'), L('<h3 class="bar" id="f-f" title="baz">foo</h3>'))
+        
+        # empty header
+        el = Form('f').add_header('f')
+        self.assertEqual( el.render(), L('<h3 id="f-f"></h3>'))
 
 class LogicalElementsTest(unittest.TestCase):
     
