@@ -563,6 +563,12 @@ class InputElementsTest(unittest.TestCase):
         html = '<input class="submit" id="f-field" name="field" type="submit" value="s" />'
         el = Form('f').add_submit('field', 'Field', defaultval='s')
         self.assertEqual(str(el()), html)
+        
+        # had a problem where we will get two class attributes
+        html = '<input class="submit wymupdate" id="f-field" name="field" type="submit" value="Submit" />'
+        el = Form('f').add_submit('field', 'Field')
+        el.add_attr('class', 'wymupdate')
+        self.assertEqual(str(el()), html)
 
     def test_el_cancel(self):
         html = '<input class="submit" id="f-field" name="field" type="submit" value="Cancel" />'

@@ -1,8 +1,8 @@
 import unittest
 from pysform.util import multi_pop, NotGiven, is_iterable, NotGivenIter, \
-    is_notgiven
+    is_notgiven, HtmlAttributeHolder
 
-class CommonFormUsageTest(unittest.TestCase):
+class TestUtilFunctions(unittest.TestCase):
 
     def test_multi_pop(self):
         start = {'a':1, 'b':2, 'c':3}
@@ -52,3 +52,46 @@ class CommonFormUsageTest(unittest.TestCase):
         assert is_notgiven(NotGiven)
         assert is_notgiven(NotGivenIter)
         assert not is_notgiven(None)
+
+class TestHtmlAttributeHolder(unittest.TestCase):
+    def test_init(self):
+        ah = HtmlAttributeHolder(src='src', class_='class')
+        assert ah.attributes['src'] == 'src'
+        assert ah.attributes['class'] == 'class'
+
+    def test_set_attrs(self):
+        ah = HtmlAttributeHolder()
+        ah.set_attrs(src='src', class_='class')
+        assert ah.attributes['src'] == 'src'
+        assert ah.attributes['class'] == 'class'
+
+    def test_set_attr(self):
+        ah = HtmlAttributeHolder()
+        ah.set_attr('src', 'src')
+        ah.set_attr('class_', 'class')
+        assert ah.attributes['src'] == 'src'
+        assert ah.attributes['class'] == 'class'
+        
+        ah.set_attr('class_', 'class2')
+        assert ah.attributes['class'] == 'class2'
+    
+    def test_get_attr(self):
+        ah = HtmlAttributeHolder(src='src', class_='class')
+        assert ah.get_attr('src') == 'src'
+        assert ah.get_attr('class') == 'class'
+        assert ah.get_attr('class_') == 'class'
+        
+    def test_del_attr(self):
+        ah = HtmlAttributeHolder(src='src', class_='class')
+        ah.del_attr('src')
+        ah.del_attr('class')
+        assert not ah.attributes.has_key('src')
+        assert not ah.attributes.has_key('class')
+    
+    def test_add_attr(self):
+        ah = HtmlAttributeHolder(src='src', class_='class')
+        ah.add_attr('class_', 'class2')
+        assert ah.attributes['src'] == 'src'
+        assert ah.attributes['class'] == 'class class2'
+
+    
