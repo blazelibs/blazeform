@@ -45,3 +45,10 @@ class TestForm(Form):
         el = self.add_header('header-blank-text', '')
         el = self.add_text('hbt-t1', 'Text1')
         el = self.add_text('hbt-t2', 'Text2')
+        
+        #test element group with class attribute
+        self.add_header('eg-class-attr', 'Element Group with Class Attribute')
+        sg = self.add_elgroup('submit-group', class_='submit-only')
+        sg.add_submit('preview', defaultval="Preview")
+        el = sg.add_submit('submit')
+        el.add_attr('class', 'customclass')
