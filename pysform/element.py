@@ -861,18 +861,19 @@ form_elements['elgroup'] = GroupElement
 
 class HeaderElement(StaticElement):
     """
-    A rendering element used for adding headers to a form
+    A rendering element used for adding headers to a form.  It can also be used,
+    depending on the renderer, to group together field elements into sections.
     
     Headers will normally be rendered differently than other static elements,
-    hence they have their own class
+    hence they have their own class.
     """
-    def __init__(self, form, eid, defaultval, level='h3', **kwargs):
+    def __init__(self, form, eid, defaultval=NotGiven, level='h3', **kwargs):
         StaticElement.__init__(self, form, eid, label=NotGiven, defaultval=defaultval, **kwargs)
         self.level = level
         
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        return HTML.tag(self.level, self.displayval, **self.attributes)
+        return HTML.tag(self.level, self.displayval or '', **self.attributes)
 form_elements['header'] = HeaderElement
 
 class LogicalSupportElement(ElementBase):
