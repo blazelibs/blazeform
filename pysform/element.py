@@ -307,7 +307,7 @@ class InputElementBase(FormFieldElementBase):
         FormFieldElementBase.__init__(self, *args, **kwargs)
         # use to override using the id as the default "name" attribute
         self.nameattr = None
-        self.set_attr('class_', etype)
+        self.add_attr('class', etype)
         self.etype = etype
 
     def __call__(self, **kwargs):
