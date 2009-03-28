@@ -148,14 +148,11 @@ class StaticRenderer(FieldRenderer):
 class GroupRenderer(StaticRenderer):
     
     def begin_row(self):
-        attrs = self.element.get_attrs()
-        attrs['id'] = '%s-%s' % (self.element.getidattr(), self.wrap_type)
+        self.element.set_attr('id', '%s-%s' % (self.element.getidattr(), self.wrap_type))
         class_str = '%s%s%s' % (self.wrap_type, self.alt_class(), self.first_class())
-        if attrs.get('class_'):
-            attrs['class_'] += ' ' + class_str
-        else:
-            attrs['class_'] = class_str
+        self.element.add_attr('class', class_str)
         # make_tag should not close the div
+        attrs = self.element.get_attrs()
         attrs['_closed'] = False
         self.output.inc(make_tag('div', **attrs))
     def field_wrapper(self):
