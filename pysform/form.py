@@ -142,7 +142,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         """ values should be dict like """
         self.errors = []
         
-        for key, el in self.submittable_els.items():
+        for el in self.submittable_els.values():
+            key = el.nameattr or el.id
             if values.has_key(key):
                 el.submittedval = values[key]
         
@@ -153,7 +154,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         # It can't be done above because _is_submitted() can't be trusted until
         # we are certain all submitted values have been processed.
         if self._is_submitted():
-            for key, el in self.submittable_els.items():
+            for el in self.submittable_els.values():
+                key = el.nameattr or el.id
                 if not values.has_key(key):
                     if isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
                         el.submittedval = None
@@ -167,7 +169,11 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         "return a dictionary of element values"
         retval = {}
         for element in self.returning_els:
-            retval[element.id] = element.value
+            try:
+                key = element.nameattr or element.id
+            except AttributeError:
+                key = element.id
+            retval[key] = element.value
         return retval
     values = property(get_values)
     

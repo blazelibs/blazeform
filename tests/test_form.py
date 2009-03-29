@@ -109,7 +109,22 @@ class CommonFormUsageTest(unittest.TestCase):
         f.set_submitted(post)
         self.assertEqual('<input class="text" id="login-username" name="username" type="text" value="test2" />', str(f.username.render()))
         assert f.get_values() == {'username': 'test2', 'login-submit-flag': 'submitted'}
-    
+
+    def test_submit_by_name(self):
+        f = Form('login')
+        f.add_text('username', 'User Name')
+        f.add_submit('submit')
+        post = {'login-submit-flag': 'submitted', 'username':'test2', 'submit':'Submit'}
+        f.set_submitted(post)
+        assert f.get_values() == {'username': 'test2', 'login-submit-flag': 'submitted', 'submit':'Submit'}
+        
+        f = Form('login')
+        f.add_text('username', 'User Name', name="unfield")
+        f.add_submit('submit', name="submitbtn")
+        post = {'login-submit-flag': 'submitted', 'unfield':'test2', 'submitbtn':'Submit'}
+        f.set_submitted(post)
+        self.assertEqual( f.get_values(),  {'unfield': 'test2', 'login-submit-flag': 'submitted', 'submitbtn':'Submit'})
+
     def test_blank_checkbox(self):
         html = L('<input checked="checked" class="checkbox" id="login-disabled" name="disabled" type="checkbox" />')
         f = Form('login')
@@ -122,6 +137,21 @@ class CommonFormUsageTest(unittest.TestCase):
         
         # should unset on re-post after a blank submit
         html = L('<input class="checkbox" id="login-disabled" name="disabled" type="checkbox" />')
+        self.assertEqual(el(), html)
+        
+        
+    def test_blank_checkbox_nameattr(self):
+        html = L('<input checked="checked" class="checkbox" id="login-disabled" name="mycb" type="checkbox" />')
+        f = Form('login')
+        el = f.add_checkbox('disabled', 'Disabled', defaultval=True, name="mycb")
+        self.assertEqual(el(), html)
+        post = {'login-submit-flag': 'submitted'}
+        f.set_submitted(post)
+        dvalue = f.get_values()['mycb']
+        assert dvalue is False
+        
+        # should unset on re-post after a blank submit
+        html = L('<input class="checkbox" id="login-disabled" name="mycb" type="checkbox" />')
         self.assertEqual(el(), html)
         
     def test_blank_multiselect(self):

@@ -993,6 +993,15 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_mselect('f', o, choose=False)
         el.submittedval = [-2]
         self.assertEqual(el.value, [-2])
+
+    def test_el_select_name_attr(self):
+        o = [(1, 'a'), (2, 'b')]
+        html = \
+        '<select id="f-f" name="myselect">\n'\
+        '<option selected="selected" value="1">a</option>\n<option value="2">'\
+        'b</option>\n</select>'
+        el = Form('f').add_select('f', o, defaultval=1, choose=None, name="myselect")
+        self.assertEqual(str(el()), html)
         
 class OtherElementsTest(unittest.TestCase):
     def test_el_textarea(self):
