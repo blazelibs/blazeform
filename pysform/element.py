@@ -304,9 +304,9 @@ class InputElementBase(FormFieldElementBase):
     use one of the child classes.
     """
     def __init__(self, etype, *args, **kwargs):
+        self.nameattr = kwargs.pop('name', None)
         FormFieldElementBase.__init__(self, *args, **kwargs)
         # use to override using the id as the default "name" attribute
-        self.nameattr = None
         self.add_attr('class', etype)
         self.etype = etype
 
