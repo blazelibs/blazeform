@@ -116,6 +116,8 @@ class FormFieldElementBase(HasValueElement):
         self.if_invalid = kwargs.pop('if_invalid', NotGiven)
         #: is this field required in order for the form submission to be valid?
         self.required = kwargs.pop('required', False)
+        #: name attribute
+        self.nameattr = kwargs.pop('name', None)
         HasValueElement.__init__(self, form, eid, label, defaultval, **kwargs)
 
         self._submittedval = NotGiven
@@ -142,7 +144,14 @@ class FormFieldElementBase(HasValueElement):
             except AttributeError, e:
                 raise TypeError('vtype should have been a string, got %s instead' % type(vtype))
         self.vtype = vtype
-        
+    
+    def set_attrs(self, **kwargs ):
+        name = kwargs.pop('name', None)
+        if not name:
+            name = self.nameattr or self.id
+        kwargs['name'] = name
+        HasValueElement.set_attrs(self, **kwargs)
+    
     def _get_submittedval(self):
         return self._submittedval
     def _set_submittedval(self, value):
@@ -304,7 +313,6 @@ class InputElementBase(FormFieldElementBase):
     use one of the child classes.
     """
     def __init__(self, etype, *args, **kwargs):
-        self.nameattr = kwargs.pop('name', None)
         FormFieldElementBase.__init__(self, *args, **kwargs)
         # use to override using the id as the default "name" attribute
         self.add_attr('class', etype)
@@ -316,7 +324,6 @@ class InputElementBase(FormFieldElementBase):
     def render(self, **kwargs):
         if self.displayval and self.displayval is not NotGiven:
             self.set_attr('value', self.displayval)
-        self.set_attr('name', self.nameattr or self.id)
         self.set_attrs(**kwargs)
         return HTML.input(type=self.etype, **self.attributes)
 
@@ -362,7 +369,6 @@ class CheckboxElement(InputElementBase):
                 self.del_attr('checked')
             except KeyError:
                 pass
-        self.set_attr('name', self.nameattr or self.id)
         self.set_attrs(**kwargs)
         return HTML.input(type=self.etype, **self.attributes)
 form_elements['checkbox'] = CheckboxElement
@@ -653,12 +659,16 @@ class SelectElement(FormFieldElementBase):
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
+    
+    def set_attrs(self, **kwargs ):
+        """ no name attribute b/c select tag takes it directly """
+        HasValueElement.set_attrs(self, **kwargs)
         
     def render(self, **kwargs):
         if self.multiple:
             self.set_attr('multiple', 'multiple')
         self.set_attrs(**kwargs)
-        return tags.select(self.id, self.displayval or None, self.options, **self.attributes)
+        return tags.select(self.nameattr or self.id, self.displayval or None, self.options, **self.attributes)
 form_elements['select'] = SelectElement
 
 class MultiSelectElement(SelectElement):
@@ -681,9 +691,13 @@ class TextAreaElement(FormFieldElementBase):
     def __call__(self, **kwargs):
         return self.render(**kwargs)
         
+    def set_attrs(self, **kwargs ):
+        """ no name attribute b/c textarea tag takes it directly """
+        HasValueElement.set_attrs(self, **kwargs)
+
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        return tags.textarea(self.id, self.displayval or '', **self.attributes)
+        return tags.textarea(self.nameattr or self.id, self.displayval or '', **self.attributes)
 form_elements['textarea'] = TextAreaElement
 
 class LogicalGroupElement(FormFieldElementBase):
