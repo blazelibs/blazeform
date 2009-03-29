@@ -569,6 +569,11 @@ class InputElementsTest(unittest.TestCase):
         el = Form('f').add_submit('field', 'Field')
         el.add_attr('class', 'wymupdate')
         self.assertEqual(str(el()), html)
+        
+        #submit button with a different name
+        html = '<input class="submit" id="f-field" name="submitbtn" type="submit" value="Reset" />'
+        el = Form('f').add_submit('field', 'Field', defaultval='Reset', name='submitbtn')
+        self.assertEqual(str(el()), html)
 
     def test_el_cancel(self):
         html = '<input class="submit" id="f-field" name="field" type="submit" value="Cancel" />'
