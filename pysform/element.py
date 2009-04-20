@@ -1,5 +1,6 @@
 from os import path
 import cgi
+from pysmvt.exceptions import ProgrammingError
 from webhelpers.html import HTML, tags
 import formencode
 import formencode.validators as fev
@@ -899,6 +900,9 @@ class LogicalSupportElement(ElementBase):
         these elements are used to support LogicalGroupElement
     """
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, *args, **kwargs):
+        if kwargs.has_key('required'):
+            raise ProgrammingError('Required is not allowed on this element. Set it for the logical group.')
+            
         ElementBase.__init__(self, form, eid, label, defaultval, *args, **kwargs)
         if isinstance(group, basestring):
             self.lgroup = getattr(form, group, None)
