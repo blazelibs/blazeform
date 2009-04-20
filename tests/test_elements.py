@@ -8,6 +8,7 @@ from pysform import Form
 from pysform.element import TextElement
 from pysform.util import NotGiven, NotGivenIter, literal
 from pysform.exceptions import ValueInvalid
+from pysmvt.exceptions import ProgrammingError
 
 L = literal
 
@@ -1137,7 +1138,13 @@ class LogicalElementsTest(unittest.TestCase):
         except NotImplementedError:
             pass
         el.form.set_submitted({'f':'test'})
-    
+
+        # cannot set required on an mcheckbox
+        try:
+            el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup', required=True)
+        except ProgrammingError, pe:
+            assert pe.args[0] == 'Required is not allowed on this element. Set it for the logical group.'
+            
     def test_mcheckbox2(self):
         # test the elements getting chosen by setting form defaults
         f = Form('f')
@@ -1218,6 +1225,12 @@ class LogicalElementsTest(unittest.TestCase):
         el.chosen = True
         self.assertEqual(el(), selected)
     
+        # cannot set required on an mradio
+        try:
+            el = Form('f').add_radio('f', 'label', 'foo', 'thegroup', required=True)
+        except ProgrammingError, pe:
+            assert pe.args[0] == 'Required is not allowed on this element. Set it for the logical group.'
+            
     def test_radio2(self):
         # test the elements getting chosen by setting form defaults
         f = Form('f')
