@@ -182,7 +182,7 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(False, form.username.is_valid())
         
         # check error message
-        self.assertEqual('"User Name" is required', el.errors[0])
+        self.assertEqual('field is required', el.errors[0])
         
         # setting submitted should reset _valid to None, which causes the
         # processing to happen again
@@ -197,7 +197,7 @@ class CommonTest(unittest.TestCase):
         form = Form('f')
         el = form.add_text('username', required=True)
         self.assertEqual(False, form.username.is_valid())
-        self.assertEqual('"username" is required', el.errors[0])
+        self.assertEqual('field is required', el.errors[0])
         
     
     def test_invalid_value(self):
@@ -269,7 +269,7 @@ class CommonTest(unittest.TestCase):
         el = form.add_text('username', 'User Name', required=True)
         self.assertEqual(False, form.username.is_valid())
         self.assertEqual(len(el.errors), 1)
-        self.assertEqual('"User Name" is required', el.errors[0])
+        self.assertEqual('field is required', el.errors[0])
         
         # formencode message
         form = Form('f')
