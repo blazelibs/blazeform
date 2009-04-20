@@ -221,7 +221,7 @@ class FormFieldElementBase(HasValueElement):
         # process required
         if self.required and self.required_empty_test(value):
             valid = False
-            self.add_error('"%s" is required' % self.label)
+            self.add_error('field is required')
         
         # process processors
         for processor, msg in self.processors:
@@ -440,7 +440,7 @@ class FileElement(InputElementBase):
             not value.file_name or not value.content_type or
             not value.content_length):
             valid = False
-            self.add_error('"%s" is required' % self.label)
+            self.add_error('field is required')
         
         if value.file_name is not None:
             _ , ext = path.splitext(value.file_name)
