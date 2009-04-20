@@ -7,8 +7,7 @@ from formencode.validators import Int
 from pysform import Form
 from pysform.element import TextElement
 from pysform.util import NotGiven, NotGivenIter, literal
-from pysform.exceptions import ValueInvalid
-from pysmvt.exceptions import ProgrammingError
+from pysform.exceptions import ValueInvalid, ProgrammingError
 
 L = literal
 

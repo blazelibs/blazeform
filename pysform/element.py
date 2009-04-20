@@ -1,6 +1,5 @@
 from os import path
 import cgi
-from pysmvt.exceptions import ProgrammingError
 from webhelpers.html import HTML, tags
 import formencode
 import formencode.validators as fev
@@ -8,7 +7,7 @@ from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
         tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, \
         is_given
 from pysform.processors import Confirm, Select, MultiValues, Wrapper
-from pysform.exceptions import ElementInvalid
+from pysform.exceptions import ElementInvalid, ProgrammingError
 
 form_elements = {}
 
