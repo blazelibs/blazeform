@@ -23,7 +23,7 @@ class FormRenderer(object):
             if isinstance(child, element.HeaderElement):
                 if self.header_section_open:
                     self.output.dec('</div>')
-                    on_first = True
+                on_first = True
                 hstr = '<div id="%s-section" class="header-section">' % child.getidattr()
                 self.output.inc(hstr)
                 self.header_section_open = True
