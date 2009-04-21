@@ -49,6 +49,20 @@ class CommonFormUsageTest(unittest.TestCase):
         self.assertEqual(self.render_html, str(form.username.render()))
         self.assertEqual(self.render_html, str(el.render()))
     
+    def test_first_class_elements(self):
+        """
+        first element in form and under header should have a 'first' class
+        """
+        form_first_html = '<div id="user-username-row" class="text row odd first">'
+        header_first_html = '<div id="user-groupname-row" class="text row even first">'
+        form = Form('user')
+        form.add_text('username', 'User Name')
+        form.add_header('group_membership_header', 'Group Membership')
+        form.add_text('groupname', 'Group')
+        form_html = form.render()
+        assert form_html.find(form_first_html) > -1
+        assert form_html.find(header_first_html) > -1
+
     def test_formencoding(self):
         """ensure form has correct encoding for file uploads"""
         
