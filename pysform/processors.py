@@ -17,7 +17,7 @@ class Select(FancyValidator):
         }
 
     def validate_python(self, values, state):
-        soptions = set([unicode(d[0]) for d in self.options])
+        soptions = set([unicode(d[0] if isinstance(d, tuple) else d) for d in self.options])
         sinvalid = set([unicode(d) for d in tolist(self.invalid)])
         svalues = set([unicode(d) for d in tolist(values)])
  

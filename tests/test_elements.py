@@ -870,6 +870,15 @@ class SelectTest(unittest.TestCase):
         # select
         el = Form('f').add_select('f', o, if_empty=[1,2])
         assert not el.is_valid()
+
+        # check the processor to be sure both tuples and strings are
+        # allowed as options
+        el_options = [(-2, 'Choose:'), (-1, '-----------'), ('first', 'First Option'), 'Second Option']
+        el = Form('f').add_select('f', el_options)
+        el.submittedval = 'first'
+        assert el.is_valid()
+        el.submittedval = 'Second Option'
+        assert el.is_valid()
         
     def test_el_select_multi(self):
         html = \
