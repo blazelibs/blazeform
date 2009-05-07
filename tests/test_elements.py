@@ -611,9 +611,24 @@ class InputElementsTest(unittest.TestCase):
         try:
             Form('f').add_confirm('f')
             self.fail('expected key error for missing "match"')
-        except KeyError:
-            pass
+        except ProgrammingError, e:
+            if 'match argument is required' not in str(e):
+                raise
+        try:
+            Form('f').add_confirm('f', match='notthere')
+            self.fail('expected element does not exist error')
+        except ProgrammingError, e:
+            if 'match element "notthere" does not exist' != str(e):
+                raise
         
+        try:
+            datematch = datetime.datetime.now()
+            Form('f').add_confirm('f', match=datematch)
+            self.fail('expected wrong type error')
+        except ProgrammingError, e:
+            if 'match element was not of type HasValueElement' != str(e):
+                raise
+
         # match password
         html = '<input class="password" id="f-f" name="f" type="password" />'
         vhtml = '<input class="password" id="f-f" name="f" type="password" value="foo" />'
