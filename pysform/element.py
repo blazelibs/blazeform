@@ -532,12 +532,21 @@ form_elements['text'] = TextElement
 
 class ConfirmElement(TextElement):
     def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
-        match = kwargs.pop('match')
+        match = kwargs.pop('match', None)
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
-        if isinstance(match, basestring):
-            self.mel = self.form.all_els[match]
+        if not match:
+              raise ProgrammingError('match argument is required for Confirm elements')
+        elif isinstance(match, basestring):
+            try:
+                self.mel = self.form.all_els[match]
+            except KeyError, e:
+                if match not in str(e):
+                    raise
+                raise ProgrammingError('match element "%s" does not exist' % match)
         else:
             self.mel = match
+        if not isinstance(self.mel, HasValueElement):
+            raise ProgrammingError('match element was not of type HasValueElement')
         # do we need to act like a password element?
         if isinstance(self.mel, PasswordElement):
             # override the type
