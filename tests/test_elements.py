@@ -894,7 +894,22 @@ class SelectTest(unittest.TestCase):
         assert el.is_valid()
         el.submittedval = 'Second Option'
         assert el.is_valid()
-        
+    
+    def test_el_select_strip(self):
+        # make sure values get stripped
+        el_options = [(-2, 'Choose:'), (-1, '-----------'), ('first', 'First Option'), 'Second Option']
+        el = Form('f').add_select('f', el_options)
+        el.submittedval = 'first '
+        assert el.is_valid()
+        el.submittedval = 'Second Option '
+        assert el.is_valid()
+    
+    def test_el_select_strip_multi(self):
+        el_options = [(-2, 'Choose:'), (-1, '-----------'), ('first', 'First Option'), 'Second Option']
+        el = Form('f').add_mselect('f', el_options)
+        el.submittedval = ['first ', 'Second Option ']
+        assert el.is_valid()
+    
     def test_el_select_multi(self):
         html = \
         '<select id="f-f" multiple="multiple" name="f">\n'\

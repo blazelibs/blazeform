@@ -205,6 +205,15 @@ class FormFieldElementBase(HasValueElement):
         # strip if necessary
         if self.strip and isinstance(value, basestring):
             value = value.strip()
+        elif self.strip and is_iterable(value):
+            newvalue = []
+            for item in value:
+                if isinstance(item, basestring):
+                    newvalue.append(item.strip())
+                else:
+                    newvalue.append(item)
+            if newvalue:
+                value = newvalue
         
         # if nothing was submitted, but we have an if_missing, substitute
         if is_notgiven(value) and self.if_missing is not NotGiven:
