@@ -73,27 +73,6 @@ and the view/controller code might look something like::
         def default(self):
             self.assign('form', self.form)
 
-Example Application:
-----------------------
-
-See below in the file downloads for an example application demonstrating how
-to use pysform.  There are a lot of dependencies b/c its based on
-`pysapp <http://pypi.python.org/pypi/pysapp/>`_ so I suggest you use virtualenv.
-
-Steps to get it running should be:
-
-#. download .zip package
-#. unzip
-#. `cd pysform-example-0.1dev`
-#. `python setup.py develop`
-#. `cd myapp`
-#. `pysmvt serve dev`
-#. browse to http://localhost:5000/formtest
-
-The example application is very unpolished and may contain bugs.  Its just a
-very rough first draft.  The pysform code was engineered much more thoughtfully
-:).
-
 Questions & Comments
 ---------------------
 
@@ -102,8 +81,7 @@ Please visit: http://groups.google.com/group/pyslibs
 Current Status
 ---------------
 
-We are in an early beta stage.  API should be relatively stable, but backwards
-compatibility won't be guaranteed for a while. 
+The code for 0.1 is pretty stable.  API, however, will be changing in 0.2.
 
 The somewhat stable `development version
 <https://svn.rcslocal.com:8443/svn/pysmvt/pysform/trunk#egg=pysform-dev>`_.
@@ -118,7 +96,7 @@ except ImportError:
 
 setup(
     name = "pysform",
-    version = "0.1dev",
+    version = "0.1",
     description = "A library for generating and validating HTML forms",
     long_description = __doc__,
     author = "Randy Syring",
@@ -132,8 +110,8 @@ setup(
     license='BSD',
     packages=['pysform'],
     install_requires = [
-        "FormEncode>=1.2",
-        "pysutils>=dev",
+        "FormEncode>=1.2.2",
+        "pysutils>=0.1",
         "WebHelpers>=0.6.4"
     ],
     zip_safe=False
