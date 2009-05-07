@@ -20,7 +20,7 @@ class FormRenderer(object):
         self.begin()
         on_first = True
         on_alt = False
-        for child in self.element.render_els:
+        for child in self.element._render_els:
             if isinstance(child, element.HeaderElement):
                 if self.header_section_open:
                     self.output.dec('</div>')
@@ -168,7 +168,7 @@ class GroupRenderer(StaticRenderer):
     def render_children(self):
         on_first = True
         on_alt = False
-        for child in self.element.render_els:
+        for child in self.element._render_els:
             r = get_renderer(child)
             rcls = get_renderer(child)
             r = rcls(child, self.output, on_first, on_alt, 'grpel')

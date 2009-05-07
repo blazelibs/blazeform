@@ -1356,7 +1356,7 @@ class LogicalElementsTest(unittest.TestCase):
     def test_non_rendering(self):
         f = Form('f')
         el = f.add_radio('radio1', 'Radio 1', group='rgroup1' )
-        assert el.lgroup not in f.render_els, 'logical group is trying to render'
+        assert el.lgroup not in f._render_els, 'logical group is trying to render'
     
 class LogicalElementsTest2(unittest.TestCase):
     def setUp(self):

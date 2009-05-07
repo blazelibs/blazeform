@@ -244,10 +244,10 @@ class CommonFormUsageTest(unittest.TestCase):
         f.add_validator(validator)
         f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'bar'})
         assert not f.is_valid()
-        self.assertEqual(f.errors[0], 'My Field: must be "foo", not "bar"')
+        self.assertEqual(f._errors[0], 'My Field: must be "foo", not "bar"')
         f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'foo'})
         assert f.is_valid()
-        assert len(f.errors) == 0
+        assert len(f._errors) == 0
         
         # custom message
         f = Form('f')
@@ -255,7 +255,7 @@ class CommonFormUsageTest(unittest.TestCase):
         f.add_validator(validator, 'value incorrect')
         f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'bar'})
         assert not f.is_valid()
-        self.assertEqual(f.errors[0], 'value incorrect')
+        self.assertEqual(f._errors[0], 'value incorrect')
     
     def test_validator_recursion(self):
         """
@@ -310,32 +310,32 @@ class CommonFormUsageTest(unittest.TestCase):
         f = Form('f')
         f.add_handler('text exception', 'test error msg')
         assert f.handle_exception(Exception('text exception'))
-        self.assertEqual(f.errors[0], 'test error msg')
+        self.assertEqual(f._errors[0], 'test error msg')
         
         # make sure second exception works too
         f = Form('f')
         f.add_handler('not it', '')
         f.add_handler('text exception', 'test error msg')
         assert f.handle_exception(Exception('text exception'))
-        self.assertEqual(f.errors[0], 'test error msg')
+        self.assertEqual(f._errors[0], 'test error msg')
         
         # specifying exception type
         f = Form('f')
         f.add_handler('text exception', 'test error msg', Exception)
         assert f.handle_exception(Exception('text exception'))
-        self.assertEqual(f.errors[0], 'test error msg')
+        self.assertEqual(f._errors[0], 'test error msg')
         
         # right message, wrong type
         f = Form('f')
         f.add_handler('text exception', 'test error msg', ValueError)
         assert not f.handle_exception(Exception('text exception'))
-        self.assertEqual(len(f.errors), 0)
+        self.assertEqual(len(f._errors), 0)
         
         # wrong message
         f = Form('f')
         f.add_handler('text exception', 'test error msg', Exception)
         assert not f.handle_exception(Exception('text'))
-        self.assertEqual(len(f.errors), 0)
+        self.assertEqual(len(f._errors), 0)
         
 # run the tests if module called directly
 if __name__ == "__main__":
