@@ -186,8 +186,8 @@ class ElementRegistrar(object):
         if name.startswith('add_'):
             type = name.replace('add_', '')
             func = self._create_element
-        elif self._formref.all_els.has_key(name):
-            return self._formref.all_els[name]
+        elif self._formref._all_els.has_key(name):
+            return self._formref._all_els[name]
         else:
             raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
         
@@ -198,7 +198,7 @@ class ElementRegistrar(object):
     def _create_element(self, type, eid, *args, **kwargs):
         if type == 'file':
             self._formref.set_attr('enctype', 'multipart/form-data')
-        if self._formref.all_els.has_key(eid):
+        if self._formref._all_els.has_key(eid):
             raise ValueError('element id "%s" already used' % eid)
         try:
             eclass = self._formref._registered_types[type]
@@ -207,12 +207,12 @@ class ElementRegistrar(object):
         return eclass(self, eid, *args, **kwargs)
     
     def bind_element(self, el, default=True, render=True, submit=True, retval=True):
-        self._formref.all_els[el.id] = el
+        self._formref._all_els[el.id] = el
         if default:
-            self._formref.defaultable_els[el.id] = el
+            self._formref._defaultable_els[el.id] = el
         if submit:
-            self._formref.submittable_els[el.id] = el
+            self._formref._submittable_els[el.id] = el
         if retval:
-            self._formref.returning_els.append(el)
+            self._formref._returning_els.append(el)
         if render:
-            self._rndr_sec.render_els.append(el)
+            self._rndr_sec._render_els.append(el)

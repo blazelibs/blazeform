@@ -15,31 +15,31 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         HtmlAttributeHolder.__init__(self, **kwargs)
         ElementRegistrar.__init__(self, self, self)
         
-        self.name = name       
+        self._name = name       
         # include a hidden field so we can check if this form was submitted
         self._form_ident_field = '%s-submit-flag' % name
         # registered element types
         self._registered_types = {}
         # our renderer
-        self.renderer = None
+        self._renderer = None
         # this string is used to generate the HTML id attribute for each
         # rendering element
-        self.element_id_formatter = '%(form_name)s-%(element_id)s'
+        self._element_id_formatter = '%(form_name)s-%(element_id)s'
         # our validators
-        self.validators = []
+        self._validators = []
         # file upload translator
-        self.fu_translator = WerkzeugTranslator
+        self._fu_translator = WerkzeugTranslator
         # form errors
-        self.errors = []
+        self._errors = []
         # exception handlers
-        self.exception_handlers = []
+        self._exception_handlers = []
         
         # element holders
-        self.all_els = {}
-        self.defaultable_els = {}
-        self.render_els = []
-        self.submittable_els = {}
-        self.returning_els = []
+        self._all_els = {}
+        self._defaultable_els = {}
+        self._render_els = []
+        self._submittable_els = {}
+        self._returning_els = []
         
         # init actions
         self.register_elements(form_elements)
@@ -55,7 +55,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         self._registered_types[type] = eclass
 
     def render(self):
-        return self.renderer(self).render()
+        return self._renderer(self).render()
 
     def is_submitted(self):
         """ In a normal workflow, is_submitted will only be called once and is
@@ -73,7 +73,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         return False
     
     def add_error(self, msg):
-        self.errors.append(msg)
+        self._errors.append(msg)
     
     def is_cancel(self):
         if not self.is_submitted():
@@ -81,7 +81,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         
         # look for any CancelElement that has a non-false submit value
         # which means that was the button clicked
-        for element in self.submittable_els.values():
+        for element in self._submittable_els.values():
             if isinstance(element, CancelElement):
                 if element.is_submitted():
                     return True
@@ -105,7 +105,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                 validator = Wrapper(to_python=validator)
             else:
                 raise TypeError('validator must be a Formencode validator or a callable')
-        self.validators.append((validator, msg))
+        self._validators.append((validator, msg))
 
     def is_valid(self):
         if not self.is_submitted():
@@ -113,12 +113,12 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         valid = True
         
         # element validation
-        for element in self.submittable_els.values():
+        for element in self._submittable_els.values():
             if not element.is_valid():
                 valid = False
         
         # whole form validation
-        for validator, msg in self.validators:
+        for validator, msg in self._validators:
             try:
                 value = validator.to_python(self)
             except formencode.Invalid, e:
@@ -138,9 +138,9 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
     
     def set_submitted(self, values):
         """ values should be dict like """
-        self.errors = []
+        self._errors = []
         
-        for el in self.submittable_els.values():
+        for el in self._submittable_els.values():
             key = el.nameattr or el.id
             if values.has_key(key):
                 el.submittedval = values[key]
@@ -152,21 +152,21 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         # It can't be done above because _is_submitted() can't be trusted until
         # we are certain all submitted values have been processed.
         if self._is_submitted():
-            for el in self.submittable_els.values():
+            for el in self._submittable_els.values():
                 key = el.nameattr or el.id
                 if not values.has_key(key):
                     if isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
                         el.submittedval = None
                 
     def set_defaults(self, values):
-        for key, el in self.defaultable_els.items():
+        for key, el in self._defaultable_els.items():
             if values.has_key(key):
                 el.defaultval = values[key]
     
     def get_values(self):
         "return a dictionary of element values"
         retval = {}
-        for element in self.returning_els:
+        for element in self._returning_els:
             try:
                 key = element.nameattr or element.id
             except AttributeError:
@@ -176,15 +176,15 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
     values = property(get_values)
     
     def add_handler(self, exception_txt, error_msg, exc_type=None):
-        self.exception_handlers.append((exception_txt, error_msg, exc_type))
+        self._exception_handlers.append((exception_txt, error_msg, exc_type))
 
     def handle_exception(self, exc):
         # try element handlers first
-        for el in self.submittable_els.values():
+        for el in self._submittable_els.values():
             if el.handle_exception(exc):
                 return True
         # try our own handlers
-        for looking_for, error_msg, exc_type in self.exception_handlers:
+        for looking_for, error_msg, exc_type in self._exception_handlers:
             if looking_for in str(exc) and (exc_type is None or isinstance(exc, exc_type)):
                 self._valid = False
                 self.add_error(error_msg)
@@ -206,7 +206,7 @@ class Form(FormBase):
         
         # import here or we get circular import problems
         from pysform.render import get_renderer
-        self.renderer = get_renderer
+        self._renderer = get_renderer
 
         
         

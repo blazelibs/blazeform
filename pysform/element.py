@@ -85,7 +85,7 @@ class ElementBase(HtmlAttributeHolder):
         self._displayval = self._defaultval
     
     def getidattr(self):
-        return self.form.element_id_formatter % {'form_name':self.form.name, 'element_id':self.id}
+        return self.form._element_id_formatter % {'form_name':self.form._name, 'element_id':self.id}
 
     def add_note(self, note, escape = True):
         if escape:
@@ -412,7 +412,7 @@ class FileElement(InputElementBase):
     def _set_submittedval(self, value):
         self._valid = None
         self.errors = []
-        self._submittedval = self.form.fu_translator(value)
+        self._submittedval = self.form._fu_translator(value)
     submittedval = property(_get_submittedval, _set_submittedval)
     
     def maxsize(self, size):
@@ -559,7 +559,7 @@ class ConfirmElement(TextElement):
               raise ProgrammingError('match argument is required for Confirm elements')
         elif isinstance(match, basestring):
             try:
-                self.mel = self.form.all_els[match]
+                self.mel = self.form._all_els[match]
             except KeyError, e:
                 if match not in str(e):
                     raise
@@ -899,15 +899,15 @@ class GroupElement(StaticElement, ElementRegistrar):
         ElementRegistrar.__init__(self, form, self)
 
         # duplicate form variables for when the elements "bind" to us
-        self.all_els = form.all_els
-        self.defaultable_els = form.defaultable_els
-        self.submittable_els = form.submittable_els
-        self.returning_els = form.returning_els
-        self.element_id_formatter = form.element_id_formatter
-        self.name = form.name
+        self._all_els = form._all_els
+        self._defaultable_els = form._defaultable_els
+        self._submittable_els = form._submittable_els
+        self._returning_els = form._returning_els
+        self._element_id_formatter = form._element_id_formatter
+        self._name = form._name
         
         # but we keep the rendering elements to ourself
-        self.render_els = []
+        self._render_els = []
 form_elements['elgroup'] = GroupElement
 
 class HeaderElement(StaticElement):
