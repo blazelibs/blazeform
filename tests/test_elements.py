@@ -574,7 +574,23 @@ class InputElementsTest(unittest.TestCase):
         html = '<input class="submit" id="f-field" name="submitbtn" type="submit" value="Reset" />'
         el = Form('f').add_submit('field', 'Field', defaultval='Reset', name='submitbtn')
         self.assertEqual(str(el()), html)
-
+        
+        # FIXED submit button after form post
+        html = '<input class="submit" id="f-field" name="submitbtn" type="submit" value="Reset" />'
+        form = Form('f')
+        el = form.add_submit('field', 'Field', defaultval='Reset', name='submitbtn')
+        el.submittedval = '1'
+        self.assertEqual( el.value, '1')
+        self.assertEqual(str(el()), html)
+        
+        # submit button after form post
+        html = '<input class="submit" id="f-field" name="submitbtn" type="submit" value="1" />'
+        form = Form('f')
+        el = form.add_submit('field', 'Field', defaultval='Reset', name='submitbtn', fixed=False)
+        el.submittedval = '1'
+        self.assertEqual( el.value, '1')
+        self.assertEqual(str(el()), html)
+        
     def test_el_cancel(self):
         html = '<input class="submit" id="f-field" name="field" type="submit" value="Cancel" />'
         el = Form('f').add_cancel('field', 'Field')

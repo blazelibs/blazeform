@@ -503,18 +503,30 @@ class ResetElement(InputElementBase):
 form_elements['reset'] = ResetElement
 
 class SubmitElement(InputElementBase):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven,
+                 defaultval=NotGiven, strip=True, fixed=True, **kwargs):
         InputElementBase.__init__(self, 'submit', form, eid, label, vtype, defaultval, strip, **kwargs)
         if self.defaultval is NotGiven:
             self.defaultval = 'Submit'
-            
+        self.fixed = fixed
+    def _get_displayval(self):
+        if is_notgiven(self.submittedval) or self.fixed:
+            return HasValueElement._get_displayval(self)
+        return self.submittedval
+    displayval = property(_get_displayval)
 form_elements['submit'] = SubmitElement
 
 class CancelElement(SubmitElement):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, fixed=True, **kwargs):
         InputElementBase.__init__(self, 'submit', form, eid, label, vtype, defaultval, strip, **kwargs)
         if self.defaultval is NotGiven:
             self.defaultval = 'Cancel'
+        self.fixed = fixed
+    def _get_displayval(self):
+        if is_notgiven(self.submittedval) or self.fixed:
+            return HasValueElement._get_displayval(self)
+        return self.submittedval
+    displayval = property(_get_displayval)
 form_elements['cancel'] = CancelElement
 
 class TextElement(InputElementBase):
