@@ -13,7 +13,8 @@ class FormRenderer(object):
         
     def begin(self):
         attr = self.element.get_attrs()
-        self.output.inc(tags.form(self.element.action, **attr))
+        action = attr.pop('action', '')
+        self.output.inc(tags.form(action, **attr))
     
     def render(self):
         self.begin()
