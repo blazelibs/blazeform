@@ -1,6 +1,6 @@
 from os import path
 
-renderers = ('default', )
+renderers = ('default', 'withaction')
 rendir = ''
 
 def test_all():

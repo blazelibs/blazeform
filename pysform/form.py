@@ -11,7 +11,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
     Base class for forms.
     """
     
-    def __init__(self, name, action='', **kwargs):
+    def __init__(self, name, **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
         ElementRegistrar.__init__(self, self, self)
         
@@ -25,8 +25,6 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         # this string is used to generate the HTML id attribute for each
         # rendering element
         self.element_id_formatter = '%(form_name)s-%(element_id)s'
-        # the form's action attribute
-        self.action = action
         # our validators
         self.validators = []
         # file upload translator
