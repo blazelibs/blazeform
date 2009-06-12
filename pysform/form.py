@@ -92,13 +92,13 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
             form level validators are only validators, no manipulation of
             values can take place.  The validator should be a formencode
             validator or a callable.  If a callable, the callable should take
-            one argument, the form object.  It should raise an exception
-            to indicate in invalid condition.
+            one argument, the form object.  It should raise a ValueInvalid
+            exception if applicable.
             
             def validator(form):
                 if form.myfield.is_valid():
                     if form.myfield.value != 'foo':
-                        raise ValueError('My Field: must have "foo" as value')
+                        raise ValueInvalid('My Field: must have "foo" as value')
         """
         if not formencode.is_validator(validator):
             if callable(validator):
