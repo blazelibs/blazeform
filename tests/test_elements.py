@@ -912,7 +912,6 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_select('f', o)
         el.is_valid()
         assert el.is_valid()
-        print type(el.value)
         assert el.value is NotGiven
     
     def test_el_select_strip(self):

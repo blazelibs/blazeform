@@ -96,8 +96,27 @@ def multi_pop(d, *args):
             retval[key] = d.pop(key)
     return retval
 
-class NotGivenBase(unicode):
+class NotGivenBase(object):
     """ an empty sentinel object """
+    
+    def __str__(self):
+        return ''
+    
+    def __unicode__(self):
+        return u''
+    
+    def __nonzero__(self):
+        return False
+    
+    def __ne__(self, other):
+        if other == '' or other == u'' or other is None or isinstance(other, NotGivenBase):
+            return False
+        return True
+    
+    def __eq__(self, other):
+        if other == '' or other == u'' or other is None or isinstance(other, NotGivenBase):
+            return True
+        return False
 NotGiven = NotGivenBase()
 
 class NotGivenIterBase(NotGivenBase):
@@ -140,8 +159,6 @@ def tolist(x, default=[]):
         return x
     
 def is_iterable(possible_iterable):
-    if isinstance(possible_iterable, NotGivenIterBase):
-        return True
     if isinstance(possible_iterable, basestring):
         return False
     try:
@@ -151,16 +168,10 @@ def is_iterable(possible_iterable):
         return False
 
 def is_notgiven(object):
-    return isinstance(object, NotGivenBase) or isinstance(object, NotGivenIterBase)
+    return isinstance(object, NotGivenBase)
     
 def is_given(object):
     return not isinstance(object, NotGivenBase)
-
-def is_str(object):
-    if is_notgiven(object):
-        return False
-    if isinstance(object, basestring):
-        return True
 
 class ElementRegistrar(object):
     def __init__(self, formref, render_section):
