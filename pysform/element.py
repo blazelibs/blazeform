@@ -5,7 +5,7 @@ import formencode
 import formencode.validators as fev
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
         tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, \
-        is_given
+        is_given, is_str
 from pysform.processors import Confirm, Select, MultiValues, Wrapper
 from pysform.exceptions import ElementInvalid, ProgrammingError
 
@@ -203,12 +203,12 @@ class FormFieldElementBase(HasValueElement):
         value = self.submittedval
         
         # strip if necessary
-        if self.strip and isinstance(value, basestring):
+        if self.strip and is_str(value):
             value = value.strip()
         elif self.strip and is_iterable(value):
             newvalue = []
             for item in value:
-                if isinstance(item, basestring):
+                if is_str(item):
                     newvalue.append(item.strip())
                 else:
                     newvalue.append(item)
@@ -235,7 +235,13 @@ class FormFieldElementBase(HasValueElement):
         for processor, msg in self.processors:
             try:
                 processor = MultiValues(processor)
-                value = processor.to_python(value, self)
+                ap_value = processor.to_python(value, self)
+                
+                # FormEncode takes "empty" values and returns None
+                # Since NotGiven == '', FormEncode thinks its empty
+                # and returns None on us.  We override that here.
+                if ap_value is not None or value is not NotGiven:
+                    value = ap_value
             except formencode.Invalid, e:
                 valid = False
                 self.add_error((msg or str(e)))
@@ -557,7 +563,7 @@ class ConfirmElement(TextElement):
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         if not match:
               raise ProgrammingError('match argument is required for Confirm elements')
-        elif isinstance(match, basestring):
+        elif is_str(match):
             try:
                 self.mel = self.form._all_els[match]
             except KeyError, e:
@@ -940,7 +946,7 @@ class LogicalSupportElement(ElementBase):
             raise ProgrammingError('Required is not allowed on this element. Set it for the logical group.')
             
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
-        if isinstance(group, basestring):
+        if is_str(group):
             self.lgroup = getattr(form, group, None)
             if not self.lgroup:
                 self.lgroup = LogicalGroupElement(self.is_multiple, form, group)
