@@ -5,7 +5,7 @@ import formencode
 import formencode.validators as fev
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
         tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, \
-        is_given, is_str
+        is_given
 from pysform.processors import Confirm, Select, MultiValues, Wrapper
 from pysform.exceptions import ElementInvalid, ProgrammingError
 
@@ -203,12 +203,12 @@ class FormFieldElementBase(HasValueElement):
         value = self.submittedval
         
         # strip if necessary
-        if self.strip and is_str(value):
+        if self.strip and isinstance(value, basestring):
             value = value.strip()
         elif self.strip and is_iterable(value):
             newvalue = []
             for item in value:
-                if is_str(item):
+                if isinstance(item, basestring):
                     newvalue.append(item.strip())
                 else:
                     newvalue.append(item)
@@ -563,7 +563,7 @@ class ConfirmElement(TextElement):
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         if not match:
               raise ProgrammingError('match argument is required for Confirm elements')
-        elif is_str(match):
+        elif isinstance(match, basestring):
             try:
                 self.mel = self.form._all_els[match]
             except KeyError, e:
@@ -946,7 +946,7 @@ class LogicalSupportElement(ElementBase):
             raise ProgrammingError('Required is not allowed on this element. Set it for the logical group.')
             
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
-        if is_str(group):
+        if isinstance(group, basestring):
             self.lgroup = getattr(form, group, None)
             if not self.lgroup:
                 self.lgroup = LogicalGroupElement(self.is_multiple, form, group)

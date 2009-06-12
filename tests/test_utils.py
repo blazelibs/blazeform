@@ -1,6 +1,6 @@
 import unittest
 from pysform.util import multi_pop, NotGiven, is_iterable, NotGivenIter, \
-    is_notgiven, HtmlAttributeHolder, is_str
+    is_notgiven, HtmlAttributeHolder
 
 class TestUtilFunctions(unittest.TestCase):
 
@@ -49,13 +49,6 @@ class TestUtilFunctions(unittest.TestCase):
         assert is_notgiven(NotGiven)
         assert is_notgiven(NotGivenIter)
         assert not is_notgiven(None)
-    
-    def test_is_str(self):
-        assert not is_str(NotGiven)
-        assert not is_str(NotGivenIter)
-        assert is_str('')
-        assert is_str(u'')
-        assert not is_str(None)
 
 class TestHtmlAttributeHolder(unittest.TestCase):
     def test_init(self):
