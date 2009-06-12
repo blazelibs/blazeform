@@ -68,7 +68,7 @@ class CommonTest(unittest.TestCase):
         form = Form('f')
         form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
-        self.assertEqual(None, form.username.value)
+        assert form.username.value is NotGiven
     
     def test_submitted_value(self):
         form = Form('f')
@@ -78,12 +78,6 @@ class CommonTest(unittest.TestCase):
         self.assertEqual('bar', form.username.value)
         
     def test_notgiven(self):
-        # test that NotGiven == None and is what we get when nothing
-        # submitted
-        form = Form('f')
-        form.add_text('username', 'User Name')
-        self.assertEqual(None, form.username.value)
-        
         # make sure the value we get really is NotGiven
         f = Form('f')
         el = f.add_text('f', 'f')
@@ -97,7 +91,7 @@ class CommonTest(unittest.TestCase):
     def test_if_missing(self):        
         f = Form('f')
         el = f.add_text('f', 'f', if_missing='foo')
-        assert el.value is 'foo'
+        assert el.value is 'foo', el.value
         
         # doesn't affect anything if the field is submitted
         f = Form('f')
@@ -341,13 +335,13 @@ class CommonTest(unittest.TestCase):
         # without form submission, we get empty value
         form = Form('f')
         el = form.add_text('field', 'Field', 'bool')
-        self.assertEqual( el.value, None)
-        
+        assert el.value is NotGiven
+
         # default values do not get processed, they are for display only
         form = Form('f')
         el = form.add_text('field', 'Field', 'bool', '1')
-        self.assertEqual( el.value, None)
-        
+        assert el.value is NotGiven
+
         # submission gets converted
         form = Form('f')
         el = form.add_text('field', 'Field', 'bool')
@@ -730,6 +724,13 @@ class InputElementsTest(unittest.TestCase):
         assert el.value == datetime.date(2009, 5, 1)
         el.submittedval = '5/1/09'
         assert not el.is_valid()
+        
+        # date field not submitted
+        f = Form('login')
+        el = f.add_date('field', 'Field')
+        post = {'login-submit-flag': 'submitted'}
+        f.set_submitted(post)
+        assert f.get_values() == {'field': NotGiven, 'login-submit-flag': 'submitted'}, f.get_values()
 
     def test_el_email(self):
         html = '<input class="text" id="f-field" name="field" type="text" />'
@@ -877,12 +878,6 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_select('f', o, if_empty=1, invalid=1)
         assert not el.is_valid()
         
-        # not submitted value when not required
-        el = Form('f').add_select('f', o)
-        el.is_valid()
-        assert el.is_valid()
-        assert el.value is NotGiven
-        
         # "empty" value when required, but there is an empty value in the
         # options.  It seems that required meaning 'must not be empty' should
         # take precidence.
@@ -910,6 +905,15 @@ class SelectTest(unittest.TestCase):
         assert el.is_valid()
         el.submittedval = 'Second Option'
         assert el.is_valid()
+    
+    def test_el_select_not_submitted(self):
+        o = [(1, 'a'), (2, 'b')]
+        # not submitted value when not required
+        el = Form('f').add_select('f', o)
+        el.is_valid()
+        assert el.is_valid()
+        print type(el.value)
+        assert el.value is NotGiven
     
     def test_el_select_strip(self):
         # make sure values get stripped
@@ -1351,7 +1355,7 @@ class LogicalElementsTest(unittest.TestCase):
             el = f.add_radio('radio2', 'Radio 2', group='rgroup1' )
             self.fail('should have got duplicate value assertion')
         except ValueError, e:
-            self.assertEqual(str(e), 'a member of this group already exists with value "None"')
+            self.assertEqual(str(e), 'a member of this group already exists with value ""')
     
     def test_non_rendering(self):
         f = Form('f')
