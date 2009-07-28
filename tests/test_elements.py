@@ -50,7 +50,7 @@ class CommonTest(unittest.TestCase):
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
         form.add_text('username', 'User Name')
-        form.set_submitted({'username':'bar'})
+        form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
         self.assertEqual(html, str(form.username.render()))
     
     def test_submit_default(self):
@@ -59,7 +59,7 @@ class CommonTest(unittest.TestCase):
         form = Form('f')
         form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
-        form.set_submitted({'username':'bar'})
+        form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
         self.assertEqual(html, str(form.username.render()))
     
     def test_default_value(self):
@@ -74,7 +74,7 @@ class CommonTest(unittest.TestCase):
         form = Form('f')
         form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
-        form.set_submitted({'username':'bar'})
+        form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
         self.assertEqual('bar', form.username.value)
         
     def test_notgiven(self):
@@ -165,7 +165,7 @@ class CommonTest(unittest.TestCase):
         form.set_defaults({'username':'foo'})
         self.assertEqual(False, form.username.is_submitted())
         
-        form.set_submitted({'username':''})
+        form.set_submitted({'f-submit-flag': 'submitted', 'username':''})
         self.assertEqual(True, form.username.is_submitted())
     
     def test_required(self):
@@ -1225,16 +1225,16 @@ class LogicalElementsTest(unittest.TestCase):
         el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
         el2 = f.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
-        f.set_submitted({'thegroup':'foo'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
         assert f.thegroup.value == ['foo']
         assert el1.chosen
         assert not el2.chosen
-        f.set_submitted({'thegroup':['foo', 'bar']})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':['foo', 'bar']})
         assert f.thegroup.value == ['foo', 'bar']
         assert el1.chosen
         assert el2.chosen
         # it was chosen, but should "undo" when set again
-        f.set_submitted({'thegroup':'foo'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
         assert el1.chosen
         assert not el2.chosen
         # both should unset
@@ -1248,13 +1248,13 @@ class LogicalElementsTest(unittest.TestCase):
         el1 = f.add_mcheckbox('f1', 'label', 1, 'thegroup')
         el2 = f.add_mcheckbox('f2', 'label', 2, 'thegroup')
         assert el1.chosen == el2.chosen == False
-        f.set_submitted({'thegroup':1})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':1})
         assert el1.chosen
         assert not el2.chosen
-        f.set_submitted({'thegroup':'1'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'1'})
         assert el1.chosen
         assert not el2.chosen
-        f.set_submitted({'thegroup':[1, '2']})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':[1, '2']})
         assert el1.chosen
         assert el2.chosen
         
@@ -1311,7 +1311,7 @@ class LogicalElementsTest(unittest.TestCase):
         el1 = f.add_radio('f1', 'label', 'foo', 'thegroup')
         el2 = f.add_radio('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
-        f.set_submitted({'thegroup':'foo'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
         assert f.thegroup.value == 'foo'
         assert el1.chosen
         assert not el2.chosen
@@ -1337,7 +1337,7 @@ class LogicalElementsTest(unittest.TestCase):
         el1 = f.add_radio('f1', 'label', 1, 'thegroup')
         el2 = f.add_radio('f2', 'label', 2, 'thegroup')
         assert el1.chosen == el2.chosen == False
-        f.set_submitted({'thegroup':1})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':1})
         assert el1.chosen
         assert not el2.chosen
         f.set_submitted({'thegroup':'1'})

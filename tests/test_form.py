@@ -4,7 +4,7 @@ from pysutils import DumbObject
 
 from pysform import Form
 from pysform.element import TextElement
-from pysform.util import NotGivenIter, literal
+from pysform.util import NotGivenIter, literal, NotGiven
 from pysform.exceptions import ValueInvalid, ElementInvalid
 
 L = literal
@@ -91,7 +91,7 @@ class CommonFormUsageTest(unittest.TestCase):
         post = {'login-submit-flag': 'submitted'}
         f1.set_submitted(post)
         assert f1.is_submitted()
-        
+
     def test_is_cancel(self):
         f1 = Form('login')
         f1.add_cancel('cancel', 'Cancel')
@@ -336,7 +336,26 @@ class CommonFormUsageTest(unittest.TestCase):
         f.add_handler('text exception', 'test error msg', Exception)
         assert not f.handle_exception(Exception('text'))
         self.assertEqual(len(f._errors), 0)
+
+    def test_submitted_only_when_appropriate(self):
+        f1 = Form('login1')
+        f1.add_text('field')
+        f2 = Form('login2')
+        f2.add_text('field')
         
+        post = {
+            'login1-submit-flag': 'submitted',
+            'field': 'foo'
+            }
+        f1.set_submitted(post)
+        assert f1.is_submitted()
+        assert f1.field.value == 'foo'
+        
+        
+        f2.set_submitted(post)
+        assert not f2.is_submitted()
+        assert f2.field.value is NotGiven
+
 # run the tests if module called directly
 if __name__ == "__main__":
     unittest.main()

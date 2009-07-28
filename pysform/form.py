@@ -140,23 +140,20 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         """ values should be dict like """
         self._errors = []
         
-        for el in self._submittable_els.values():
-            key = el.nameattr or el.id
-            if values.has_key(key):
-                el.submittedval = values[key]
+        # ident field first since we need to know that to now if we need to
+        # apply the submitted values
+        identel = getattr(self, self._form_ident_field)
+        ident_key = identel.nameattr or identel.id
+        if values.has_key(ident_key):
+            identel.submittedval = values[ident_key]
         
-        # this second loop is to make sure we clear checkboxes,
-        # LogicalGroupElements, and multi-selects if the form is submitted,
-        # they have a default value, but the field wasn't submitted.
-        #
-        # It can't be done above because _is_submitted() can't be trusted until
-        # we are certain all submitted values have been processed.
         if self._is_submitted():
             for el in self._submittable_els.values():
                 key = el.nameattr or el.id
-                if not values.has_key(key):
-                    if isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
-                        el.submittedval = None
+                if values.has_key(key):
+                    el.submittedval = values[key]
+                elif isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
+                        el.submittedval = None                    
                 
     def set_defaults(self, values):
         for key, el in self._defaultable_els.items():
