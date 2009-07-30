@@ -337,7 +337,7 @@ class InputElementBase(FormFieldElementBase):
         return self.render(**kwargs)
         
     def render(self, **kwargs):
-        if self.displayval and self.displayval is not NotGiven:
+        if (self.displayval or self.displayval == 0) and self.displayval is not NotGiven:
             self.set_attr('value', self.displayval)
         self.set_attrs(**kwargs)
         return HTML.input(type=self.etype, **self.attributes)
@@ -705,7 +705,8 @@ class SelectElement(FormFieldElementBase):
         if self.multiple:
             self.set_attr('multiple', 'multiple')
         self.set_attrs(**kwargs)
-        return tags.select(self.nameattr or self.id, self.displayval or None, self.options, **self.attributes)
+        displayval = self.displayval if self.displayval or self.displayval == 0 else None
+        return tags.select(self.nameattr or self.id, displayval, self.options, **self.attributes)
 form_elements['select'] = SelectElement
 
 class MultiSelectElement(SelectElement):
@@ -740,7 +741,8 @@ class TextAreaElement(FormFieldElementBase):
 
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        return tags.textarea(self.nameattr or self.id, self.displayval or '', **self.attributes)
+        displayval = self.displayval if self.displayval or self.displayval == 0 else ''
+        return tags.textarea(self.nameattr or self.id, displayval, **self.attributes)
 form_elements['textarea'] = TextAreaElement
 
 class LogicalGroupElement(FormFieldElementBase):
@@ -889,7 +891,8 @@ class StaticElement(ElementBase):
         
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        return HTML.tag('div', self.displayval or '', **self.attributes)
+        displayval = self.displayval if self.displayval or self.displayval == 0 else None
+        return HTML.tag('div', displayval, **self.attributes)
 form_elements['static'] = StaticElement
 
 class GroupElement(StaticElement, ElementRegistrar):
@@ -930,7 +933,8 @@ class HeaderElement(StaticElement):
         
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        return HTML.tag(self.level, self.displayval or '', **self.attributes)
+        displayval = self.displayval if self.displayval or self.displayval == 0 else None
+        return HTML.tag(self.level, displayval, **self.attributes)
 form_elements['header'] = HeaderElement
 
 class LogicalSupportElement(ElementBase):
@@ -975,7 +979,7 @@ class LogicalSupportElement(ElementBase):
         return self.render(**kwargs)
     
     def render(self, **kwargs):
-        if self.displayval:
+        if self.displayval or self.displayval == 0:
             self.set_attr('value', self.displayval)
         self.set_attr('class_', self.etype)
         if self.chosen:

@@ -3,6 +3,7 @@ import datetime
 import warnings
 from pysutils import DumbObject
 from formencode.validators import Int
+from nose.plugins.skip import SkipTest
 
 from pysform import Form
 from pysform.element import TextElement
@@ -51,6 +52,13 @@ class CommonTest(unittest.TestCase):
         form = Form('f')
         form.add_text('username', 'User Name')
         form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
+        self.assertEqual(html, str(form.username.render()))
+        
+    def test_text_with_zero_default(self):
+        html = '<input class="text" id="f-username" name="username" type="text" value="0" />'
+        form = Form('f')
+        form.add_text('username', 'User Name')
+        form.set_defaults({'username':0})
         self.assertEqual(html, str(form.username.render()))
     
     def test_submit_default(self):
@@ -747,7 +755,7 @@ class InputElementsTest(unittest.TestCase):
             el.submittedval = 'bob@ireallyhopethisdontexistontheweb.com'
             assert not el.is_valid()
         except ImportError:
-            warnings.warn('skipping test b/c pyDNS not installed')
+            raise SkipTest
         
     def test_el_password(self):
         html = '<input class="password" id="f-f" name="f" type="password" />'
