@@ -1,6 +1,6 @@
 from os import path
 
-renderers = ('default', 'withaction')
+renderers = ('default', 'withaction', 'all_els', 'static')
 rendir = ''
 
 def test_all():
@@ -22,7 +22,7 @@ def test_all():
             for lnum in range(0, len(form_html_lines)):
                 formstr = form_html_lines[lnum]
                 filestr = file_html_lines[lnum]
-                assert formstr == filestr, 'line %d not equal\n  form: %s\n  file: %s' % (lnum, formstr, filestr)
+                assert formstr == filestr, 'line %d not equal in %s\n  form: %s\n  file: %s' % (lnum+1, '%s.html' % rname, formstr, filestr)
         except AssertionError:
             # write the form output next to the test file for an easy diff
             formfile = open(path.join(rendir, '%s.form.html' % rname), 'w')

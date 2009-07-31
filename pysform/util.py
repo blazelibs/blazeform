@@ -1,57 +1,5 @@
 from webhelpers.html import literal
 
-class HtmlAttributeHolder(object):
-    def __init__(self, **kwargs):
-        self._cleankeys(kwargs)
-        #: a dictionary that represents html attributes
-        self.attributes = kwargs
-        
-    def set_attrs(self, **kwargs ):
-        self._cleankeys(kwargs)
-        self.attributes.update(kwargs)
-        
-    def set_attr(self, key, value):
-        if key.endswith('_'):
-            key = key[:-1]
-        self.attributes[key] = value
-        
-    def add_attr(self, key, value):
-        """
-            Creates a space separated string of attributes.  Mostly for the
-            "class" attribute.
-        """
-        if key.endswith('_'):
-            key = key[:-1]
-        if self.attributes.has_key(key):
-            self.attributes[key] = self.attributes[key] + ' ' + value
-        else:
-            self.attributes[key] = value
-        
-    def del_attr(self, key):
-        if key.endswith('_'):
-            key = key[:-1]
-        del self.attributes[key]
-    
-    def get_attrs(self):
-        return self.attributes
-    
-    def get_attr(self, key):
-        if key.endswith('_'):
-            key = key[:-1]
-        return self.attributes[key]
-    
-    def _cleankeys(self, dict):
-        """
-            When using kwargs, some attributes can not be sent directly b/c
-            they are Python key words (i.e. "class") so that have to be sent
-            in with an underscore at the end (i.e. "class_").  We want to
-            remove the underscore before saving
-        """
-        for key, val in dict.items():
-            if key.endswith('_'):
-                del dict[key]
-                dict[key[:-1]] = val
-    
 class StringIndentHelper(object):
 
     def __init__(self):
@@ -216,3 +164,60 @@ class ElementRegistrar(object):
             self._formref._returning_els.append(el)
         if render:
             self._rndr_sec._render_els.append(el)
+
+class HtmlAttributeHolder(object):
+    def __init__(self, **kwargs):
+        self._cleankeys(kwargs)
+        #: a dictionary that represents html attributes
+        self.attributes = kwargs
+        
+    def set_attrs(self, **kwargs ):
+        self._cleankeys(kwargs)
+        self.attributes.update(kwargs)
+        
+    def set_attr(self, key, value):
+        if key.endswith('_'):
+            key = key[:-1]
+        self.attributes[key] = value
+        
+    def add_attr(self, key, value):
+        """
+            Creates a space separated string of attributes.  Mostly for the
+            "class" attribute.
+        """
+        if key.endswith('_'):
+            key = key[:-1]
+        if self.attributes.has_key(key):
+            self.attributes[key] = self.attributes[key] + ' ' + value
+        else:
+            self.attributes[key] = value
+        
+    def del_attr(self, key):
+        if key.endswith('_'):
+            key = key[:-1]
+        del self.attributes[key]
+    
+    def get_attrs(self):
+        return self.attributes
+    
+    def get_attr(self, key, defaultval = NotGiven):
+        try:
+            if key.endswith('_'):
+                key = key[:-1]
+            return self.attributes[key]
+        except KeyError:
+            if defaultval is not NotGiven:
+                return defaultval
+            raise
+
+    def _cleankeys(self, dict):
+        """
+            When using kwargs, some attributes can not be sent directly b/c
+            they are Python key words (i.e. "class") so that have to be sent
+            in with an underscore at the end (i.e. "class_").  We want to
+            remove the underscore before saving
+        """
+        for key, val in dict.items():
+            if key.endswith('_'):
+                del dict[key]
+                dict[key[:-1]] = val

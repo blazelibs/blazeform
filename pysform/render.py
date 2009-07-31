@@ -1,8 +1,8 @@
 
 from pysform.form import FormBase
-from pysform.util import StringIndentHelper, NotGiven
+from pysform.util import StringIndentHelper, NotGiven, HtmlAttributeHolder
 from pysform import element
-from webhelpers.html import tags
+from webhelpers.html import tags, HTML
 from webhelpers.html.builder import make_tag
 
 class FormRenderer(object):
@@ -20,7 +20,7 @@ class FormRenderer(object):
         self.begin()
         on_first = True
         on_alt = False
-        for child in self.element._render_els:
+        for child in self.rendering_els():
             if isinstance(child, element.HeaderElement):
                 if self.header_section_open:
                     self.output.dec('</div>')
@@ -38,12 +38,47 @@ class FormRenderer(object):
         self.end()
         return self.output.get()
     
+    def rendering_els(self):
+        for el in self.element._render_els:
+            yield el
+    
     def end(self):
         if self.header_section_open:
             self.output.dec('</div>')
         self.output.dec('</form>')
 
-
+class StaticFormRenderer(FormRenderer):
+    no_render = (
+        element.ButtonElement,
+        element.FileElement,
+        element.HiddenElement,
+        element.ImageElement,
+        element.ResetElement,
+        element.SubmitElement,
+        element.CancelElement,
+        element.PasswordElement,
+        element.ConfirmElement
+    )
+    def begin(self):
+        attrs = HtmlAttributeHolder(**self.element.attributes)
+        attrs.add_attr('class', 'static-form')
+        for attr in ('enctype', 'method', 'action'):
+            try:
+                attrs.del_attr(attr)
+            except KeyError:
+                pass
+        self.output.inc(HTML.div(None, _closed=False, **attrs.attributes))
+    
+    def rendering_els(self):
+        for el in self.element._render_els:
+            if not isinstance(el, self.no_render):
+                yield el
+            
+    def end(self):
+        if self.header_section_open:
+            self.output.dec('</div>')
+        self.output.dec('</div>')
+        
 class Renderer(object):
     def __init__(self, element, output, is_first, is_alt, wrap_type):
         self.element = element
@@ -193,6 +228,8 @@ def get_renderer(el):
         element.MultiCheckboxElement,
     )
     if isinstance(el, FormBase):
+        if el._static:
+            return StaticFormRenderer(el)
         return FormRenderer(el)
     elif isinstance(el, element.GroupElement):
         return GroupRenderer
@@ -206,4 +243,3 @@ def get_renderer(el):
         return FieldRenderer
     elif isinstance(el, static):
         return StaticRenderer
-    print el

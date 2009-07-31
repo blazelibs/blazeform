@@ -1,6 +1,6 @@
 from os import path
 import cgi
-from webhelpers.html import HTML, tags
+from webhelpers.html import HTML, tags, literal
 import formencode
 import formencode.validators as fev
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
@@ -335,12 +335,44 @@ class InputElementBase(FormFieldElementBase):
 
     def __call__(self, **kwargs):
         return self.render(**kwargs)
-        
+    
     def render(self, **kwargs):
+        self.set_attrs(**kwargs)
+        if self.form._static:
+            return self.render_static()
+        else:
+            return self.render_html()
+
+    def render_html(self):
         if (self.displayval or self.displayval == 0) and self.displayval is not NotGiven:
             self.set_attr('value', self.displayval)
-        self.set_attrs(**kwargs)
         return HTML.input(type=self.etype, **self.attributes)
+    
+    def _static_attributes(self):
+        attrs = self.attributes.copy()
+        try:
+            del attrs['name']
+        except KeyError:
+            pass
+        try:
+            del attrs['maxlength']
+        except KeyError:
+            pass
+        try:
+            del attrs['checked']
+        except KeyError:
+            pass
+        return attrs
+    
+    def render_static(self):
+        if self.etype in ('button', 'file', 'hidden', 'image', 'submit',
+            'reset', 'password'):
+            return ''
+        if self.displayval == '':
+            todisplay = literal('&nbsp;')
+        else:
+            todisplay = self.displayval
+        return HTML.div(todisplay, **self._static_attributes())
 
 class ButtonElement(InputElementBase):
     def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
@@ -373,8 +405,15 @@ class CheckboxElement(InputElementBase):
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
-        
+    
     def render(self, **kwargs):
+        self.set_attrs(**kwargs)
+        if self.form._static:
+            return self.render_static()
+        else:
+            return self.render_html()
+
+    def render_html(self):
         # have to override InputBase.render or it will put a value attribute
         # for a checkbox
         if self.displayval and self.displayval is not NotGiven:
@@ -384,8 +423,10 @@ class CheckboxElement(InputElementBase):
                 self.del_attr('checked')
             except KeyError:
                 pass
-        self.set_attrs(**kwargs)
         return HTML.input(type=self.etype, **self.attributes)
+    
+    def render_static(self):
+        return HTML.div('yes' if self.displayval else 'no', **self._static_attributes())
 form_elements['checkbox'] = CheckboxElement
 
 class FileElement(InputElementBase):
@@ -588,6 +629,9 @@ class ConfirmElement(TextElement):
             return None
         return TextElement._get_displayval(self)
     displayval = property(_get_displayval)
+    
+    def render_static(self):
+        return ''
 form_elements['confirm'] = ConfirmElement
 
 class DateElement(TextElement):
@@ -637,6 +681,17 @@ class URLElement(TextElement):
         vargs = multi_pop(kwargs, 'check_exists', 'add_http', 'require_tld')
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         self.add_processor(fev.URL(**vargs))
+        
+    def render_static(self):
+        if self.displayval == '':
+            todisplay = literal('&nbsp;')
+        else:
+            if self.displayval.startswith('http:') or self.displayval.startswith('https:'):
+                todisplay = tags.link_to(self.displayval, self.displayval)
+            else:
+                todisplay = self.displayval
+        return HTML.div(todisplay, **self._static_attributes())
+        
 form_elements['url'] = URLElement
 
 class SelectElement(FormFieldElementBase):
@@ -700,13 +755,49 @@ class SelectElement(FormFieldElementBase):
     def set_attrs(self, **kwargs ):
         """ no name attribute b/c select tag takes it directly """
         HasValueElement.set_attrs(self, **kwargs)
-        
+    
+    def _static_attributes(self):
+        attrs = self.attributes.copy()
+        try:
+            del attrs['name']
+        except KeyError:
+            pass
+        try:
+            del attrs['multiple']
+        except KeyError:
+            pass
+        return attrs
+    
     def render(self, **kwargs):
         if self.multiple:
             self.set_attr('multiple', 'multiple')
         self.set_attrs(**kwargs)
+        if self.form._static:
+            return self.render_static()
+        else:
+            return self.render_html()
+    
+    def render_html(self):
         displayval = self.displayval if self.displayval or self.displayval == 0 else None
         return tags.select(self.nameattr or self.id, displayval, self.options, **self.attributes)
+        
+    def render_static(self):
+        if self.displayval == '':
+            todisplay = literal('&nbsp;')
+        else:
+            values = []
+            mapf = lambda x: (unicode(x[0]), x[1])
+            lookup = dict(map(mapf, self.options))
+            for key in tolist(self.displayval):
+                try:
+                    values.append(lookup[unicode(key)])
+                except KeyError:
+                    pass
+            todisplay = ', '.join(values)
+            
+        self.add_attr('class', 'select')
+        return HTML.div(todisplay, **self._static_attributes())
+
 form_elements['select'] = SelectElement
 
 class MultiSelectElement(SelectElement):
@@ -739,10 +830,37 @@ class TextAreaElement(FormFieldElementBase):
         """ no name attribute b/c textarea tag takes it directly """
         HasValueElement.set_attrs(self, **kwargs)
 
+    def _static_attributes(self):
+        attrs = self.attributes.copy()
+        try:
+            del attrs['rows']
+        except KeyError:
+            pass
+        try:
+            del attrs['cols']
+        except KeyError:
+            pass
+        return attrs
+
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
+        if self.form._static:
+            return self.render_static()
+        else:
+            return self.render_html()
+
+    def render_html(self):
         displayval = self.displayval if self.displayval or self.displayval == 0 else ''
         return tags.textarea(self.nameattr or self.id, displayval, **self.attributes)
+    
+    def render_static(self):
+        self.add_attr('class', 'textarea')
+        if self.displayval == '':
+            todisplay = literal('&nbsp;')
+        else:
+            todisplay = self.displayval
+        return HTML.div(todisplay, **self._static_attributes())
+
 form_elements['textarea'] = TextAreaElement
 
 class LogicalGroupElement(FormFieldElementBase):
@@ -914,6 +1032,7 @@ class GroupElement(StaticElement, ElementRegistrar):
         self._returning_els = form._returning_els
         self._element_id_formatter = form._element_id_formatter
         self._name = form._name
+        self._static = form._static
         
         # but we keep the rendering elements to ourself
         self._render_els = []
@@ -977,11 +1096,17 @@ class LogicalSupportElement(ElementBase):
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
-    
+
     def render(self, **kwargs):
+        self.set_attr('class_', self.etype)
+        if self.form._static:
+            return self.render_static(**kwargs)
+        else:
+            return self.render_html(**kwargs)
+
+    def render_html(self, **kwargs):
         if self.displayval or self.displayval == 0:
             self.set_attr('value', self.displayval)
-        self.set_attr('class_', self.etype)
         if self.chosen:
             self.set_attr(self.chosen_attr, self.chosen_attr)
         else:
@@ -989,10 +1114,30 @@ class LogicalSupportElement(ElementBase):
                 self.del_attr(self.chosen_attr)
             except KeyError:
                 pass
-        self.set_attr('name', self.lgroup.id)
         self.set_attrs(**kwargs)
+        self.set_attr('name', self.lgroup.id)
         return HTML.input(type=self.etype, **self.attributes)
-
+    
+    def _static_attributes(self):
+        attrs = self.attributes.copy()
+        for attr in ('checked', 'name', 'type', 'selected'):
+            try:
+                del attrs[attr]
+            except KeyError:
+                pass
+        return attrs
+    
+    def render_static(self, **kwargs):
+        self.set_attrs(**kwargs)
+        if self.chosen or self.get_attr(self.chosen_attr, None):
+            if self.displayval or self.displayval == 0:
+                todisplay = self.displayval
+            else:
+                todisplay = literal('&nbsp;')    
+        else:
+            todisplay = literal('&nbsp;')
+        return HTML.div(todisplay, **self._static_attributes())
+    
 class MultiCheckboxElement(LogicalSupportElement):
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, checked=False, **kwargs):
         chosen = bool(checked)
@@ -1001,6 +1146,7 @@ class MultiCheckboxElement(LogicalSupportElement):
         self.chosen = chosen
         self.chosen_attr = 'checked'
         self.etype = 'checkbox'
+
 form_elements['mcheckbox'] = MultiCheckboxElement
 
 class RadioElement(LogicalSupportElement):
