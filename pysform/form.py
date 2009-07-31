@@ -4,14 +4,14 @@ from pysform.element import form_elements, CancelElement, CheckboxElement, \
 from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
 from pysform.file_upload_translators import WerkzeugTranslator
 from pysform.processors import Wrapper
-from pysform.exceptions import ElementInvalid
+from pysform.exceptions import ElementInvalid, ProgrammingError
 
 class FormBase(HtmlAttributeHolder, ElementRegistrar):
     """
     Base class for forms.
     """
     
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, static=False, **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
         ElementRegistrar.__init__(self, self, self)
         
@@ -33,6 +33,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         self._errors = []
         # exception handlers
         self._exception_handlers = []
+        # is the form static?
+        self._static = static
         
         # element holders
         self._all_els = {}
@@ -138,6 +140,11 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
     
     def set_submitted(self, values):
         """ values should be dict like """
+        
+        # if the form is static, it shoudl not get submitted values
+        if self._static:
+            raise ProgrammingError('static forms should not get submitted values')
+        
         self._errors = []
         
         # ident field first since we need to know that to now if we need to
@@ -194,12 +201,12 @@ class Form(FormBase):
     Main form class using default HTML renderer and Werkzeug file upload
     translator
     """
-    def __init__(self, name, **kwargs):        
+    def __init__(self, name, static=False, **kwargs):        
         # make the form's name the id
         if not kwargs.has_key('id'):
             kwargs['id'] = name
             
-        FormBase.__init__(self, name, **kwargs)
+        FormBase.__init__(self, name, static, **kwargs)
         
         # import here or we get circular import problems
         from pysform.render import get_renderer
