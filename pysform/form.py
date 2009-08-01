@@ -56,8 +56,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
             raise ValueError('type "%s" is already registered' % type)
         self._registered_types[type] = eclass
 
-    def render(self):
-        return self._renderer(self).render()
+    def render(self, **kwargs):
+        return self._renderer(self).render(**kwargs)
 
     def is_submitted(self):
         """ In a normal workflow, is_submitted will only be called once and is
