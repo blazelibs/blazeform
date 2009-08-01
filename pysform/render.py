@@ -144,7 +144,7 @@ class FieldRenderer(Renderer):
         self.output.inc('<div id="%s-fw" class="field-wrapper%s">' %
                             (self.element.getidattr(), self.no_label_class))
     def required(self):
-        if self.element.required:
+        if self.element.required and not self.element.form._static:
             self.output('<span class="required-star">*</span>')
     def notes(self):
         if len(self.element.notes) == 1:
