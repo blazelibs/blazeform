@@ -10,13 +10,15 @@ class FormRenderer(object):
         self.element = element
         self.output = StringIndentHelper()
         self.header_section_open = False
-        
+        self.settings = {}
+
     def begin(self):
         attr = self.element.get_attrs()
         action = attr.pop('action', '')
         self.output.inc(tags.form(action, **attr))
     
-    def render(self):
+    def render(self, **kwargs):
+        self.settings.update(kwargs)
         self.begin()
         on_first = True
         on_alt = False
@@ -29,7 +31,7 @@ class FormRenderer(object):
                 self.output.inc(hstr)
                 self.header_section_open = True
             rcls = get_renderer(child)
-            r = rcls(child, self.output, on_first, on_alt, 'row')
+            r = rcls(child, self.output, on_first, on_alt, 'row', self.settings)
             r.render()
             if r.uses_alt:
                 on_alt = not on_alt
@@ -80,7 +82,7 @@ class StaticFormRenderer(FormRenderer):
         self.output.dec('</div>')
         
 class Renderer(object):
-    def __init__(self, element, output, is_first, is_alt, wrap_type):
+    def __init__(self, element, output, is_first, is_alt, wrap_type, settings):
         self.element = element
         self.output = output
         self.wrap_type = wrap_type
@@ -88,6 +90,7 @@ class Renderer(object):
         self.uses_first = False
         self.is_first = is_first
         self.is_alt = is_alt
+        self.settings = settings
             
     def first_class(self):
         if self.is_first:
@@ -116,8 +119,8 @@ class HeaderRenderer(Renderer):
         self.end()
 
 class FieldRenderer(Renderer):
-    def __init__(self, element, output, is_first, is_alt, wrap_type):
-        Renderer.__init__(self, element, output, is_first, is_alt, wrap_type)
+    def __init__(self, element, output, is_first, is_alt, wrap_type, settings):
+        Renderer.__init__(self, element, output, is_first, is_alt, wrap_type, settings)
         self.uses_first = True
         self.uses_alt = True
     def begin(self):
@@ -145,19 +148,31 @@ class FieldRenderer(Renderer):
             self.output('<span class="required-star">*</span>')
     def notes(self):
         if len(self.element.notes) == 1:
-            self.output('<p class="note">%s</p>' % self.element.notes[0])
+            self.output('<p class="note">%s%s</p>' % (
+                self.settings.get('note_prefix', ''),
+                self.element.notes[0]
+            ))
         elif len(self.element.notes) > 1:
             self.output.inc('<ul class="notes">')
             for msg in self.element.notes:
-                self.output('<li>%s</li>' % msg)
+                self.output('<li>%s%s</li>' % (
+                    self.settings.get('note_prefix', ''),
+                    msg
+                ))
             self.output.dec('</ul>')
     def errors(self):
         if len(self.element.errors) == 1:
-            self.output('<p class="error">%s</p>' % self.element.errors[0])
+            self.output('<p class="error">%s%s</p>' % (
+                self.settings.get('error_prefix', ''),
+                self.element.errors[0]
+            ))
         elif len(self.element.errors) > 1:
             self.output.inc('<ul class="errors">')
             for msg in self.element.errors:
-                self.output('<li>%s</li>' % msg)
+                self.output('<li>%s%s</li>' % (
+                    self.settings.get('error_prefix', ''),
+                    msg
+                ))
             self.output.dec('</ul>')
     def end(self):
         self.notes()
@@ -206,7 +221,7 @@ class GroupRenderer(StaticRenderer):
         for child in self.element._render_els:
             r = get_renderer(child)
             rcls = get_renderer(child)
-            r = rcls(child, self.output, on_first, on_alt, 'grpel')
+            r = rcls(child, self.output, on_first, on_alt, 'grpel', self.settings)
             r.render()
             if r.uses_alt:
                 on_alt = not on_alt
