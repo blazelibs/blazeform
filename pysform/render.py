@@ -22,6 +22,7 @@ class FormRenderer(object):
         self.begin()
         on_first = True
         on_alt = False
+        self.req_note_written = False
         for child in self.rendering_els():
             if isinstance(child, element.HeaderElement):
                 if self.header_section_open:
@@ -30,8 +31,12 @@ class FormRenderer(object):
                 hstr = '<div id="%s-section" class="header-section">' % child.getidattr()
                 self.output.inc(hstr)
                 self.header_section_open = True
+                if self.required_note_level == 'section':
+                    self.req_note_written = False
             rcls = get_renderer(child)
             r = rcls(child, self.output, on_first, on_alt, 'row', self.settings)
+            if (r.uses_first and on_first) or isinstance(child, element.HeaderElement):
+                self.render_required_note()
             r.render()
             if r.uses_alt:
                 on_alt = not on_alt
@@ -40,6 +45,24 @@ class FormRenderer(object):
         self.end()
         return self.output.get()
     
+    @property
+    def required_note_level(self):
+        try:
+            if self.settings['req_note_level'] == 'form':
+                return 'form'
+            if self.settings['req_note_level'] == 'section':
+                return 'section'
+        except KeyError, e:
+            if 'req_note_level' not in str(e):
+                raise
+        return None
+    
+    def render_required_note(self):
+        if self.required_note_level and not self.req_note_written:
+            req_note = self.settings.get('req_note', '<div class="required_note"><span class="star">*</span> = required field</div>')
+            self.output(req_note)
+            self.req_note_written = True
+
     def rendering_els(self):
         for el in self.element._render_els:
             yield el
