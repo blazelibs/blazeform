@@ -36,7 +36,7 @@ class FormRenderer(object):
             rcls = get_renderer(child)
             r = rcls(child, self.output, on_first, on_alt, 'row', self.settings)
             if (r.uses_first and on_first) or isinstance(child, element.HeaderElement):
-                self.render_required_note()
+                self.render_required_note(isinstance(child, element.HeaderElement))
             r.render()
             if r.uses_alt:
                 on_alt = not on_alt
@@ -57,10 +57,14 @@ class FormRenderer(object):
                 raise
         return None
     
-    def render_required_note(self):
+    def render_required_note(self, above_header):
         if self.required_note_level and not self.req_note_written:
-            req_note = self.settings.get('req_note', '<div class="required_note"><span class="star">*</span> = required field</div>')
-            self.output(req_note)
+            req_note = self.settings.get('req_note', '<div class="required_note%(above_header)s"><span class="star">*</span> = required field</div>')
+            if above_header:
+                above_header_class = '_above_header'
+            else:
+                above_header_class = ''
+            self.output(req_note % {'above_header': above_header_class})
             self.req_note_written = True
 
     def rendering_els(self):
