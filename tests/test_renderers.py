@@ -1,6 +1,7 @@
 from os import path
 
-renderers = ('default', 'withaction', 'all_els', 'static', 'noteprefix')
+renderers = ('default', 'withaction', 'all_els', 'static', 'noteprefix',
+             'reqnote_formtop', 'reqnote_formtop_header', 'reqnote_section')
 rendir = ''
 
 def test_all():
@@ -31,8 +32,18 @@ def test_all():
         
         try:
             for lnum in range(0, len(form_html_lines)):
-                formstr = form_html_lines[lnum]
-                filestr = file_html_lines[lnum]
+                try:
+                    formstr = form_html_lines[lnum]
+                except IndexError:
+                    if lnum <> 0:
+                        raise
+                    formstr = '**form output empty**'
+                try:
+                    filestr = file_html_lines[lnum]
+                except IndexError:
+                    if lnum <> 0:
+                        raise
+                    filestr = '**file empty**'
                 assert formstr == filestr, 'line %d not equal in %s\n  form: %s\n  file: %s' % (lnum+1, '%s.html' % rname, formstr, filestr)
         except AssertionError:
             # write the form output next to the test file for an easy diff
