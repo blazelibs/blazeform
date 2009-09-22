@@ -212,7 +212,6 @@ class GroupRenderer(StaticRenderer):
     def render(self):
         self.begin()
         self.render_children()
-        #self.output.dec('</div>')
         self.end()
     
     def render_children(self):

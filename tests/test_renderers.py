@@ -1,6 +1,6 @@
 from os import path
 
-renderers = ('default', 'withaction', 'all_els', 'static')
+renderers = ('default', 'withaction', 'all_els', 'static', 'noteprefix')
 rendir = ''
 
 def test_all():
@@ -10,7 +10,18 @@ def test_all():
         if rendir == '':
             rendir = path.dirname(rmod.__file__)
         tf = rmod.TestForm()
-        form_html = tf.render()
+        try:
+            tf.set_submitted(rmod.submitted_vals)
+            tf.is_valid()
+        except AttributeError, e:
+            if 'submitted_vals' not in str(e):
+                raise
+        try:
+            form_html = tf.render(**rmod.render_opts)
+        except AttributeError, e:
+            if 'render_opts' not in str(e):
+                raise
+            form_html = tf.render()
         form_html_lines = form_html.strip().splitlines()
         htmlfile = open(path.join(rendir, '%s.html' % rname))
         try:
