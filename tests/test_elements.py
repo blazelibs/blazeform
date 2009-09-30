@@ -325,6 +325,34 @@ class CommonTest(unittest.TestCase):
         assert el.handle_exception(Exception('text exception'))
         self.assertEqual(el.errors[0], 'test error msg')
         
+        # specifying exception type only
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler(exc_type=TypeError)
+        assert el.handle_exception(TypeError('text exception'))
+        self.assertEqual(el.errors[0], 'text exception')
+        
+        # specifying exception type only
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler(exc_type=TypeError, error_msg='wrong type')
+        assert el.handle_exception(TypeError('text exception'))
+        self.assertEqual(el.errors[0], 'wrong type')
+        
+        # error message not specified gets exception text
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler('text exception')
+        assert el.handle_exception(Exception('text exception user message'))
+        self.assertEqual(el.errors[0], 'text exception user message')
+        
+        # specifying exception's class string
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler('text exception', 'test error msg', 'TypeError')
+        assert el.handle_exception(TypeError('text exception'))
+        self.assertEqual(el.errors[0], 'test error msg')
+        
         # right message, wrong type
         form = Form('f')
         el = form.add_text('field', 'Field')
@@ -337,6 +365,26 @@ class CommonTest(unittest.TestCase):
         el = form.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg', Exception)
         assert not el.handle_exception(Exception('text'))
+        self.assertEqual(len(el.errors), 0)
+        
+        # callback
+        def can_handle(exc):
+            if 'can_handle' in str(exc):
+                return True
+            return False
+        
+        # callback that handles
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler(callback=can_handle, error_msg='invalid value')
+        assert el.handle_exception(Exception('can_handle'))
+        self.assertEqual(el.errors[0], 'invalid value')
+        
+        # callback that doesn't
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler(callback=can_handle, error_msg='invalid value')
+        assert not el.handle_exception(Exception('cant_handle'))
         self.assertEqual(len(el.errors), 0)
         
     def test_conversion(self):

@@ -309,15 +309,33 @@ class FormFieldElementBase(HasValueElement):
 
         self.processors.append((processor, msg))
         
-    def add_handler(self, exception_txt, error_msg, exc_type=None):
-        self.exception_handlers.append((exception_txt, error_msg, exc_type))
+    def add_handler(self, exception_txt=NotGiven, error_msg=NotGiven, exc_type=NotGiven, callback=NotGiven):
+        self.exception_handlers.append((exception_txt, error_msg, exc_type, callback))
 
     def handle_exception(self, exc):
-        for looking_for, error_msg, exc_type in self.exception_handlers:
-            if looking_for in str(exc) and (exc_type is None or isinstance(exc, exc_type)):
-                self._valid = False
-                self.add_error(error_msg)
-                return True
+        def can_handle(error_msg):
+            self._valid = False
+            if is_notgiven(error_msg):
+                error_msg = str(exc)
+            self.add_error(error_msg)
+            return True
+        
+        for looking_for, error_msg, exc_type, callback in self.exception_handlers:
+            if is_notgiven(callback):
+                if not is_notgiven(exc_type):
+                    if isinstance(exc_type, basestring):
+                        if exc.__class__.__name__ != exc_type:
+                            continue
+                    else:
+                        if not isinstance(exc, exc_type):
+                            continue
+                if is_notgiven(looking_for):
+                    return can_handle(error_msg)
+                elif looking_for in str(exc):
+                    return can_handle(error_msg)
+            else:
+                if callback(exc):
+                    return can_handle(error_msg)
         return False
 
 class InputElementBase(FormFieldElementBase):
