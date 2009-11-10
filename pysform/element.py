@@ -49,6 +49,9 @@ class ElementBase(HtmlAttributeHolder):
     Base class for form elements.
     """
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
+        # settings to overide the form's settings
+        self.settings = kwargs.pop('settings', {})
+        
         HtmlAttributeHolder.__init__(self, **kwargs)
 
         self._defaultval = NotGiven
