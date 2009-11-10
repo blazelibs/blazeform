@@ -7,6 +7,8 @@ class TestForm(Form):
         el = self.add_header('header', 'Header')
         el = self.add_text('text', 'Text', required=True)
         el.add_note('hi there!')
+        el = self.add_text('text2', 'Text', settings={'note_prefix':''})
+        el.add_note('hi there!')
         
 submitted_vals = {
     'noteprefixform-submit-flag' : 'submit'

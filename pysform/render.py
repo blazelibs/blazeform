@@ -131,12 +131,17 @@ class Renderer(object):
     
     def begin(self):
         pass
+    
     def render(self):
         self.begin()
         self.output(self.element.render())
         self.end()
+    
     def end(self):
         pass
+    
+    def setting(self, key):
+        return self.element.settings.get(key, self.settings.get(key, ''))
 
 class HeaderRenderer(Renderer):
     def render(self):
@@ -176,28 +181,28 @@ class FieldRenderer(Renderer):
     def notes(self):
         if len(self.element.notes) == 1:
             self.output('<p class="note">%s%s</p>' % (
-                self.settings.get('note_prefix', ''),
+                self.setting('note_prefix'),
                 self.element.notes[0]
             ))
         elif len(self.element.notes) > 1:
             self.output.inc('<ul class="notes">')
             for msg in self.element.notes:
                 self.output('<li>%s%s</li>' % (
-                    self.settings.get('note_prefix', ''),
+                    self.setting('note_prefix'),
                     msg
                 ))
             self.output.dec('</ul>')
     def errors(self):
         if len(self.element.errors) == 1:
             self.output('<p class="error">%s%s</p>' % (
-                self.settings.get('error_prefix', ''),
+                self.setting('error_prefix'),
                 self.element.errors[0]
             ))
         elif len(self.element.errors) > 1:
             self.output.inc('<ul class="errors">')
             for msg in self.element.errors:
                 self.output('<li>%s%s</li>' % (
-                    self.settings.get('error_prefix', ''),
+                self.setting('error_prefix'),
                     msg
                 ))
             self.output.dec('</ul>')
