@@ -41,3 +41,6 @@ class TestForm(Form):
 
         self.add_radio('r1', 'r1', defaultval='truck', group='rgroup')
         self.add_radio('r2', 'r2', defaultval='car', group='rgroup')
+        
+        self.add_radio('animal_dog', 'dog', defaultval='dog', group='animalgroup', label_after=True)
+        self.add_radio('animal_cat', 'cat', defaultval='cat', group='animalgroup', label_after=True)

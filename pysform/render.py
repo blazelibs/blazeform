@@ -157,7 +157,9 @@ class FieldRenderer(Renderer):
         self.uses_alt = True
     def begin(self):
         self.begin_row()
-        self.label()
+        self.label_class()
+        if not self.element.label_after:
+            self.label()
         self.field_wrapper()
         self.required()
     def begin_row(self):
@@ -165,16 +167,26 @@ class FieldRenderer(Renderer):
                 (self.element.getidattr(), self.wrap_type, self.wrap_type,
                  self.alt_class(), self.first_class())
             )
+    def label_class(self):
+        classes = []
+        if not self.element.label.value:
+            classes.append('no-label')
+        if self.element.label_after:
+            classes.append('label-after')
+        if not classes:
+            self.label_class = ''
+        else:
+            self.label_class = ' %s' % ' '.join(classes)
+
     def label(self):
         if self.element.label.value:
-            self.element.label.value += ':'
+            if not self.element.label_after:
+                self.element.label.value += ':'
             self.output(self.element.label())
-            self.no_label_class = ''
-        else:
-           self.no_label_class = ' no-label'
+
     def field_wrapper(self):
         self.output.inc('<div id="%s-fw" class="field-wrapper%s">' %
-                            (self.element.getidattr(), self.no_label_class))
+                            (self.element.getidattr(), self.label_class))
     def required(self):
         if self.element.required and not self.element.form._static:
             self.output('<span class="required-star">*</span>')
@@ -211,6 +223,8 @@ class FieldRenderer(Renderer):
         self.errors()
         # close field wrapper
         self.output.dec('</div>')
+        if self.element.label_after:
+            self.label()
         # close row
         self.output.dec('</div>')
         
@@ -240,7 +254,7 @@ class GroupRenderer(StaticRenderer):
         self.output.inc(make_tag('div', **attrs))
     def field_wrapper(self):
         self.output.inc('<div id="%s-fw" class="group-wrapper%s">' %
-                            (self.element.getidattr(), self.no_label_class))
+                            (self.element.getidattr(), self.label_class))
     def render(self):
         self.begin()
         self.render_children()
