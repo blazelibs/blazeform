@@ -51,6 +51,7 @@ class ElementBase(HtmlAttributeHolder):
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
         # settings to overide the form's settings
         self.settings = kwargs.pop('settings', {})
+        self.label_after = kwargs.pop('label_after', False)
         
         HtmlAttributeHolder.__init__(self, **kwargs)
 
