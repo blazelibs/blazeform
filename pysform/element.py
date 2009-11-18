@@ -7,7 +7,7 @@ from pysutils import DumbObject
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
         tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, \
         is_given
-from pysform.processors import Confirm, Select, MultiValues, Wrapper
+from pysform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
 from pysform.exceptions import ElementInvalid, ProgrammingError
 
 form_elements = {}
@@ -140,7 +140,7 @@ class FormFieldElementBase(HasValueElement):
         
         # types
         vtypes = ('boolean', 'bool', 'int', 'integer', 'number', 'num',
-                        'str', 'string', 'unicode', 'uni', 'float')
+                        'str', 'string', 'unicode', 'uni', 'float', 'decimal')
         if vtype is not NotGiven:
             try:
                 vtype = vtype.lower()
@@ -269,6 +269,8 @@ class FormFieldElementBase(HasValueElement):
                     tvalidator = fev.Int
                 elif self.vtype in ('number', 'num', 'float'):
                     tvalidator = fev.Number
+                elif self.vtype in ('decimal'):
+                    tvalidator = Decimal
                 elif self.vtype in ('str', 'string'):
                     tvalidator = fev.String
                 elif self.vtype in ('unicode', 'uni'):
