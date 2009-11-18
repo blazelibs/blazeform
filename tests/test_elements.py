@@ -948,6 +948,16 @@ class SelectTest(unittest.TestCase):
         el.submittedval = -1
         self.assertEqual(el.value, None)
         
+        # if vtype = bool, then we need to make sure a "choose" option doesn't
+        # get returned as True
+        el = Form('f').add_select('f', o, vtype='bool')
+        el.submittedval = -1
+        self.assertEqual(el.value, None)
+        # but we should be able to specify if we always want a boolean value
+        el = Form('f').add_select('f', o, if_empty=1, vtype='bool')
+        el.submittedval = -1
+        self.assertEqual(el.value, True)
+        
         # make sure we do not accept multiple values if we aren't a multi
         # select
         el = Form('f').add_select('f', o, if_empty=[1,2])
@@ -1085,7 +1095,7 @@ class SelectTest(unittest.TestCase):
         # make sure choose values do not get returned when required=False
         el = Form('f').add_mselect('f', o, if_empty=1)
         el.submittedval = [-2, -1]
-        self.assertEqual(el.value, 1)
+        self.assertEqual(el.value, [1])
         el = Form('f').add_mselect('f', o)
         el.submittedval = [-1, -2]
         self.assertEqual(el.value, [])

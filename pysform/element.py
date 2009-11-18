@@ -765,27 +765,17 @@ class SelectElement(FormFieldElementBase):
                 ok_values = self.options + [(NotGiven, 0)] + [(NotGivenIter, 0)]
                 self.add_processor(Select(ok_values, invalid), error_msg)
     
-    def _to_python_processing(self):
-        """
-            if "choose" value was chosen, we need to return an emtpy
-            value appropriate to `multi`
-        """
-        do_processing = bool(self._valid == None)
-        FormFieldElementBase._to_python_processing(self)
-        if self.choose and do_processing and not is_notgiven(self._safeval):
-            value = self._safeval
+    def _get_submittedval(self):
+        value = self._submittedval
+        if self.choose and is_notgiven(value) == False:
             # strip out choose values
-            if self.multiple:
+            if self.multiple and is_iterable(value):
                 value = [v for v in value if unicode(v) not in (u'-1', u'-2')]
             else:
                 if unicode(value) in (u'-1', u'-2'):
                     value = None
-            
-            # re-apply if_empty settings
-            if is_empty(value) and self.if_empty is not NotGiven:
-                value = self.if_empty
-        
-            self._safeval = value
+        return value
+    submittedval = property(_get_submittedval, FormFieldElementBase._set_submittedval)
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
