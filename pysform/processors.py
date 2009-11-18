@@ -2,6 +2,7 @@ from formencode.validators import FancyValidator
 from formencode import Invalid
 from pysform.util import tolist, is_iterable, is_notgiven
 from pysform.exceptions import ValueInvalid
+import decimal
 
 class Select(FancyValidator):
     """
@@ -125,3 +126,12 @@ class Wrapper(FancyValidator):
             except ValueInvalid, e:
                 raise Invalid(str(e), {}, value, state)
         return result
+
+class Decimal(FancyValidator):
+
+    def _to_python(self, value, state):
+        try:
+            return decimal.Decimal(value)
+        except decimal.DecimalException, e:
+            raise Invalid(str(e), value, state)
+        

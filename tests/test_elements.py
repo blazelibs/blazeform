@@ -1,6 +1,6 @@
 import unittest
 import datetime
-from decimal import Decimal
+import decimal
 import warnings
 from pysutils import DumbObject
 from formencode.validators import Int
@@ -461,6 +461,10 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(form.f11.value, u'1.25')
         form.add_text('f12', 'Field', 'bool', if_empty='false')
         self.assertEqual(form.f12.value, False)
+        form.add_text('f13', 'Field', 'decimal', if_empty='1.25')
+        self.assertEqual(form.f13.value, decimal.Decimal('1.25'))
+        form.f13.submittedval = 'foo'
+        assert form.f13.is_valid() == False
         
         # test invalid vtype
         form = Form('f')
@@ -898,7 +902,7 @@ class SelectTest(unittest.TestCase):
         self.assertEqual(str(el()), html)
         el = Form('f').add_select('f', o, defaultval=u'1', choose=None)
         self.assertEqual(str(el()), html)
-        el = Form('f').add_select('f', o, defaultval=Decimal('1'), choose=None)
+        el = Form('f').add_select('f', o, defaultval=decimal.Decimal('1'), choose=None)
         self.assertEqual(str(el()), html)
         
         # value
