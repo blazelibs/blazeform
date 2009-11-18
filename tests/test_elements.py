@@ -1,5 +1,6 @@
 import unittest
 import datetime
+from decimal import Decimal
 import warnings
 from pysutils import DumbObject
 from formencode.validators import Int
@@ -896,6 +897,8 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_select('f', o, defaultval='1', choose=None)
         self.assertEqual(str(el()), html)
         el = Form('f').add_select('f', o, defaultval=u'1', choose=None)
+        self.assertEqual(str(el()), html)
+        el = Form('f').add_select('f', o, defaultval=Decimal('1'), choose=None)
         self.assertEqual(str(el()), html)
         
         # value

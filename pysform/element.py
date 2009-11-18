@@ -807,7 +807,7 @@ class SelectElement(FormFieldElementBase):
     
     def render_html(self):
         displayval = self.displayval if self.displayval or self.displayval == 0 else None
-        return tags.select(self.nameattr or self.id, displayval, self.options, **self.attributes)
+        return tags.select(self.nameattr or self.id, tolist(displayval), self.options, **self.attributes)
         
     def render_static(self):
         if self.displayval == '':
