@@ -931,8 +931,8 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_select('f', o, if_empty=-2)
         assert el.is_valid()
         el = Form('f').add_select('f', o, if_empty=-2, required=True)
-        assert not el.is_valid()
-        assert 'the value chosen is invalid' in el.errors
+        assert not el.is_valid(), el.value
+        assert 'the value chosen is invalid' in el.errors, el.errors
         el = Form('f').add_select('f', o, required=True)
         el.submittedval = -2
         assert not el.is_valid()
@@ -942,7 +942,7 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_select('f', o, required=True)
         el.submittedval = ''
         assert not el.is_valid()
-        assert 'the field is required' in el.errors, el.errors
+        assert 'field is required' in el.errors, el.errors
         
         # custom invalid values
         el = Form('f').add_select('f', o, if_empty=1, invalid=['2'])
@@ -1097,7 +1097,7 @@ class SelectTest(unittest.TestCase):
         # Should return NotGivenIter
         el = Form('f').add_mselect('f', o)
         assert el.is_valid()
-        assert el.value is NotGivenIter
+        assert el.value is NotGivenIter, el.value
         for v in el.value:
             self.fail('should emulate empty')
         else:
@@ -1310,7 +1310,7 @@ class LogicalElementsTest(unittest.TestCase):
         el2 = f.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
-        assert f.thegroup.value == ['foo']
+        assert f.thegroup.value == ['foo'], f.thegroup.value
         assert el1.chosen
         assert not el2.chosen
         f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':['foo', 'bar']})

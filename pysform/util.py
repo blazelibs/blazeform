@@ -101,10 +101,11 @@ NotGivenIter = NotGivenIterBase()
 def tolist(x, default=[]):
     if x is None:
         return default
-    if not isinstance(x, (list, tuple)):
-        return [x]
-    else:
+    if isinstance(x, list):
         return x
+    if isinstance(x, tuple):
+        return list(x)
+    return [x]
     
 def is_iterable(possible_iterable):
     if isinstance(possible_iterable, basestring):
