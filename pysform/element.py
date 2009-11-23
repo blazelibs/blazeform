@@ -256,6 +256,21 @@ class FormFieldElementBase(HasValueElement):
             if getattr(self, 'multiple', False) and not is_iterable(value):
                 value = tolist(value)
 
+        ###
+        # Doing these again in case the processors changed the value
+        ###
+        # handle empty or missing submit value with if_empty
+        if is_empty(value) and self.if_empty is not NotGiven:
+            value = self.if_empty
+        # standardize all empty values as None if if_empty not given
+        elif is_empty(value) and not is_notgiven(value):
+            value = None  
+
+        # process required
+        if self.required and self.required_empty_test(value) and 'field is required' not in self.errors:
+            valid = False
+            self.add_error('field is required')
+
         # If its empty, there is no reason to run the converters.  By default,
         # the validators don't do anything if the value is empty and they WILL
         # try to convert our NotGiven value, which we want to avoid.  Therefore,
@@ -759,28 +774,27 @@ class SelectElement(FormFieldElementBase):
                
             self.options = self.choose + options
         
-        if auto_validate: 
+        if auto_validate:
+            choose_as_none = [cv[0] for cv in tolist(self.choose)]
             if required:
-                self.add_processor(Select(self.options, invalid), error_msg)
+                self.add_processor(Select(self.options, invalid, choose_as_none), error_msg)
             else:
                 # NotGiven is a valid option as long as a value isn't required
                 ok_values = self.options + [(NotGiven, 0)] + [(NotGivenIter, 0)]
-                self.add_processor(Select(ok_values, invalid), error_msg)
-    
-    def _get_submittedval(self):
-        value = self._submittedval
-        if self.choose and is_notgiven(value) == False:
-            # strip out choose values
-            if self.multiple and is_iterable(value):
-                value = [v for v in value if unicode(v) not in (u'-1', u'-2')]
-            else:
-                if unicode(value) in (u'-1', u'-2'):
-                    value = None
-        return value
-    submittedval = property(_get_submittedval, FormFieldElementBase._set_submittedval)
+                self.add_processor(Select(ok_values, invalid, choose_as_none), error_msg)
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
+    
+    def _to_python_processing(self):
+        """
+            if "choose" value was chosen, we need to return an emtpy
+            value appropriate to `multi`
+        """
+        FormFieldElementBase._to_python_processing(self)
+        # multiple select fields should always return a list
+        if self.multiple and not is_notgiven(self._safeval):
+            self._safeval = tolist(self._safeval)
     
     def set_attrs(self, **kwargs ):
         """ no name attribute b/c select tag takes it directly """
