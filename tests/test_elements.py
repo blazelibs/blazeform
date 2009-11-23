@@ -932,6 +932,17 @@ class SelectTest(unittest.TestCase):
         assert el.is_valid()
         el = Form('f').add_select('f', o, if_empty=-2, required=True)
         assert not el.is_valid()
+        assert 'the value chosen is invalid' in el.errors
+        el = Form('f').add_select('f', o, required=True)
+        el.submittedval = -2
+        assert not el.is_valid()
+        assert 'the value chosen is invalid' in el.errors, el.errors
+        
+        # correct required error message
+        el = Form('f').add_select('f', o, required=True)
+        el.submittedval = ''
+        assert not el.is_valid()
+        assert 'the field is required' in el.errors, el.errors
         
         # custom invalid values
         el = Form('f').add_select('f', o, if_empty=1, invalid=['2'])
