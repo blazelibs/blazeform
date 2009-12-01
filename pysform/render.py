@@ -33,7 +33,7 @@ class FormRenderer(object):
                 self.header_section_open = True
                 if self.required_note_level == 'section':
                     self.req_note_written = False
-            rcls = get_renderer(child)
+            rcls = self.element._renderer(child)
             r = rcls(child, self.output, on_first, on_alt, 'row', self.settings)
             if (r.uses_first and on_first) or isinstance(child, element.HeaderElement):
                 self.render_required_note(isinstance(child, element.HeaderElement))
@@ -264,8 +264,7 @@ class GroupRenderer(StaticRenderer):
         on_first = True
         on_alt = False
         for child in self.element._render_els:
-            r = get_renderer(child)
-            rcls = get_renderer(child)
+            rcls = self.element.form._renderer(child)
             r = rcls(child, self.output, on_first, on_alt, 'grpel', self.settings)
             r.render()
             if r.uses_alt:
