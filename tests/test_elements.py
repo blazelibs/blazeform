@@ -2,7 +2,6 @@ import unittest
 import datetime
 import decimal
 import warnings
-from pysutils import DumbObject
 from formencode.validators import Int
 from nose.plugins.skip import SkipTest
 
@@ -10,6 +9,7 @@ from pysform import Form
 from pysform.element import TextElement
 from pysform.util import NotGiven, NotGivenIter, literal
 from pysform.exceptions import ValueInvalid, ProgrammingError
+from pysform.file_upload_translators import BaseTranslator
 
 L = literal
 
@@ -1548,6 +1548,12 @@ class LogicalElementsTest2(unittest.TestCase):
     
 class FileUploadsTest(unittest.TestCase):
     
+    blank = BaseTranslator(None, 'application/octet-stream', 0)
+    text = BaseTranslator('text.txt', 'text/plain', 10)
+    noext = BaseTranslator('nofileext', 'text/plain', 10)
+    noname = BaseTranslator('', 'text/plain', 10)
+    noct = BaseTranslator('text.txt', '', 10)
+    
     def test_html(self):
         html = L('<input class="file" id="f-f" name="f" type="file" />')
         el = Form('f').add_file('f')
@@ -1567,14 +1573,13 @@ class FileUploadsTest(unittest.TestCase):
             self.assertEqual(str(e), 'FileElement doesn\'t support default values')
     
     def test_submitted(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length='10')
         el = Form('f').add_file('f')
-        el.submittedval = tosub
+        el.submittedval = self.text
         assert el.is_valid()
-        self.assertEqual(el.value.file_name, tosub.filename)
-        self.assertEqual(el.value.content_type, tosub.content_type)
-        self.assertEqual(el.value.content_length, tosub.content_length)
-
+        self.assertEqual(el.value.file_name, self.text.file_name)
+        self.assertEqual(el.value.content_type, self.text.content_type)
+        self.assertEqual(el.value.content_length, self.text.content_length)
+    
     def test_no_file_submit(self):
         el = Form('f').add_file('f')
         assert el.is_valid()
@@ -1584,7 +1589,7 @@ class FileUploadsTest(unittest.TestCase):
         assert not el.is_valid()
     
     def test_maxsize(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.maxsize(5)
         el.submittedval = tosub
@@ -1596,15 +1601,32 @@ class FileUploadsTest(unittest.TestCase):
         el.submittedval = tosub
         assert el.is_valid(), 'max size validation should have been ok'
         
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=None)
+        # zero length max size validation
+        # this is probably going to be confusing since the content length is usually not given
+        # for files by a browser, but lets test anyway
+        tosub = BaseTranslator('text.txt', 'text/plain', 0)
         el = Form('f').add_file('f')
         el.maxsize(5)
         el.submittedval = tosub
         assert not el.is_valid(), 'max size validation should have failed'
-        assert el.errors[0] == 'extension requirement exists, but submitted file had no content length'
+        assert el.errors[0] == 'maximum size requirement exists, but submitted file had no content length'
+        
+        # none should be the same as zero
+        tosub = BaseTranslator('text.txt', 'text/plain', None)
+        el = Form('f').add_file('f')
+        el.maxsize(5)
+        el.submittedval = tosub
+        assert not el.is_valid(), 'max size validation should have failed'
+        assert el.errors[0] == 'maximum size requirement exists, but submitted file had no content length'
+    
+        # no submission should pass since maxsize should only run if a file is uploaded
+        el = Form('f').add_file('f')
+        el.maxsize(5)
+        el.submittedval = self.blank
+        assert el.is_valid(), el.errors
     
     def test_allowexts(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.allow_extension('txt')
         el.submittedval = tosub
@@ -1621,22 +1643,28 @@ class FileUploadsTest(unittest.TestCase):
         assert not el.is_valid()
         self.assertEqual(el.errors[0], 'extension ".txt" not allowed')
         
-        tosub = DumbObject(filename=None, content_type='text/plain', content_length=10)
+        tosub = self.noname
         el = Form('f').add_file('f')
         el.allow_extension('txt')
         el.submittedval = tosub
         assert not el.is_valid()
         assert 'submitted file had no file name' in el.errors[0]
         
-        tosub = DumbObject(filename='nofilext', content_type='text/plain', content_length=10)
+        tosub = self.noext
         el = Form('f').add_file('f')
         el.allow_extension('txt')
         el.submittedval = tosub
         assert not el.is_valid()
         assert 'submitted file had no extension' in el.errors[0]
+        
+        # no submission should work
+        el = Form('f').add_file('f')
+        el.allow_extension('txt')
+        el.submittedval = self.blank
+        assert el.is_valid(), el.errors
     
     def test_denyexts(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.deny_extension('txt')
         el.submittedval = tosub
@@ -1653,22 +1681,26 @@ class FileUploadsTest(unittest.TestCase):
         el.submittedval = tosub
         assert el.is_valid()
         
-        tosub = DumbObject(filename=None, content_type='text/plain', content_length=10)
         el = Form('f').add_file('f')
         el.deny_extension('txt')
-        el.submittedval = tosub
+        el.submittedval = self.noname
         assert not el.is_valid()
         assert 'submitted file had no file name' in el.errors[0]
-        
-        tosub = DumbObject(filename='nofilext', content_type='text/plain', content_length=10)
+
         el = Form('f').add_file('f')
         el.deny_extension('txt')
-        el.submittedval = tosub
+        el.submittedval = self.noext
         assert not el.is_valid()
         assert 'submitted file had no extension' in el.errors[0]
         
+        # no submission should work
+        el = Form('f').add_file('f')
+        el.deny_extension('txt')
+        el.submittedval = self.blank
+        assert el.is_valid()
+        
     def test_allowtypes(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.allow_type('text/plain')
         el.submittedval = tosub
@@ -1680,15 +1712,20 @@ class FileUploadsTest(unittest.TestCase):
         assert not el.is_valid()
         self.assertEqual(el.errors[0], 'content type "text/plain" not allowed')
         
-        tosub = DumbObject(filename='text.txt', content_type=None, content_length=10)
         el = Form('f').add_file('f')
         el.allow_type('text/css', 'text/javascript')
-        el.submittedval = tosub
+        el.submittedval = self.noct
         assert not el.is_valid()
-        assert 'submitted file had no content type' in el.errors[0]
+        assert 'submitted file had no content-type' in el.errors[0], el.errors
+        
+        # no submission should work
+        el = Form('f').add_file('f')
+        el.allow_type('text/css', 'text/javascript')
+        el.submittedval = self.blank
+        assert el.is_valid()
         
     def test_denytypes(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.deny_type('text/plain')
         el.submittedval = tosub
@@ -1699,13 +1736,18 @@ class FileUploadsTest(unittest.TestCase):
         el.deny_type('text/css', 'text/javascript')
         el.submittedval = tosub
         assert el.is_valid()
-        
-        tosub = DumbObject(filename='text.txt', content_type=None, content_length=10)
+
         el = Form('f').add_file('f')
         el.deny_type('text/css', 'text/javascript')
-        el.submittedval = tosub
+        el.submittedval = self.noct
         assert not el.is_valid()
-        assert 'submitted file had no content type' in el.errors[0]
+        assert 'submitted file had no content-type' in el.errors[0]
+        
+        # no submission should work
+        el = Form('f').add_file('f')
+        el.deny_type('text/css', 'text/javascript')
+        el.submittedval = self.blank
+        assert el.is_valid()
 
 # need to test adding group first and then members
 # test setting attributes for each element with a render()
