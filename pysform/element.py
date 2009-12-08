@@ -9,6 +9,7 @@ from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
         is_given
 from pysform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
 from pysform.exceptions import ElementInvalid, ProgrammingError
+from pysform.file_upload_translators import BaseTranslator
 
 form_elements = {}
 
@@ -496,10 +497,14 @@ class FileElement(InputElementBase):
     
     def _get_submittedval(self):
         return self._submittedval
+
     def _set_submittedval(self, value):
         self._valid = None
         self.errors = []
-        self._submittedval = self.form._fu_translator(value)
+        if isinstance(value, BaseTranslator):
+            self._submittedval = value
+        else:
+            self._submittedval = self.form._fu_translator(value)
     submittedval = property(_get_submittedval, _set_submittedval)
     
     def maxsize(self, size):
@@ -529,55 +534,53 @@ class FileElement(InputElementBase):
         
         valid = True
         value = self.submittedval
-        if value is NotGiven:
-            value = DumbObject(file_name=None, content_type=None, content_length=None)
+
+        if is_notgiven(value):
+            value = BaseTranslator(None, None, 0)
+
+        if value.is_uploaded:
+            if value.file_name:
+                _ , ext = path.splitext(value.file_name)
+                ext  = ext.lower()
+                if not ext and (self._allowed_exts or self._denied_exts):
+                    valid = False
+                    self.add_error('extension requirement exists, but submitted file had no extension')
+                    
+                if self._allowed_exts and ext not in self._allowed_exts:
+                    valid = False
+                    self.add_error('extension "%s" not allowed' % ext)
+                
+                if self._denied_exts and ext in self._denied_exts:
+                    valid = False
+                    self.add_error('extension "%s" not permitted' % ext)
+            elif value.file_name is not None and (self._allowed_exts or self._denied_exts):
+                valid = False
+                self.add_error('extension requirements exist, but submitted file had no file name')
+    
+            if value.content_type:
+                if self._allowed_types and value.content_type not in self._allowed_types:
+                    valid = False
+                    self.add_error('content type "%s" not allowed' % value.content_type)
+                
+                if self._denied_types and value.content_type in self._denied_types:
+                    valid = False
+                    self.add_error('content type "%s" not permitted' % value.content_type)
+            elif value.content_type is not None and (self._allowed_types or self._denied_types):
+                valid = False
+                self.add_error('content-type requirements exist, but submitted file had no content-type')
             
-        # process required
-        if self.required and (
-            not value.file_name or not value.content_type or
-            not value.content_length):
+            if self._maxsize:
+                if not value.content_length :
+                    valid = False
+                    self.add_error('maximum size requirement exists, but submitted file had no content length')  
+                elif value.content_length > self._maxsize:
+                    valid = False
+                    self.add_error('file too big (%s), max size %s' %
+                                   (value.content_length, self._maxsize))
+        elif self.required:
             valid = False
             self.add_error('field is required')
         
-        if value.file_name is not None:
-            _ , ext = path.splitext(value.file_name)
-            ext  = ext.lower()
-            if not ext and (self._allowed_exts or self._denied_exts):
-                valid = False
-                self.add_error('extension requirement exists, but submitted file had no extension')
-                
-            if self._allowed_exts and ext not in self._allowed_exts:
-                valid = False
-                self.add_error('extension "%s" not allowed' % ext)
-            
-            if self._denied_exts and ext in self._denied_exts:
-                valid = False
-                self.add_error('extension "%s" not permitted' % ext)
-        elif self._allowed_exts or self._denied_exts:
-            valid = False
-            self.add_error('extension requirements exist, but submitted file had no file name')
-
-        if value.content_type is not None:
-            if self._allowed_types and value.content_type not in self._allowed_types:
-                valid = False
-                self.add_error('content type "%s" not allowed' % value.content_type)
-            
-            if self._denied_types and value.content_type in self._denied_types:
-                valid = False
-                self.add_error('content type "%s" not permitted' % value.content_type)
-        elif self._allowed_types or self._denied_types:
-            valid = False
-            self.add_error('extension requirements exist, but submitted file had no content type')
-            
-        if self._maxsize:
-            if value.content_length is None:
-                valid = False
-                self.add_error('extension requirement exists, but submitted file had no content length')  
-            elif value.content_length > self._maxsize:
-                valid = False
-                self.add_error('file too big (%s), max size %s' %
-                               (value.content_length, self._maxsize))
-                
         self._valid = valid
         if valid:
             self._safeval = self.submittedval
