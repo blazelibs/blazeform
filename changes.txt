@@ -8,7 +8,7 @@ Version ??
 
 Version 0.2.0
 -------------
-(bugfixes/features/**BC BREAKS!!**, released on ??)
+(bugfixes/features/**BC BREAKS!!**, released on 2010-05-30)
 
 - this release includes a few small BC BREAKS!
 - see bitbucket changesets: http://bitbucket.org/rsyring/pysform/changesets
