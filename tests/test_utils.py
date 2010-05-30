@@ -10,18 +10,14 @@ class TestUtilFunctions(unittest.TestCase):
         assert start == {'b':2}
         
     def test_notgiven(self):
-        assert not None
         assert not NotGiven
         assert NotGiven != False
-        assert None != False
+        assert NotGiven == ''
+        assert NotGiven == u''
         assert NotGiven is NotGiven
         assert NotGiven == NotGiven
-        assert None is not NotGiven
-        assert None == NotGiven
-        assert not None != NotGiven
-        assert NotGiven == None
-        assert str(NotGiven) == 'None'
-        assert unicode(NotGiven) == u'None'
+        assert str(NotGiven) == ''
+        assert unicode(NotGiven) == u''
     
     def test_notgiveniter(self):
         assert not NotGivenIter
@@ -47,6 +43,7 @@ class TestUtilFunctions(unittest.TestCase):
         assert is_iterable(tuple())
         assert is_iterable({})
         assert not is_iterable('asdf')
+        assert is_iterable(NotGivenIter)
         
     def test_is_notgiven(self):
         assert is_notgiven(NotGiven)

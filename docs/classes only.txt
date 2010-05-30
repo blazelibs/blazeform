@@ -1,0 +1,32 @@
+
+ElementBase
+    - HasValueElement
+        - FormFieldElementBase
+            - InputElementBase
+                - ButtonElement
+                - CheckboxElement
+                - FileElement
+                - HiddenElement
+                - ImageElement
+                - ResetElement
+                - SubmitElement
+                    - CancelElement
+                - TextElement
+                    - ConfirmElement
+                    - DateElement
+                    - EmailElement
+                    - PasswordElement
+                    - TimeElement
+                    - URLElement
+            - SelectElement
+                - MultiSelectElement
+        - TextAreaElement
+        - LogicalGroupElement
+    - PassThruElement
+        - FixedElement
+- Static Element
+    - Header Element
+- Group Element
+- Logical Support Element
+    - RadioElement
+    - MultiCheckboxElement

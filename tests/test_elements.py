@@ -1,13 +1,15 @@
 import unittest
 import datetime
+import decimal
 import warnings
-from pysutils import DumbObject
 from formencode.validators import Int
+from nose.plugins.skip import SkipTest
 
 from pysform import Form
 from pysform.element import TextElement
 from pysform.util import NotGiven, NotGivenIter, literal
 from pysform.exceptions import ValueInvalid, ProgrammingError
+from pysform.file_upload_translators import BaseTranslator
 
 L = literal
 
@@ -50,7 +52,14 @@ class CommonTest(unittest.TestCase):
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
         form.add_text('username', 'User Name')
-        form.set_submitted({'username':'bar'})
+        form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
+        self.assertEqual(html, str(form.username.render()))
+        
+    def test_text_with_zero_default(self):
+        html = '<input class="text" id="f-username" name="username" type="text" value="0" />'
+        form = Form('f')
+        form.add_text('username', 'User Name')
+        form.set_defaults({'username':0})
         self.assertEqual(html, str(form.username.render()))
     
     def test_submit_default(self):
@@ -59,7 +68,7 @@ class CommonTest(unittest.TestCase):
         form = Form('f')
         form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
-        form.set_submitted({'username':'bar'})
+        form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
         self.assertEqual(html, str(form.username.render()))
     
     def test_default_value(self):
@@ -68,22 +77,16 @@ class CommonTest(unittest.TestCase):
         form = Form('f')
         form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
-        self.assertEqual(None, form.username.value)
+        assert form.username.value is NotGiven
     
     def test_submitted_value(self):
         form = Form('f')
         form.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
-        form.set_submitted({'username':'bar'})
+        form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
         self.assertEqual('bar', form.username.value)
         
     def test_notgiven(self):
-        # test that NotGiven == None and is what we get when nothing
-        # submitted
-        form = Form('f')
-        form.add_text('username', 'User Name')
-        self.assertEqual(None, form.username.value)
-        
         # make sure the value we get really is NotGiven
         f = Form('f')
         el = f.add_text('f', 'f')
@@ -97,7 +100,7 @@ class CommonTest(unittest.TestCase):
     def test_if_missing(self):        
         f = Form('f')
         el = f.add_text('f', 'f', if_missing='foo')
-        assert el.value is 'foo'
+        assert el.value is 'foo', el.value
         
         # doesn't affect anything if the field is submitted
         f = Form('f')
@@ -171,7 +174,7 @@ class CommonTest(unittest.TestCase):
         form.set_defaults({'username':'foo'})
         self.assertEqual(False, form.username.is_submitted())
         
-        form.set_submitted({'username':''})
+        form.set_submitted({'f-submit-flag': 'submitted', 'username':''})
         self.assertEqual(True, form.username.is_submitted())
     
     def test_required(self):
@@ -323,6 +326,34 @@ class CommonTest(unittest.TestCase):
         assert el.handle_exception(Exception('text exception'))
         self.assertEqual(el.errors[0], 'test error msg')
         
+        # specifying exception type only
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler(exc_type=TypeError)
+        assert el.handle_exception(TypeError('text exception'))
+        self.assertEqual(el.errors[0], 'text exception')
+        
+        # specifying exception type only
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler(exc_type=TypeError, error_msg='wrong type')
+        assert el.handle_exception(TypeError('text exception'))
+        self.assertEqual(el.errors[0], 'wrong type')
+        
+        # error message not specified gets exception text
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler('text exception')
+        assert el.handle_exception(Exception('text exception user message'))
+        self.assertEqual(el.errors[0], 'text exception user message')
+        
+        # specifying exception's class string
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler('text exception', 'test error msg', 'TypeError')
+        assert el.handle_exception(TypeError('text exception'))
+        self.assertEqual(el.errors[0], 'test error msg')
+        
         # right message, wrong type
         form = Form('f')
         el = form.add_text('field', 'Field')
@@ -337,17 +368,37 @@ class CommonTest(unittest.TestCase):
         assert not el.handle_exception(Exception('text'))
         self.assertEqual(len(el.errors), 0)
         
+        # callback
+        def can_handle(exc):
+            if 'can_handle' in str(exc):
+                return True
+            return False
+        
+        # callback that handles
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler(callback=can_handle, error_msg='invalid value')
+        assert el.handle_exception(Exception('can_handle'))
+        self.assertEqual(el.errors[0], 'invalid value')
+        
+        # callback that doesn't
+        form = Form('f')
+        el = form.add_text('field', 'Field')
+        el.add_handler(callback=can_handle, error_msg='invalid value')
+        assert not el.handle_exception(Exception('cant_handle'))
+        self.assertEqual(len(el.errors), 0)
+        
     def test_conversion(self):
         # without form submission, we get empty value
         form = Form('f')
         el = form.add_text('field', 'Field', 'bool')
-        self.assertEqual( el.value, None)
-        
+        assert el.value is NotGiven
+
         # default values do not get processed, they are for display only
         form = Form('f')
         el = form.add_text('field', 'Field', 'bool', '1')
-        self.assertEqual( el.value, None)
-        
+        assert el.value is NotGiven
+
         # submission gets converted
         form = Form('f')
         el = form.add_text('field', 'Field', 'bool')
@@ -410,6 +461,10 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(form.f11.value, u'1.25')
         form.add_text('f12', 'Field', 'bool', if_empty='false')
         self.assertEqual(form.f12.value, False)
+        form.add_text('f13', 'Field', 'decimal', if_empty='1.25')
+        self.assertEqual(form.f13.value, decimal.Decimal('1.25'))
+        form.f13.submittedval = 'foo'
+        assert form.f13.is_valid() == False
         
         # test invalid vtype
         form = Form('f')
@@ -730,6 +785,13 @@ class InputElementsTest(unittest.TestCase):
         assert el.value == datetime.date(2009, 5, 1)
         el.submittedval = '5/1/09'
         assert not el.is_valid()
+        
+        # date field not submitted
+        f = Form('login')
+        el = f.add_date('field', 'Field')
+        post = {'login-submit-flag': 'submitted'}
+        f.set_submitted(post)
+        assert f.get_values() == {'field': NotGiven, 'login-submit-flag': 'submitted'}, f.get_values()
 
     def test_el_email(self):
         html = '<input class="text" id="f-field" name="field" type="text" />'
@@ -746,7 +808,7 @@ class InputElementsTest(unittest.TestCase):
             el.submittedval = 'bob@ireallyhopethisdontexistontheweb.com'
             assert not el.is_valid()
         except ImportError:
-            warnings.warn('skipping test b/c pyDNS not installed')
+            raise SkipTest
         
     def test_el_password(self):
         html = '<input class="password" id="f-f" name="f" type="password" />'
@@ -840,6 +902,8 @@ class SelectTest(unittest.TestCase):
         self.assertEqual(str(el()), html)
         el = Form('f').add_select('f', o, defaultval=u'1', choose=None)
         self.assertEqual(str(el()), html)
+        el = Form('f').add_select('f', o, defaultval=decimal.Decimal('1'), choose=None)
+        self.assertEqual(str(el()), html)
         
         # value
         el = Form('f').add_select('f', o, if_empty=1)
@@ -867,7 +931,18 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_select('f', o, if_empty=-2)
         assert el.is_valid()
         el = Form('f').add_select('f', o, if_empty=-2, required=True)
+        assert not el.is_valid(), el.value
+        assert 'the value chosen is invalid' in el.errors, el.errors
+        el = Form('f').add_select('f', o, required=True)
+        el.submittedval = -2
         assert not el.is_valid()
+        assert 'the value chosen is invalid' in el.errors, el.errors
+        
+        # correct required error message
+        el = Form('f').add_select('f', o, required=True)
+        el.submittedval = ''
+        assert not el.is_valid()
+        assert 'field is required' in el.errors, el.errors
         
         # custom invalid values
         el = Form('f').add_select('f', o, if_empty=1, invalid=['2'])
@@ -876,12 +951,6 @@ class SelectTest(unittest.TestCase):
         assert not el.is_valid()
         el = Form('f').add_select('f', o, if_empty=1, invalid=1)
         assert not el.is_valid()
-        
-        # not submitted value when not required
-        el = Form('f').add_select('f', o)
-        el.is_valid()
-        assert el.is_valid()
-        assert el.value is NotGiven
         
         # "empty" value when required, but there is an empty value in the
         # options.  It seems that required meaning 'must not be empty' should
@@ -897,6 +966,16 @@ class SelectTest(unittest.TestCase):
         el.submittedval = -1
         self.assertEqual(el.value, None)
         
+        # if vtype = bool, then we need to make sure a "choose" option doesn't
+        # get returned as True
+        el = Form('f').add_select('f', o, vtype='bool')
+        el.submittedval = -1
+        self.assertEqual(el.value, None)
+        # but we should be able to specify if we always want a boolean value
+        el = Form('f').add_select('f', o, if_empty=1, vtype='bool')
+        el.submittedval = -1
+        self.assertEqual(el.value, True)
+        
         # make sure we do not accept multiple values if we aren't a multi
         # select
         el = Form('f').add_select('f', o, if_empty=[1,2])
@@ -910,6 +989,14 @@ class SelectTest(unittest.TestCase):
         assert el.is_valid()
         el.submittedval = 'Second Option'
         assert el.is_valid()
+    
+    def test_el_select_not_submitted(self):
+        o = [(1, 'a'), (2, 'b')]
+        # not submitted value when not required
+        el = Form('f').add_select('f', o)
+        el.is_valid()
+        assert el.is_valid()
+        assert el.value is NotGiven
     
     def test_el_select_strip(self):
         # make sure values get stripped
@@ -1010,7 +1097,7 @@ class SelectTest(unittest.TestCase):
         # Should return NotGivenIter
         el = Form('f').add_mselect('f', o)
         assert el.is_valid()
-        assert el.value is NotGivenIter
+        assert el.value is NotGivenIter, el.value
         for v in el.value:
             self.fail('should emulate empty')
         else:
@@ -1026,7 +1113,7 @@ class SelectTest(unittest.TestCase):
         # make sure choose values do not get returned when required=False
         el = Form('f').add_mselect('f', o, if_empty=1)
         el.submittedval = [-2, -1]
-        self.assertEqual(el.value, 1)
+        self.assertEqual(el.value, [1])
         el = Form('f').add_mselect('f', o)
         el.submittedval = [-1, -2]
         self.assertEqual(el.value, [])
@@ -1222,16 +1309,16 @@ class LogicalElementsTest(unittest.TestCase):
         el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
         el2 = f.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
-        f.set_submitted({'thegroup':'foo'})
-        assert f.thegroup.value == ['foo']
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
+        assert f.thegroup.value == ['foo'], f.thegroup.value
         assert el1.chosen
         assert not el2.chosen
-        f.set_submitted({'thegroup':['foo', 'bar']})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':['foo', 'bar']})
         assert f.thegroup.value == ['foo', 'bar']
         assert el1.chosen
         assert el2.chosen
         # it was chosen, but should "undo" when set again
-        f.set_submitted({'thegroup':'foo'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
         assert el1.chosen
         assert not el2.chosen
         # both should unset
@@ -1245,13 +1332,13 @@ class LogicalElementsTest(unittest.TestCase):
         el1 = f.add_mcheckbox('f1', 'label', 1, 'thegroup')
         el2 = f.add_mcheckbox('f2', 'label', 2, 'thegroup')
         assert el1.chosen == el2.chosen == False
-        f.set_submitted({'thegroup':1})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':1})
         assert el1.chosen
         assert not el2.chosen
-        f.set_submitted({'thegroup':'1'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'1'})
         assert el1.chosen
         assert not el2.chosen
-        f.set_submitted({'thegroup':[1, '2']})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':[1, '2']})
         assert el1.chosen
         assert el2.chosen
         
@@ -1308,7 +1395,7 @@ class LogicalElementsTest(unittest.TestCase):
         el1 = f.add_radio('f1', 'label', 'foo', 'thegroup')
         el2 = f.add_radio('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
-        f.set_submitted({'thegroup':'foo'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
         assert f.thegroup.value == 'foo'
         assert el1.chosen
         assert not el2.chosen
@@ -1334,7 +1421,7 @@ class LogicalElementsTest(unittest.TestCase):
         el1 = f.add_radio('f1', 'label', 1, 'thegroup')
         el2 = f.add_radio('f2', 'label', 2, 'thegroup')
         assert el1.chosen == el2.chosen == False
-        f.set_submitted({'thegroup':1})
+        f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':1})
         assert el1.chosen
         assert not el2.chosen
         f.set_submitted({'thegroup':'1'})
@@ -1351,7 +1438,7 @@ class LogicalElementsTest(unittest.TestCase):
             el = f.add_radio('radio2', 'Radio 2', group='rgroup1' )
             self.fail('should have got duplicate value assertion')
         except ValueError, e:
-            self.assertEqual(str(e), 'a member of this group already exists with value "None"')
+            self.assertEqual(str(e), 'a member of this group already exists with value ""')
     
     def test_non_rendering(self):
         f = Form('f')
@@ -1461,6 +1548,12 @@ class LogicalElementsTest2(unittest.TestCase):
     
 class FileUploadsTest(unittest.TestCase):
     
+    blank = BaseTranslator(None, 'application/octet-stream', 0)
+    text = BaseTranslator('text.txt', 'text/plain', 10)
+    noext = BaseTranslator('nofileext', 'text/plain', 10)
+    noname = BaseTranslator('', 'text/plain', 10)
+    noct = BaseTranslator('text.txt', '', 10)
+    
     def test_html(self):
         html = L('<input class="file" id="f-f" name="f" type="file" />')
         el = Form('f').add_file('f')
@@ -1480,16 +1573,23 @@ class FileUploadsTest(unittest.TestCase):
             self.assertEqual(str(e), 'FileElement doesn\'t support default values')
     
     def test_submitted(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length='10')
         el = Form('f').add_file('f')
-        el.submittedval = tosub
+        el.submittedval = self.text
         assert el.is_valid()
-        self.assertEqual(el.value.file_name, tosub.filename)
-        self.assertEqual(el.value.content_type, tosub.content_type)
-        self.assertEqual(el.value.content_length, tosub.content_length)
+        self.assertEqual(el.value.file_name, self.text.file_name)
+        self.assertEqual(el.value.content_type, self.text.content_type)
+        self.assertEqual(el.value.content_length, self.text.content_length)
+    
+    def test_no_file_submit(self):
+        el = Form('f').add_file('f')
+        assert el.is_valid()
+        assert el.value is NotGiven
+        
+        el = Form('f').add_file('f', required=True)
+        assert not el.is_valid()
     
     def test_maxsize(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.maxsize(5)
         el.submittedval = tosub
@@ -1500,9 +1600,33 @@ class FileUploadsTest(unittest.TestCase):
         el.maxsize(15)
         el.submittedval = tosub
         assert el.is_valid(), 'max size validation should have been ok'
+        
+        # zero length max size validation
+        # this is probably going to be confusing since the content length is usually not given
+        # for files by a browser, but lets test anyway
+        tosub = BaseTranslator('text.txt', 'text/plain', 0)
+        el = Form('f').add_file('f')
+        el.maxsize(5)
+        el.submittedval = tosub
+        assert not el.is_valid(), 'max size validation should have failed'
+        assert el.errors[0] == 'maximum size requirement exists, but submitted file had no content length'
+        
+        # none should be the same as zero
+        tosub = BaseTranslator('text.txt', 'text/plain', None)
+        el = Form('f').add_file('f')
+        el.maxsize(5)
+        el.submittedval = tosub
+        assert not el.is_valid(), 'max size validation should have failed'
+        assert el.errors[0] == 'maximum size requirement exists, but submitted file had no content length'
+    
+        # no submission should pass since maxsize should only run if a file is uploaded
+        el = Form('f').add_file('f')
+        el.maxsize(5)
+        el.submittedval = self.blank
+        assert el.is_valid(), el.errors
     
     def test_allowexts(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.allow_extension('txt')
         el.submittedval = tosub
@@ -1518,9 +1642,29 @@ class FileUploadsTest(unittest.TestCase):
         el.submittedval = tosub
         assert not el.is_valid()
         self.assertEqual(el.errors[0], 'extension ".txt" not allowed')
+        
+        tosub = self.noname
+        el = Form('f').add_file('f')
+        el.allow_extension('txt')
+        el.submittedval = tosub
+        assert not el.is_valid()
+        assert 'submitted file had no file name' in el.errors[0]
+        
+        tosub = self.noext
+        el = Form('f').add_file('f')
+        el.allow_extension('txt')
+        el.submittedval = tosub
+        assert not el.is_valid()
+        assert 'submitted file had no extension' in el.errors[0]
+        
+        # no submission should work
+        el = Form('f').add_file('f')
+        el.allow_extension('txt')
+        el.submittedval = self.blank
+        assert el.is_valid(), el.errors
     
     def test_denyexts(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.deny_extension('txt')
         el.submittedval = tosub
@@ -1530,15 +1674,33 @@ class FileUploadsTest(unittest.TestCase):
         el.deny_extension('.txt', '.pdf')
         el.submittedval = tosub
         assert not el.is_valid()
-        assert el.errors[0] == 'extension ".txt" not permitted'
+        assert el.errors[0] == 'extension ".txt" not permitted', el.errors
         
         el = Form('f').add_file('f')
         el.deny_extension('pdf', 'doc')
         el.submittedval = tosub
         assert el.is_valid()
         
+        el = Form('f').add_file('f')
+        el.deny_extension('txt')
+        el.submittedval = self.noname
+        assert not el.is_valid()
+        assert 'submitted file had no file name' in el.errors[0]
+
+        el = Form('f').add_file('f')
+        el.deny_extension('txt')
+        el.submittedval = self.noext
+        assert not el.is_valid()
+        assert 'submitted file had no extension' in el.errors[0]
+        
+        # no submission should work
+        el = Form('f').add_file('f')
+        el.deny_extension('txt')
+        el.submittedval = self.blank
+        assert el.is_valid()
+        
     def test_allowtypes(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.allow_type('text/plain')
         el.submittedval = tosub
@@ -1550,8 +1712,20 @@ class FileUploadsTest(unittest.TestCase):
         assert not el.is_valid()
         self.assertEqual(el.errors[0], 'content type "text/plain" not allowed')
         
+        el = Form('f').add_file('f')
+        el.allow_type('text/css', 'text/javascript')
+        el.submittedval = self.noct
+        assert not el.is_valid()
+        assert 'submitted file had no content-type' in el.errors[0], el.errors
+        
+        # no submission should work
+        el = Form('f').add_file('f')
+        el.allow_type('text/css', 'text/javascript')
+        el.submittedval = self.blank
+        assert el.is_valid()
+        
     def test_denytypes(self):
-        tosub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
+        tosub = self.text
         el = Form('f').add_file('f')
         el.deny_type('text/plain')
         el.submittedval = tosub
@@ -1561,6 +1735,18 @@ class FileUploadsTest(unittest.TestCase):
         el = Form('f').add_file('f')
         el.deny_type('text/css', 'text/javascript')
         el.submittedval = tosub
+        assert el.is_valid()
+
+        el = Form('f').add_file('f')
+        el.deny_type('text/css', 'text/javascript')
+        el.submittedval = self.noct
+        assert not el.is_valid()
+        assert 'submitted file had no content-type' in el.errors[0]
+        
+        # no submission should work
+        el = Form('f').add_file('f')
+        el.deny_type('text/css', 'text/javascript')
+        el.submittedval = self.blank
         assert el.is_valid()
 
 # need to test adding group first and then members
