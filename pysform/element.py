@@ -1,13 +1,15 @@
 from os import path
 import cgi
-from webhelpers.html import HTML, tags
+from webhelpers.html import HTML, tags, literal
 import formencode
 import formencode.validators as fev
+from pysutils import DumbObject
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
         tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, \
         is_given
-from pysform.processors import Confirm, Select, MultiValues, Wrapper
+from pysform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
 from pysform.exceptions import ElementInvalid, ProgrammingError
+from pysform.file_upload_translators import BaseTranslator
 
 form_elements = {}
 
@@ -48,6 +50,10 @@ class ElementBase(HtmlAttributeHolder):
     Base class for form elements.
     """
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
+        # settings to overide the form's settings
+        self.settings = kwargs.pop('settings', {})
+        self.label_after = kwargs.pop('label_after', False)
+        
         HtmlAttributeHolder.__init__(self, **kwargs)
 
         self._defaultval = NotGiven
@@ -135,7 +141,7 @@ class FormFieldElementBase(HasValueElement):
         
         # types
         vtypes = ('boolean', 'bool', 'int', 'integer', 'number', 'num',
-                        'str', 'string', 'unicode', 'uni', 'float')
+                        'str', 'string', 'unicode', 'uni', 'float', 'decimal')
         if vtype is not NotGiven:
             try:
                 vtype = vtype.lower()
@@ -235,7 +241,13 @@ class FormFieldElementBase(HasValueElement):
         for processor, msg in self.processors:
             try:
                 processor = MultiValues(processor)
-                value = processor.to_python(value, self)
+                ap_value = processor.to_python(value, self)
+                
+                # FormEncode takes "empty" values and returns None
+                # Since NotGiven == '', FormEncode thinks its empty
+                # and returns None on us.  We override that here.
+                if ap_value is not None or value is not NotGiven:
+                    value = ap_value
             except formencode.Invalid, e:
                 valid = False
                 self.add_error((msg or str(e)))
@@ -244,6 +256,21 @@ class FormFieldElementBase(HasValueElement):
             # it doesn't get called
             if getattr(self, 'multiple', False) and not is_iterable(value):
                 value = tolist(value)
+
+        ###
+        # Doing these again in case the processors changed the value
+        ###
+        # handle empty or missing submit value with if_empty
+        if is_empty(value) and self.if_empty is not NotGiven:
+            value = self.if_empty
+        # standardize all empty values as None if if_empty not given
+        elif is_empty(value) and not is_notgiven(value):
+            value = None  
+
+        # process required
+        if self.required and self.required_empty_test(value) and 'field is required' not in self.errors:
+            valid = False
+            self.add_error('field is required')
 
         # If its empty, there is no reason to run the converters.  By default,
         # the validators don't do anything if the value is empty and they WILL
@@ -258,6 +285,8 @@ class FormFieldElementBase(HasValueElement):
                     tvalidator = fev.Int
                 elif self.vtype in ('number', 'num', 'float'):
                     tvalidator = fev.Number
+                elif self.vtype in ('decimal'):
+                    tvalidator = Decimal
                 elif self.vtype in ('str', 'string'):
                     tvalidator = fev.String
                 elif self.vtype in ('unicode', 'uni'):
@@ -302,15 +331,33 @@ class FormFieldElementBase(HasValueElement):
 
         self.processors.append((processor, msg))
         
-    def add_handler(self, exception_txt, error_msg, exc_type=None):
-        self.exception_handlers.append((exception_txt, error_msg, exc_type))
+    def add_handler(self, exception_txt=NotGiven, error_msg=NotGiven, exc_type=NotGiven, callback=NotGiven):
+        self.exception_handlers.append((exception_txt, error_msg, exc_type, callback))
 
     def handle_exception(self, exc):
-        for looking_for, error_msg, exc_type in self.exception_handlers:
-            if looking_for in str(exc) and (exc_type is None or isinstance(exc, exc_type)):
-                self._valid = False
-                self.add_error(error_msg)
-                return True
+        def can_handle(error_msg):
+            self._valid = False
+            if is_notgiven(error_msg):
+                error_msg = str(exc)
+            self.add_error(error_msg)
+            return True
+        
+        for looking_for, error_msg, exc_type, callback in self.exception_handlers:
+            if is_notgiven(callback):
+                if not is_notgiven(exc_type):
+                    if isinstance(exc_type, basestring):
+                        if exc.__class__.__name__ != exc_type:
+                            continue
+                    else:
+                        if not isinstance(exc, exc_type):
+                            continue
+                if is_notgiven(looking_for):
+                    return can_handle(error_msg)
+                elif looking_for in str(exc):
+                    return can_handle(error_msg)
+            else:
+                if callback(exc):
+                    return can_handle(error_msg)
         return False
 
 class InputElementBase(FormFieldElementBase):
@@ -329,12 +376,44 @@ class InputElementBase(FormFieldElementBase):
 
     def __call__(self, **kwargs):
         return self.render(**kwargs)
-        
+    
     def render(self, **kwargs):
-        if self.displayval and self.displayval is not NotGiven:
-            self.set_attr('value', self.displayval)
         self.set_attrs(**kwargs)
+        if self.form._static:
+            return self.render_static()
+        else:
+            return self.render_html()
+
+    def render_html(self):
+        if (self.displayval or self.displayval == 0) and self.displayval is not NotGiven:
+            self.set_attr('value', self.displayval)
         return HTML.input(type=self.etype, **self.attributes)
+    
+    def _static_attributes(self):
+        attrs = self.attributes.copy()
+        try:
+            del attrs['name']
+        except KeyError:
+            pass
+        try:
+            del attrs['maxlength']
+        except KeyError:
+            pass
+        try:
+            del attrs['checked']
+        except KeyError:
+            pass
+        return attrs
+    
+    def render_static(self):
+        if self.etype in ('button', 'file', 'hidden', 'image', 'submit',
+            'reset', 'password'):
+            return ''
+        if self.displayval == '':
+            todisplay = literal('&nbsp;')
+        else:
+            todisplay = self.displayval
+        return HTML.div(todisplay, **self._static_attributes())
 
 class ButtonElement(InputElementBase):
     def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
@@ -367,8 +446,15 @@ class CheckboxElement(InputElementBase):
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
-        
+    
     def render(self, **kwargs):
+        self.set_attrs(**kwargs)
+        if self.form._static:
+            return self.render_static()
+        else:
+            return self.render_html()
+
+    def render_html(self):
         # have to override InputBase.render or it will put a value attribute
         # for a checkbox
         if self.displayval and self.displayval is not NotGiven:
@@ -378,8 +464,10 @@ class CheckboxElement(InputElementBase):
                 self.del_attr('checked')
             except KeyError:
                 pass
-        self.set_attrs(**kwargs)
         return HTML.input(type=self.etype, **self.attributes)
+    
+    def render_static(self):
+        return HTML.div('yes' if self.displayval else 'no', **self._static_attributes())
 form_elements['checkbox'] = CheckboxElement
 
 class FileElement(InputElementBase):
@@ -409,10 +497,14 @@ class FileElement(InputElementBase):
     
     def _get_submittedval(self):
         return self._submittedval
+
     def _set_submittedval(self, value):
         self._valid = None
         self.errors = []
-        self._submittedval = self.form._fu_translator(value)
+        if isinstance(value, BaseTranslator):
+            self._submittedval = value
+        else:
+            self._submittedval = self.form._fu_translator(value)
     submittedval = property(_get_submittedval, _set_submittedval)
     
     def maxsize(self, size):
@@ -442,40 +534,53 @@ class FileElement(InputElementBase):
         
         valid = True
         value = self.submittedval
-        
-        # process required
-        if self.required and (
-            not value.file_name or not value.content_type or
-            not value.content_length):
+
+        if is_notgiven(value):
+            value = BaseTranslator(None, None, 0)
+
+        if value.is_uploaded:
+            if value.file_name:
+                _ , ext = path.splitext(value.file_name)
+                ext  = ext.lower()
+                if not ext and (self._allowed_exts or self._denied_exts):
+                    valid = False
+                    self.add_error('extension requirement exists, but submitted file had no extension')
+                    
+                if self._allowed_exts and ext not in self._allowed_exts:
+                    valid = False
+                    self.add_error('extension "%s" not allowed' % ext)
+                
+                if self._denied_exts and ext in self._denied_exts:
+                    valid = False
+                    self.add_error('extension "%s" not permitted' % ext)
+            elif value.file_name is not None and (self._allowed_exts or self._denied_exts):
+                valid = False
+                self.add_error('extension requirements exist, but submitted file had no file name')
+    
+            if value.content_type:
+                if self._allowed_types and value.content_type not in self._allowed_types:
+                    valid = False
+                    self.add_error('content type "%s" not allowed' % value.content_type)
+                
+                if self._denied_types and value.content_type in self._denied_types:
+                    valid = False
+                    self.add_error('content type "%s" not permitted' % value.content_type)
+            elif value.content_type is not None and (self._allowed_types or self._denied_types):
+                valid = False
+                self.add_error('content-type requirements exist, but submitted file had no content-type')
+            
+            if self._maxsize:
+                if not value.content_length :
+                    valid = False
+                    self.add_error('maximum size requirement exists, but submitted file had no content length')  
+                elif value.content_length > self._maxsize:
+                    valid = False
+                    self.add_error('file too big (%s), max size %s' %
+                                   (value.content_length, self._maxsize))
+        elif self.required:
             valid = False
             self.add_error('field is required')
         
-        if value.file_name is not None:
-            _ , ext = path.splitext(value.file_name)
-            ext  = ext.lower()
-            if self._allowed_exts and ext not in self._allowed_exts:
-                valid = False
-                self.add_error('extension "%s" not allowed' % ext)
-            
-            if self._denied_exts and ext in self._denied_exts:
-                valid = False
-                self.add_error('extension "%s" not permitted' % ext)
-        
-        if value.content_type is not None:
-            if self._allowed_types and value.content_type not in self._allowed_types:
-                valid = False
-                self.add_error('content type "%s" not allowed' % value.content_type)
-            
-            if self._denied_types and value.content_type in self._denied_types:
-                valid = False
-                self.add_error('content type "%s" not permitted' % value.content_type)
-        
-        if self._maxsize:
-            if value.content_length > self._maxsize:
-                valid = False
-                self.add_error('file too big (%s), max size %s' %
-                               (value.content_length, self._maxsize))
-                
         self._valid = valid
         if valid:
             self._safeval = self.submittedval
@@ -582,6 +687,9 @@ class ConfirmElement(TextElement):
             return None
         return TextElement._get_displayval(self)
     displayval = property(_get_displayval)
+    
+    def render_static(self):
+        return ''
 form_elements['confirm'] = ConfirmElement
 
 class DateElement(TextElement):
@@ -631,6 +739,17 @@ class URLElement(TextElement):
         vargs = multi_pop(kwargs, 'check_exists', 'add_http', 'require_tld')
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         self.add_processor(fev.URL(**vargs))
+        
+    def render_static(self):
+        if self.displayval == '':
+            todisplay = literal('&nbsp;')
+        else:
+            if self.displayval.startswith('http:') or self.displayval.startswith('https:'):
+                todisplay = tags.link_to(self.displayval, self.displayval)
+            else:
+                todisplay = self.displayval
+        return HTML.div(todisplay, **self._static_attributes())
+        
 form_elements['url'] = URLElement
 
 class SelectElement(FormFieldElementBase):
@@ -658,48 +777,74 @@ class SelectElement(FormFieldElementBase):
                
             self.options = self.choose + options
         
-        if auto_validate: 
+        if auto_validate:
+            choose_as_none = [cv[0] for cv in tolist(self.choose)]
             if required:
-                self.add_processor(Select(self.options, invalid), error_msg)
+                self.add_processor(Select(self.options, invalid, choose_as_none), error_msg)
             else:
                 # NotGiven is a valid option as long as a value isn't required
                 ok_values = self.options + [(NotGiven, 0)] + [(NotGivenIter, 0)]
-                self.add_processor(Select(ok_values, invalid), error_msg)
+                self.add_processor(Select(ok_values, invalid, choose_as_none), error_msg)
+    
+    def __call__(self, **kwargs):
+        return self.render(**kwargs)
     
     def _to_python_processing(self):
         """
             if "choose" value was chosen, we need to return an emtpy
             value appropriate to `multi`
         """
-        do_processing = bool(self._valid == None)
         FormFieldElementBase._to_python_processing(self)
-        if self.choose and do_processing and not is_notgiven(self._safeval):
-            value = self._safeval
-            # strip out choose values
-            if self.multiple:
-                value = [v for v in value if unicode(v) not in (u'-1', u'-2')]
-            else:
-                if unicode(value) in (u'-1', u'-2'):
-                    value = None
-            
-            # re-apply if_empty settings
-            if is_empty(value) and self.if_empty is not NotGiven:
-                value = self.if_empty
-        
-            self._safeval = value
-    
-    def __call__(self, **kwargs):
-        return self.render(**kwargs)
+        # multiple select fields should always return a list
+        if self.multiple and not is_notgiven(self._safeval):
+            self._safeval = tolist(self._safeval)
     
     def set_attrs(self, **kwargs ):
         """ no name attribute b/c select tag takes it directly """
         HasValueElement.set_attrs(self, **kwargs)
-        
+    
+    def _static_attributes(self):
+        attrs = self.attributes.copy()
+        try:
+            del attrs['name']
+        except KeyError:
+            pass
+        try:
+            del attrs['multiple']
+        except KeyError:
+            pass
+        return attrs
+    
     def render(self, **kwargs):
         if self.multiple:
             self.set_attr('multiple', 'multiple')
         self.set_attrs(**kwargs)
-        return tags.select(self.nameattr or self.id, self.displayval or None, self.options, **self.attributes)
+        if self.form._static:
+            return self.render_static()
+        else:
+            return self.render_html()
+    
+    def render_html(self):
+        displayval = self.displayval if self.displayval or self.displayval == 0 else None
+        return tags.select(self.nameattr or self.id, tolist(displayval), self.options, **self.attributes)
+        
+    def render_static(self):
+        if self.displayval == '':
+            todisplay = literal('&nbsp;')
+        else:
+            values = []
+            mapf = lambda x: (unicode(x[0]), x[1])
+            lookup = dict(map(mapf, self.options))
+            for key in tolist(self.displayval):
+                try:
+                    values.append(lookup[unicode(key)])
+                except KeyError:
+                    pass
+            todisplay = ', '.join(values)
+            
+        self.add_attr('class', 'select')
+        return HTML.div(todisplay, **self._static_attributes())
+
 form_elements['select'] = SelectElement
 
 class MultiSelectElement(SelectElement):
@@ -732,9 +877,37 @@ class TextAreaElement(FormFieldElementBase):
         """ no name attribute b/c textarea tag takes it directly """
         HasValueElement.set_attrs(self, **kwargs)
 
+    def _static_attributes(self):
+        attrs = self.attributes.copy()
+        try:
+            del attrs['rows']
+        except KeyError:
+            pass
+        try:
+            del attrs['cols']
+        except KeyError:
+            pass
+        return attrs
+
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        return tags.textarea(self.nameattr or self.id, self.displayval or '', **self.attributes)
+        if self.form._static:
+            return self.render_static()
+        else:
+            return self.render_html()
+
+    def render_html(self):
+        displayval = self.displayval if self.displayval or self.displayval == 0 else ''
+        return tags.textarea(self.nameattr or self.id, displayval, **self.attributes)
+    
+    def render_static(self):
+        self.add_attr('class', 'textarea')
+        if self.displayval == '':
+            todisplay = literal('&nbsp;')
+        else:
+            todisplay = self.displayval
+        return HTML.div(todisplay, **self._static_attributes())
+
 form_elements['textarea'] = TextAreaElement
 
 class LogicalGroupElement(FormFieldElementBase):
@@ -883,7 +1056,8 @@ class StaticElement(ElementBase):
         
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        return HTML.tag('div', self.displayval or '', **self.attributes)
+        displayval = self.displayval if self.displayval or self.displayval == 0 else None
+        return HTML.tag('div', displayval, **self.attributes)
 form_elements['static'] = StaticElement
 
 class GroupElement(StaticElement, ElementRegistrar):
@@ -905,6 +1079,7 @@ class GroupElement(StaticElement, ElementRegistrar):
         self._returning_els = form._returning_els
         self._element_id_formatter = form._element_id_formatter
         self._name = form._name
+        self._static = form._static
         
         # but we keep the rendering elements to ourself
         self._render_els = []
@@ -924,7 +1099,8 @@ class HeaderElement(StaticElement):
         
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        return HTML.tag(self.level, self.displayval or '', **self.attributes)
+        displayval = self.displayval if self.displayval or self.displayval == 0 else None
+        return HTML.tag(self.level, displayval, **self.attributes)
 form_elements['header'] = HeaderElement
 
 class LogicalSupportElement(ElementBase):
@@ -967,11 +1143,17 @@ class LogicalSupportElement(ElementBase):
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
-    
+
     def render(self, **kwargs):
-        if self.displayval:
-            self.set_attr('value', self.displayval)
         self.set_attr('class_', self.etype)
+        if self.form._static:
+            return self.render_static(**kwargs)
+        else:
+            return self.render_html(**kwargs)
+
+    def render_html(self, **kwargs):
+        if self.displayval or self.displayval == 0:
+            self.set_attr('value', self.displayval)
         if self.chosen:
             self.set_attr(self.chosen_attr, self.chosen_attr)
         else:
@@ -979,10 +1161,30 @@ class LogicalSupportElement(ElementBase):
                 self.del_attr(self.chosen_attr)
             except KeyError:
                 pass
-        self.set_attr('name', self.lgroup.id)
         self.set_attrs(**kwargs)
+        self.set_attr('name', self.lgroup.id)
         return HTML.input(type=self.etype, **self.attributes)
-
+    
+    def _static_attributes(self):
+        attrs = self.attributes.copy()
+        for attr in ('checked', 'name', 'type', 'selected'):
+            try:
+                del attrs[attr]
+            except KeyError:
+                pass
+        return attrs
+    
+    def render_static(self, **kwargs):
+        self.set_attrs(**kwargs)
+        if self.chosen or self.get_attr(self.chosen_attr, None):
+            if self.displayval or self.displayval == 0:
+                todisplay = self.displayval
+            else:
+                todisplay = literal('&nbsp;')    
+        else:
+            todisplay = literal('&nbsp;')
+        return HTML.div(todisplay, **self._static_attributes())
+    
 class MultiCheckboxElement(LogicalSupportElement):
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, checked=False, **kwargs):
         chosen = bool(checked)
@@ -991,6 +1193,7 @@ class MultiCheckboxElement(LogicalSupportElement):
         self.chosen = chosen
         self.chosen_attr = 'checked'
         self.etype = 'checkbox'
+
 form_elements['mcheckbox'] = MultiCheckboxElement
 
 class RadioElement(LogicalSupportElement):

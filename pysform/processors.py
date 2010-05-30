@@ -2,6 +2,7 @@ from formencode.validators import FancyValidator
 from formencode import Invalid
 from pysform.util import tolist, is_iterable, is_notgiven
 from pysform.exceptions import ValueInvalid
+import decimal
 
 class Select(FancyValidator):
     """
@@ -10,13 +11,35 @@ class Select(FancyValidator):
     """
     
     invalid = []
-    __unpackargs__ = ('options', 'invalid')
+    as_empty = []
+    handles_multiples = True
+    __unpackargs__ = ('options', 'invalid', 'as_empty')
     messages = {
         'notthere': "the value did not come from the given options",
         'invalid': "the value chosen is invalid",
         }
-
-    def validate_python(self, values, state):
+    
+    def _to_python(self, value, state):
+        valiter = tolist(value)
+        as_empty = [unicode(d) for d in tolist(self.as_empty)]
+        vallist = [unicode(d) for d in valiter]
+        # single
+        if len(vallist) == 1:
+            if vallist[0] in as_empty:
+                return None
+            return value
+        # multiple
+        to_remove = []
+        for index, val in enumerate(vallist):
+            if val in as_empty:
+                to_remove.append(index)
+        adjust = 0
+        for index in to_remove:
+            del valiter[index-adjust]
+            adjust += 1
+        return valiter
+        
+    def validate_other(self, values, state):
         soptions = set([unicode(d[0] if isinstance(d, tuple) else d) for d in self.options])
         sinvalid = set([unicode(d) for d in tolist(self.invalid)])
         svalues = set([unicode(d) for d in tolist(values)])
@@ -77,7 +100,7 @@ class MultiValues(FancyValidator):
                     raise Invalid(self.message('nonmultiple', state), value, state)
 
         # now apply the validator to the value
-        if not multiple or is_notgiven(value):
+        if not multiple or is_notgiven(value) or getattr(self.validator, 'handles_multiples', False):
             return self.validator.to_python(value, state)
         else:
             retval = []
@@ -125,3 +148,12 @@ class Wrapper(FancyValidator):
             except ValueInvalid, e:
                 raise Invalid(str(e), {}, value, state)
         return result
+
+class Decimal(FancyValidator):
+
+    def _to_python(self, value, state):
+        try:
+            return decimal.Decimal(value)
+        except decimal.DecimalException, e:
+            raise Invalid(str(e), value, state)
+        

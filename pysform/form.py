@@ -4,14 +4,14 @@ from pysform.element import form_elements, CancelElement, CheckboxElement, \
 from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
 from pysform.file_upload_translators import WerkzeugTranslator
 from pysform.processors import Wrapper
-from pysform.exceptions import ElementInvalid
+from pysform.exceptions import ElementInvalid, ProgrammingError
 
 class FormBase(HtmlAttributeHolder, ElementRegistrar):
     """
     Base class for forms.
     """
     
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, static=False, **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
         ElementRegistrar.__init__(self, self, self)
         
@@ -33,6 +33,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         self._errors = []
         # exception handlers
         self._exception_handlers = []
+        # is the form static?
+        self._static = static
         
         # element holders
         self._all_els = {}
@@ -54,8 +56,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
             raise ValueError('type "%s" is already registered' % type)
         self._registered_types[type] = eclass
 
-    def render(self):
-        return self._renderer(self).render()
+    def render(self, **kwargs):
+        return self._renderer(self).render(**kwargs)
 
     def is_submitted(self):
         """ In a normal workflow, is_submitted will only be called once and is
@@ -92,13 +94,13 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
             form level validators are only validators, no manipulation of
             values can take place.  The validator should be a formencode
             validator or a callable.  If a callable, the callable should take
-            one argument, the form object.  It should raise an exception
-            to indicate in invalid condition.
+            one argument, the form object.  It should raise a ValueInvalid
+            exception if applicable.
             
             def validator(form):
                 if form.myfield.is_valid():
                     if form.myfield.value != 'foo':
-                        raise ValueError('My Field: must have "foo" as value')
+                        raise ValueInvalid('My Field: must have "foo" as value')
         """
         if not formencode.is_validator(validator):
             if callable(validator):
@@ -138,25 +140,27 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
     
     def set_submitted(self, values):
         """ values should be dict like """
+        
+        # if the form is static, it shoudl not get submitted values
+        if self._static:
+            raise ProgrammingError('static forms should not get submitted values')
+        
         self._errors = []
         
-        for el in self._submittable_els.values():
-            key = el.nameattr or el.id
-            if values.has_key(key):
-                el.submittedval = values[key]
+        # ident field first since we need to know that to now if we need to
+        # apply the submitted values
+        identel = getattr(self, self._form_ident_field)
+        ident_key = identel.nameattr or identel.id
+        if values.has_key(ident_key):
+            identel.submittedval = values[ident_key]
         
-        # this second loop is to make sure we clear checkboxes,
-        # LogicalGroupElements, and multi-selects if the form is submitted,
-        # they have a default value, but the field wasn't submitted.
-        #
-        # It can't be done above because _is_submitted() can't be trusted until
-        # we are certain all submitted values have been processed.
         if self._is_submitted():
             for el in self._submittable_els.values():
                 key = el.nameattr or el.id
-                if not values.has_key(key):
-                    if isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
-                        el.submittedval = None
+                if values.has_key(key):
+                    el.submittedval = values[key]
+                elif isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
+                        el.submittedval = None                    
                 
     def set_defaults(self, values):
         for key, el in self._defaultable_els.items():
@@ -197,12 +201,12 @@ class Form(FormBase):
     Main form class using default HTML renderer and Werkzeug file upload
     translator
     """
-    def __init__(self, name, **kwargs):        
+    def __init__(self, name, static=False, **kwargs):        
         # make the form's name the id
         if not kwargs.has_key('id'):
             kwargs['id'] = name
             
-        FormBase.__init__(self, name, **kwargs)
+        FormBase.__init__(self, name, static, **kwargs)
         
         # import here or we get circular import problems
         from pysform.render import get_renderer
