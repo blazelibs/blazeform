@@ -81,10 +81,10 @@ Please visit: http://groups.google.com/group/pyslibs
 Current Status
 ---------------
 
-The code for 0.1 is pretty stable.  API, however, will be changing in 0.2.
+The code stays pretty stable, but the API is likely to change in the future.
 
-The somewhat stable `development version
-<https://svn.rcslocal.com:8443/svn/pysmvt/pysform/trunk#egg=pysform-dev>`_.
+The `pysform tip <http://bitbucket.org/rsyring/pysform/get/tip.zip#egg=pysform-dev>`_
+is installable via `easy_install` with ``easy_install pysform==dev``
 """
 import sys
 try:
@@ -94,13 +94,15 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages
 
+version = "0.1"
+
 setup(
     name = "pysform",
-    version = "0.1",
+    version = version,
     description = "A library for generating and validating HTML forms",
     long_description = __doc__,
     author = "Randy Syring",
-    author_email = "randy@rcs-comp.com",
+    author_email = "rsyring@gmail.com",
     url='http://pypi.python.org/pypi/pysform',
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -111,8 +113,11 @@ setup(
     packages=['pysform'],
     install_requires = [
         "FormEncode>=1.2.2",
-        "pysutils>=0.1",
+        "pysutils>=0.2",
         "WebHelpers>=0.6.4"
     ],
+    test_suite='nose.collector',
+    # tests will issue warning if run without pydns, but only one test uses it
+    tests_require=['nose', 'pydns'],
     zip_safe=False
 )
