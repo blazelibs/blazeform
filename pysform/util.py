@@ -138,7 +138,7 @@ class ElementRegistrar(object):
         elif self._formref._all_els.has_key(name):
             return self._formref._all_els[name]
         else:
-            raise AttributeError("'%s' bobject has no attribute '%s'" % (self.__class__.__name__, name))
+            raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
         
         def wrapper(eid, *args, **kwargs):
             return func(type, eid, *args, **kwargs)
@@ -149,11 +149,14 @@ class ElementRegistrar(object):
             self._formref.set_attr('enctype', 'multipart/form-data')
         if self._formref._all_els.has_key(eid):
             raise ValueError('element id "%s" already used' % eid)
+        
+        
+        
         try:
             eclass = self._formref._registered_types[type]
         except KeyError:
             raise ValueError('"%s" is not a registered element type' % type)
-        return eclass(self, eid, *args, **kwargs)
+        return eclass(self._formref, eid, *args, **kwargs)
     
     def bind_element(self, el, default=True, render=True, submit=True, retval=True):
         self._formref._all_els[el.id] = el

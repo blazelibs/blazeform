@@ -72,7 +72,7 @@ class ElementBase(HtmlAttributeHolder):
         self._bind_to_form()
     
     def _bind_to_form(self):
-        self.form.bind_element(self)
+        self.form.fields.bind_element(self)
     
     def _get_defaultval(self):
         return self._defaultval
@@ -482,7 +482,7 @@ class FileElement(InputElementBase):
         self._maxsize = NotGiven
     
     def _bind_to_form(self):
-        self.form.bind_element(self, default=False)
+        self.form.fields.bind_element(self, default=False)
         
     def _get_defaultval(self):
         return NotGiven
@@ -926,7 +926,7 @@ class LogicalGroupElement(FormFieldElementBase):
         self.submittedval = NotGivenIter
 
     def _bind_to_form(self):
-        self.form.bind_element(self, render=False)
+        self.form.fields.bind_element(self, render=False)
         
     def _get_defaultval(self):
         return self._defaultval
@@ -999,7 +999,7 @@ class PassThruElement(HasValueElement):
         HasValueElement.__init__(self, form, eid, label, defaultval, **kwargs)
 
     def _bind_to_form(self):
-        self.form.bind_element(self, render=False, submit=False)
+        self.form.fields.bind_element(self, render=False, submit=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -1020,7 +1020,7 @@ class FixedElement(PassThruElement):
         PassThruElement.__init__(self, form, eid, defaultval, label, **kwargs)
 
     def _bind_to_form(self):
-        self.form.bind_element(self, submit=False)
+        self.form.fields.bind_element(self, submit=False)
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
@@ -1039,7 +1039,7 @@ class StaticElement(ElementBase):
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
 
     def _bind_to_form(self):
-        self.form.bind_element(self, submit=False, retval=False)
+        self.form.fields.bind_element(self, submit=False, retval=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -1129,7 +1129,7 @@ class LogicalSupportElement(ElementBase):
         self.chosen_attr = 'checked'
     
     def _bind_to_form(self):
-        self.form.bind_element(self, submit=False, retval=False)
+        self.form.fields.bind_element(self, submit=False, retval=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
