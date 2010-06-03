@@ -15,7 +15,7 @@ class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
         HtmlAttributeHolder.__init__(self, **kwargs)
         #ElementRegistrar.__init__(self, self, self)
         
-        self.fields = ElementRegistrar()
+        self.fields = ElementRegistrar(self, self)
         self.f = self.fields
         
         self._name = name       
@@ -48,7 +48,7 @@ class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
         
         # init actions
         self.register_elements(form_elements)
-        self.add_hidden(self._form_ident_field, value='submitted')
+        self.fields.add_hidden(self._form_ident_field, value='submitted')
     
     def register_elements(self, dic):
         for type, eclass in dic.items():
@@ -73,7 +73,7 @@ class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
         return self._is_submitted()
     
     def _is_submitted(self):
-        if getattr(self, self._form_ident_field).is_submitted():
+        if getattr(self.fields, self._form_ident_field).is_submitted():
             return True
         return False
     
@@ -152,7 +152,7 @@ class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
         
         # ident field first since we need to know that to now if we need to
         # apply the submitted values
-        identel = getattr(self, self._form_ident_field)
+        identel = getattr(self.fields, self._form_ident_field)
         ident_key = identel.nameattr or identel.id
         if values.has_key(ident_key):
             identel.submittedval = values[ident_key]
@@ -204,7 +204,7 @@ class Form(FormBase):
     Main form class using default HTML renderer and Werkzeug file upload
     translator
     """
-    def __init__(self, name, static=False, **kwargs):        
+    def __init__(self, name, static=False, **kwargs): 
         # make the form's name the id
         if not kwargs.has_key('id'):
             kwargs['id'] = name

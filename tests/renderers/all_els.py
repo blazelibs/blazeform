@@ -5,8 +5,6 @@ class TestForm(Form):
     def __init__(self):
         Form.__init__(self, 'testform')
 
-        blah = self._name
-        
         el = self.fields.add_button('button', 'Button', defaultval='PushMe')
         el = self.fields.add_checkbox('checkbox', 'Checkbox')
         el = self.fields.add_file('file', 'File')

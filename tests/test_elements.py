@@ -18,193 +18,193 @@ class CommonTest(unittest.TestCase):
     def test_render(self):
         html = '<input class="text" id="f-username" name="username" type="text" />'
         form = Form('f')
-        el = form.add_text('username', 'User Name')
-        self.assertEqual(html, str(form.username.render()))
+        el = form.fields.add_text('username', 'User Name')
+        self.assertEqual(html, str(form.fields.username.render()))
         self.assertEqual(el.label.render(), L('<label for="f-username">User Name</label>'))
         
     def test_implicit_render(self):
         html = '<input class="text" id="f-username" name="username" type="text" />'
         form = Form('f')
-        form.add_text('username', 'User Name')
-        self.assertEqual(html, str(form.username()))
+        form.fields.add_text('username', 'User Name')
+        self.assertEqual(html, str(form.fields.username()))
         
     def test_attr_render(self):
         html = '<input baz="bar" class="text foo bar" id="f-username" name="username" type="text" />'
         form = Form('f')
-        form.add_text('username', 'User Name')
-        self.assertEqual(html, str(form.username(class_='text foo bar', baz='bar')))
+        form.fields.add_text('username', 'User Name')
+        self.assertEqual(html, str(form.fields.username(class_='text foo bar', baz='bar')))
 
     def test_text_with_default(self):
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
-        form.add_text('username', 'User Name', defaultval='bar')
-        self.assertEqual(html, str(form.username.render()))
+        form.fields.add_text('username', 'User Name', defaultval='bar')
+        self.assertEqual(html, str(form.fields.username.render()))
     
     def test_text_with_default2(self):
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
-        form.add_text('username', 'User Name')
+        form.fields.add_text('username', 'User Name')
         form.set_defaults({'username':'bar'})
-        self.assertEqual(html, str(form.username.render()))
+        self.assertEqual(html, str(form.fields.username.render()))
     
     def test_text_submit(self):
         # make sure the submit value shows up in the form
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
-        form.add_text('username', 'User Name')
+        form.fields.add_text('username', 'User Name')
         form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
-        self.assertEqual(html, str(form.username.render()))
+        self.assertEqual(html, str(form.fields.username.render()))
         
     def test_text_with_zero_default(self):
         html = '<input class="text" id="f-username" name="username" type="text" value="0" />'
         form = Form('f')
-        form.add_text('username', 'User Name')
+        form.fields.add_text('username', 'User Name')
         form.set_defaults({'username':0})
-        self.assertEqual(html, str(form.username.render()))
+        self.assertEqual(html, str(form.fields.username.render()))
     
     def test_submit_default(self):
         # submitted should take precidence over default
         html = '<input class="text" id="f-username" name="username" type="text" value="bar" />'
         form = Form('f')
-        form.add_text('username', 'User Name')
+        form.fields.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
         form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
-        self.assertEqual(html, str(form.username.render()))
+        self.assertEqual(html, str(form.fields.username.render()))
     
     def test_default_value(self):
         # default values do not show up in .value, they only show up when
         # rendering
         form = Form('f')
-        form.add_text('username', 'User Name')
+        form.fields.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
-        assert form.username.value is NotGiven
+        assert form.fields.username.value is NotGiven
     
     def test_submitted_value(self):
         form = Form('f')
-        form.add_text('username', 'User Name')
+        form.fields.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
         form.set_submitted({'f-submit-flag': 'submitted', 'username':'bar'})
-        self.assertEqual('bar', form.username.value)
+        self.assertEqual('bar', form.fields.username.value)
         
     def test_notgiven(self):
         # make sure the value we get really is NotGiven
         f = Form('f')
-        el = f.add_text('f', 'f')
+        el = f.fields.add_text('f', 'f')
         assert el.value is NotGiven
         
         # default shouldn't affect this
         f = Form('f')
-        el = f.add_text('f', 'f', defaultval='test')
+        el = f.fields.add_text('f', 'f', defaultval='test')
         assert el.value is NotGiven
     
     def test_if_missing(self):        
         f = Form('f')
-        el = f.add_text('f', 'f', if_missing='foo')
+        el = f.fields.add_text('f', 'f', if_missing='foo')
         assert el.value is 'foo', el.value
         
         # doesn't affect anything if the field is submitted
         f = Form('f')
-        el = f.add_text('f', 'f', if_missing='foo')
+        el = f.fields.add_text('f', 'f', if_missing='foo')
         el.submittedval = None
         assert el.value is None
     
     def test_if_empty(self):
         # if empty works like if_missing when the field isn't submitted
         f = Form('f')
-        el = f.add_text('f', 'f', if_empty='foo')
+        el = f.fields.add_text('f', 'f', if_empty='foo')
         assert el.value is 'foo'
         
         # if_empty also covers empty submit values
         f = Form('f')
-        el = f.add_text('f', 'f', if_empty='foo')
+        el = f.fields.add_text('f', 'f', if_empty='foo')
         el.submittedval = None
         assert el.value == 'foo'
         
         # an "empty" if_empty should not get converted to None
         f = Form('f')
-        el = f.add_text('f', 'f', if_empty='')
+        el = f.fields.add_text('f', 'f', if_empty='')
         assert el.value == ''
         
         # same as previous, but making sure a submitted empty value doesn't
         #change it
         f = Form('f')
-        el = f.add_text('f', 'f', if_empty='')
+        el = f.fields.add_text('f', 'f', if_empty='')
         el.submittedval = None
         assert el.value == ''        
     
     def test_strip(self):
         # strip is on by default
-        el = Form('f').add_text('f', 'f')
+        el = Form('f').fields.add_text('f', 'f')
         el.submittedval = '   '
         assert el.value == None
         
         # turn strip off
-        el = Form('f').add_text('f', 'f', strip=False)
+        el = Form('f').fields.add_text('f', 'f', strip=False)
         el.submittedval = '   '
         assert el.value == '   '
         
         # strip happens before if_empty
-        el = Form('f').add_text('f', 'f', if_empty='test')
+        el = Form('f').fields.add_text('f', 'f', if_empty='test')
         el.submittedval = '   '
         assert el.value == 'test'
 
     def test_invalid(self):
-        el = Form('f').add_text('f', 'f', required=True)
+        el = Form('f').fields.add_text('f', 'f', required=True)
         el.submittedval = None
         assert el.is_valid() == False
         
-        el = Form('f').add_text('f', 'f', required=True, if_invalid='foo')
+        el = Form('f').fields.add_text('f', 'f', required=True, if_invalid='foo')
         el.submittedval = None
         self.assertEqual(el.value, 'foo')
         
     def test_blank_submit_value(self):
         form = Form('f')
-        form.add_text('username', 'User Name')
+        form.fields.add_text('username', 'User Name')
         form.set_submitted({'username':''})
-        self.assertEqual(None, form.username.value)
+        self.assertEqual(None, form.fields.username.value)
         
         form = Form('f')
-        form.add_text('username', 'User Name', if_empty='')
+        form.fields.add_text('username', 'User Name', if_empty='')
         form.set_submitted({'username':''})
-        self.assertEqual('', form.username.value)
+        self.assertEqual('', form.fields.username.value)
     
     def test_is_submitted(self):
         form = Form('f')
-        form.add_text('username', 'User Name')
+        form.fields.add_text('username', 'User Name')
         form.set_defaults({'username':'foo'})
-        self.assertEqual(False, form.username.is_submitted())
+        self.assertEqual(False, form.fields.username.is_submitted())
         
         form.set_submitted({'f-submit-flag': 'submitted', 'username':''})
-        self.assertEqual(True, form.username.is_submitted())
+        self.assertEqual(True, form.fields.username.is_submitted())
     
     def test_required(self):
         form = Form('f')
-        el = form.add_text('username', 'User Name', required=True)
+        el = form.fields.add_text('username', 'User Name', required=True)
         self.assertEqual(True, el.required)
-        self.assertEqual(False, form.username.is_valid())
+        self.assertEqual(False, form.fields.username.is_valid())
         
         # check error message
         self.assertEqual('field is required', el.errors[0])
         
         # setting submitted should reset _valid to None, which causes the
         # processing to happen again
-        self.assertEqual(False, form.username._valid)
+        self.assertEqual(False, form.fields.username._valid)
         el.submittedval = ''
-        self.assertEqual(None, form.username._valid)
+        self.assertEqual(None, form.fields.username._valid)
         
         el.submittedval = 'foo'
-        self.assertEqual(True, form.username.is_valid())
+        self.assertEqual(True, form.fields.username.is_valid())
         
         # error message without label sould default to element id
         form = Form('f')
-        el = form.add_text('username', required=True)
-        self.assertEqual(False, form.username.is_valid())
+        el = form.fields.add_text('username', required=True)
+        self.assertEqual(False, form.fields.username.is_valid())
         self.assertEqual('field is required', el.errors[0])
         
     
     def test_invalid_value(self):
         form = Form('f')
-        el = form.add_text('username', 'User Name', required=True)
+        el = form.fields.add_text('username', 'User Name', required=True)
         try:
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
@@ -247,15 +247,15 @@ class CommonTest(unittest.TestCase):
         
         v = validator()
         form = Form('f')
-        el = form.add_text('username', 'User Name', if_empty='bar')
+        el = form.fields.add_text('username', 'User Name', if_empty='bar')
         el.add_processor(v)
-        self.assertEqual(True, form.username.is_valid())
+        self.assertEqual(True, form.fields.username.is_valid())
         self.assertEqual(1, v.vcalled)
-        self.assertEqual(True, form.username.is_valid())
+        self.assertEqual(True, form.fields.username.is_valid())
         self.assertEqual(1, v.vcalled)
-        self.assertEqual('bar', form.username.value)
+        self.assertEqual('bar', form.fields.username.value)
         self.assertEqual(1, v.vcalled)
-        self.assertEqual('bar', form.username.value)
+        self.assertEqual('bar', form.fields.username.value)
         self.assertEqual(1, v.vcalled)
         
         # setting submitted should reset _valid to None, which causes the
@@ -263,19 +263,19 @@ class CommonTest(unittest.TestCase):
         # b/c formencode seems to cache the results and our validator's method
         # won't be called again
         el.submittedval = 'foo'
-        self.assertEqual('foo', form.username.value)
+        self.assertEqual('foo', form.fields.username.value)
         self.assertEqual(2, v.vcalled)
 
     def test_error_messages(self):
         form = Form('f')
-        el = form.add_text('username', 'User Name', required=True)
-        self.assertEqual(False, form.username.is_valid())
+        el = form.fields.add_text('username', 'User Name', required=True)
+        self.assertEqual(False, form.fields.username.is_valid())
         self.assertEqual(len(el.errors), 1)
         self.assertEqual('field is required', el.errors[0])
         
         # formencode message
         form = Form('f')
-        el = form.add_text('field', 'Field', if_empty='test')
+        el = form.fields.add_text('field', 'Field', if_empty='test')
         el.add_processor(Int)
         self.assertEqual(False, el.is_valid())
         self.assertEqual(len(el.errors), 1)
@@ -283,7 +283,7 @@ class CommonTest(unittest.TestCase):
         
         # custom message
         form = Form('f')
-        el = form.add_text('field', 'Field', if_empty='test')
+        el = form.fields.add_text('field', 'Field', if_empty='test')
         el.add_processor(Int, 'int required')
         self.assertEqual(False, el.is_valid())
         self.assertEqual(len(el.errors), 1)
@@ -300,20 +300,20 @@ class CommonTest(unittest.TestCase):
         
     def test_notes(self):
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_note('test note')
         self.assertEqual(el.notes[0], 'test note')
     
     def test_handlers(self):
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg')
         assert el.handle_exception(Exception('text exception'))
         self.assertEqual(el.errors[0], 'test error msg')
         
         # make sure second exception works too
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler('not it', '')
         el.add_handler('text exception', 'test error msg')
         assert el.handle_exception(Exception('text exception'))
@@ -321,49 +321,49 @@ class CommonTest(unittest.TestCase):
         
         # specifying exception type
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg', Exception)
         assert el.handle_exception(Exception('text exception'))
         self.assertEqual(el.errors[0], 'test error msg')
         
         # specifying exception type only
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler(exc_type=TypeError)
         assert el.handle_exception(TypeError('text exception'))
         self.assertEqual(el.errors[0], 'text exception')
         
         # specifying exception type only
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler(exc_type=TypeError, error_msg='wrong type')
         assert el.handle_exception(TypeError('text exception'))
         self.assertEqual(el.errors[0], 'wrong type')
         
         # error message not specified gets exception text
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler('text exception')
         assert el.handle_exception(Exception('text exception user message'))
         self.assertEqual(el.errors[0], 'text exception user message')
         
         # specifying exception's class string
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg', 'TypeError')
         assert el.handle_exception(TypeError('text exception'))
         self.assertEqual(el.errors[0], 'test error msg')
         
         # right message, wrong type
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg', ValueError)
         assert not el.handle_exception(Exception('text exception'))
         self.assertEqual(len(el.errors), 0)
         
         # wrong message
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler('text exception', 'test error msg', Exception)
         assert not el.handle_exception(Exception('text'))
         self.assertEqual(len(el.errors), 0)
@@ -376,14 +376,14 @@ class CommonTest(unittest.TestCase):
         
         # callback that handles
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler(callback=can_handle, error_msg='invalid value')
         assert el.handle_exception(Exception('can_handle'))
         self.assertEqual(el.errors[0], 'invalid value')
         
         # callback that doesn't
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.add_handler(callback=can_handle, error_msg='invalid value')
         assert not el.handle_exception(Exception('cant_handle'))
         self.assertEqual(len(el.errors), 0)
@@ -391,105 +391,105 @@ class CommonTest(unittest.TestCase):
     def test_conversion(self):
         # without form submission, we get empty value
         form = Form('f')
-        el = form.add_text('field', 'Field', 'bool')
+        el = form.fields.add_text('field', 'Field', 'bool')
         assert el.value is NotGiven
 
         # default values do not get processed, they are for display only
         form = Form('f')
-        el = form.add_text('field', 'Field', 'bool', '1')
+        el = form.fields.add_text('field', 'Field', 'bool', '1')
         assert el.value is NotGiven
 
         # submission gets converted
         form = Form('f')
-        el = form.add_text('field', 'Field', 'bool')
+        el = form.fields.add_text('field', 'Field', 'bool')
         el.submittedval = '1'
         self.assertEqual( el.value, True)
         
         # conversion turned off
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         el.submittedval = '1'
         self.assertEqual( el.value, '1')
         
         # conversion with if_empty
         form = Form('f')
-        el = form.add_text('field', 'Field', 'bool', if_empty=False)
+        el = form.fields.add_text('field', 'Field', 'bool', if_empty=False)
         el.submittedval = '1'
         self.assertEqual( el.value, True)
         
         # conversion with if_empty
         form = Form('f')
-        el = form.add_text('field', 'Field', 'bool', if_empty=False)
+        el = form.fields.add_text('field', 'Field', 'bool', if_empty=False)
         el.submittedval = None
         self.assertEqual( el.value, False)
         
         # conversion with if_empty
         form = Form('f')
-        el = form.add_text('field', 'Field', 'bool', if_empty=True)
+        el = form.fields.add_text('field', 'Field', 'bool', if_empty=True)
         el.submittedval = False
         self.assertEqual( el.value, False)
         
         # conversion with if_empty
         form = Form('f')
-        el = form.add_text('field', 'Field', 'bool', if_empty='1')
+        el = form.fields.add_text('field', 'Field', 'bool', if_empty='1')
         self.assertEqual( el.value, True)
         
     def test_type_strings(self):
 
         form = Form('f')
-        form.add_text('f1', 'Field', 'bool', if_empty='1.25')
-        self.assertEqual(form.f1.value, True)
-        form.add_text('f2', 'Field', 'boolean', if_empty='1.25')
-        self.assertEqual(form.f2.value, True)
-        form.add_text('f3', 'Field', 'int', if_empty='1')
-        self.assertEqual(form.f3.value, 1)
-        form.add_text('f4', 'Field', 'integer', if_empty='1')
-        self.assertEqual(form.f4.value, 1)
-        form.add_text('f5', 'Field', 'num', if_empty='1.25')
-        self.assertEqual(form.f5.value, 1.25)
-        form.add_text('f6', 'Field', 'number', if_empty='1.25')
-        self.assertEqual(form.f6.value, 1.25)
-        form.add_text('f7', 'Field', 'float', if_empty='1.25')
-        self.assertEqual(form.f7.value, 1.25)
-        form.add_text('f8', 'Field', 'str', if_empty='1.25')
-        self.assertEqual(form.f8.value, '1.25')
-        form.add_text('f9', 'Field', 'string', if_empty='1.25')
-        self.assertEqual(form.f9.value, '1.25')
-        form.add_text('f10', 'Field', 'uni', if_empty='1.25')
-        self.assertEqual(form.f10.value, u'1.25')
-        form.add_text('f11', 'Field', 'unicode', if_empty='1.25')
-        self.assertEqual(form.f11.value, u'1.25')
-        form.add_text('f12', 'Field', 'bool', if_empty='false')
-        self.assertEqual(form.f12.value, False)
-        form.add_text('f13', 'Field', 'decimal', if_empty='1.25')
-        self.assertEqual(form.f13.value, decimal.Decimal('1.25'))
-        form.f13.submittedval = 'foo'
-        assert form.f13.is_valid() == False
+        form.fields.add_text('f1', 'Field', 'bool', if_empty='1.25')
+        self.assertEqual(form.fields.f1.value, True)
+        form.fields.add_text('f2', 'Field', 'boolean', if_empty='1.25')
+        self.assertEqual(form.fields.f2.value, True)
+        form.fields.add_text('f3', 'Field', 'int', if_empty='1')
+        self.assertEqual(form.fields.f3.value, 1)
+        form.fields.add_text('f4', 'Field', 'integer', if_empty='1')
+        self.assertEqual(form.fields.f4.value, 1)
+        form.fields.add_text('f5', 'Field', 'num', if_empty='1.25')
+        self.assertEqual(form.fields.f5.value, 1.25)
+        form.fields.add_text('f6', 'Field', 'number', if_empty='1.25')
+        self.assertEqual(form.fields.f6.value, 1.25)
+        form.fields.add_text('f7', 'Field', 'float', if_empty='1.25')
+        self.assertEqual(form.fields.f7.value, 1.25)
+        form.fields.add_text('f8', 'Field', 'str', if_empty='1.25')
+        self.assertEqual(form.fields.f8.value, '1.25')
+        form.fields.add_text('f9', 'Field', 'string', if_empty='1.25')
+        self.assertEqual(form.fields.f9.value, '1.25')
+        form.fields.add_text('f10', 'Field', 'uni', if_empty='1.25')
+        self.assertEqual(form.fields.f10.value, u'1.25')
+        form.fields.add_text('f11', 'Field', 'unicode', if_empty='1.25')
+        self.assertEqual(form.fields.f11.value, u'1.25')
+        form.fields.add_text('f12', 'Field', 'bool', if_empty='false')
+        self.assertEqual(form.fields.f12.value, False)
+        form.fields.add_text('f13', 'Field', 'decimal', if_empty='1.25')
+        self.assertEqual(form.fields.f13.value, decimal.Decimal('1.25'))
+        form.fields.f13.submittedval = 'foo'
+        assert form.fields.f13.is_valid() == False
         
         # test invalid vtype
         form = Form('f')
         try:
-            form.add_text('f1', 'Field', 'badvtype')
+            form.fields.add_text('f1', 'Field', 'badvtype')
         except ValueError, e:
             self.assertEqual('invalid vtype "badvtype"', str(e))
             
         # test wrong type of vtype
         try:
-            form.add_text('f2', 'Field', ())
+            form.fields.add_text('f2', 'Field', ())
         except TypeError, e:
             self.assertEqual('vtype should have been a string, got <type \'tuple\'> instead', str(e))
     #
     #def from_python_exception(self):
     #    # waht do we do with from_python validation problems, anything?  Right now
     #    # they just throw an exception
-    #    el = Form('f').add_email('field', 'Field', defaultval='bad_email')
+    #    el = Form('f').fields.add_email('field', 'Field', defaultval='bad_email')
     #    el.render()
         
 class InputElementsTest(unittest.TestCase):
     
     def test_el_button(self):
         html = '<input class="button" id="f-field" name="field" type="button" />'
-        el = Form('f').add_button('field', 'Field')
+        el = Form('f').fields.add_button('field', 'Field')
         assert el() == html
         
     def test_el_checkbox(self):
@@ -498,142 +498,142 @@ class InputElementsTest(unittest.TestCase):
         
         # no default
         f = Form('f')
-        el = f.add_checkbox('f', 'f')
+        el = f.fields.add_checkbox('f', 'f')
         self.assertEqual(str(el()), not_checked)
         
         # default from defaultval (True)
-        el = Form('f').add_checkbox('f', 'f', defaultval=True)
+        el = Form('f').fields.add_checkbox('f', 'f', defaultval=True)
         self.assertEqual(str(el()), checked)
-        el = Form('f').add_checkbox('f', 'f', defaultval='checked')
+        el = Form('f').fields.add_checkbox('f', 'f', defaultval='checked')
         self.assertEqual(str(el()), checked)
-        el = Form('f').add_checkbox('f', 'f', defaultval=1)
+        el = Form('f').fields.add_checkbox('f', 'f', defaultval=1)
         self.assertEqual(str(el()), checked)
         
         # default from defaultval (False)
-        el = Form('f').add_checkbox('f', 'f', defaultval=False)
+        el = Form('f').fields.add_checkbox('f', 'f', defaultval=False)
         self.assertEqual(str(el()), not_checked)
-        el = Form('f').add_checkbox('f', 'f', defaultval=None)
+        el = Form('f').fields.add_checkbox('f', 'f', defaultval=None)
         self.assertEqual(str(el()), not_checked)
-        el = Form('f').add_checkbox('f', 'f', defaultval=0)
+        el = Form('f').fields.add_checkbox('f', 'f', defaultval=0)
         self.assertEqual(str(el()), not_checked)
         
         # default from checked (True)
-        el = Form('f').add_checkbox('f', 'f', checked=True)
+        el = Form('f').fields.add_checkbox('f', 'f', checked=True)
         self.assertEqual(str(el()), checked)
-        el = Form('f').add_checkbox('f', 'f', checked='checked')
+        el = Form('f').fields.add_checkbox('f', 'f', checked='checked')
         self.assertEqual(str(el()), checked)
-        el = Form('f').add_checkbox('f', 'f', checked=1)
+        el = Form('f').fields.add_checkbox('f', 'f', checked=1)
         self.assertEqual(str(el()), checked)
         
         # default from checked (False)
-        el = Form('f').add_checkbox('f', 'f', checked=False)
+        el = Form('f').fields.add_checkbox('f', 'f', checked=False)
         self.assertEqual(str(el()), not_checked)
-        el = Form('f').add_checkbox('f', 'f', checked=None)
+        el = Form('f').fields.add_checkbox('f', 'f', checked=None)
         self.assertEqual(str(el()), not_checked)
-        el = Form('f').add_checkbox('f', 'f', checked=0)
+        el = Form('f').fields.add_checkbox('f', 'f', checked=0)
         self.assertEqual(str(el()), not_checked)
         
         # default takes precidence over checked
-        el = Form('f').add_checkbox('f', 'f', defaultval=True, checked=False)
+        el = Form('f').fields.add_checkbox('f', 'f', defaultval=True, checked=False)
         self.assertEqual(str(el()), checked)
-        el = Form('f').add_checkbox('f', 'f', defaultval=False, checked=True)
+        el = Form('f').fields.add_checkbox('f', 'f', defaultval=False, checked=True)
         self.assertEqual(str(el()), not_checked)
         
         # default should not affect value
-        el = Form('f').add_checkbox('f', 'f', defaultval=True)
+        el = Form('f').fields.add_checkbox('f', 'f', defaultval=True)
         self.assertEqual(el.value, False)
         
         # true submit values
-        el = Form('f').add_checkbox('f', 'f')
+        el = Form('f').fields.add_checkbox('f', 'f')
         el.submittedval = True
         self.assertEqual(el.value, True)
-        el = Form('f').add_checkbox('f', 'f')
+        el = Form('f').fields.add_checkbox('f', 'f')
         el.submittedval = 1
         self.assertEqual(el.value, True)
-        el = Form('f').add_checkbox('f', 'f')
+        el = Form('f').fields.add_checkbox('f', 'f')
         el.submittedval = 'checked'
         self.assertEqual(el.value, True)
         
         # false submit values
-        el = Form('f').add_checkbox('f', 'f')
+        el = Form('f').fields.add_checkbox('f', 'f')
         el.submittedval = False
         self.assertEqual(el.value, False)
-        el = Form('f').add_checkbox('f', 'f')
+        el = Form('f').fields.add_checkbox('f', 'f')
         el.submittedval = 0
         self.assertEqual(el.value, False)
-        el = Form('f').add_checkbox('f', 'f')
+        el = Form('f').fields.add_checkbox('f', 'f')
         self.assertEqual(el.value, False)
         
         # converted values int (true)
-        el = Form('f').add_checkbox('f', 'f', 'int')
+        el = Form('f').fields.add_checkbox('f', 'f', 'int')
         el.submittedval = True
         self.assertEqual(el.value, 1)
-        el = Form('f').add_checkbox('f', 'f', 'int')
+        el = Form('f').fields.add_checkbox('f', 'f', 'int')
         el.submittedval = 1
         self.assertEqual(el.value, 1)
-        el = Form('f').add_checkbox('f', 'f', 'int')
+        el = Form('f').fields.add_checkbox('f', 'f', 'int')
         el.submittedval = 'checked'
         self.assertEqual(el.value, 1)
         
         # converted values int (false)
-        el = Form('f').add_checkbox('f', 'f', 'int')
+        el = Form('f').fields.add_checkbox('f', 'f', 'int')
         el.submittedval = False
         self.assertEqual(el.value, 0)
-        el = Form('f').add_checkbox('f', 'f', 'int')
+        el = Form('f').fields.add_checkbox('f', 'f', 'int')
         el.submittedval = 0
         self.assertEqual(el.value, 0)
-        el = Form('f').add_checkbox('f', 'f', 'int')
+        el = Form('f').fields.add_checkbox('f', 'f', 'int')
         self.assertEqual(el.value, 0)
     
     def test_el_checkbox_req(self):
         # required value: requires special handling b/c we get
         # None for a checkbox when its missing
-        el = Form('f').add_checkbox('f', 'f', 'int', required=True)
+        el = Form('f').fields.add_checkbox('f', 'f', 'int', required=True)
         assert not el.is_valid()
         
     def test_el_hidden(self):
         html = '<input class="hidden" id="f-field" name="field" type="hidden" />'
-        el = Form('f').add_hidden('field', 'Field')
+        el = Form('f').fields.add_hidden('field', 'Field')
         self.assertEqual(str(el()), html)
 
     def test_el_image(self):
         html = '<input class="image" id="f-field" name="field" type="image" />'
-        el = Form('f').add_image('field', 'Field')
+        el = Form('f').fields.add_image('field', 'Field')
         self.assertEqual(str(el()), html)
 
     def test_el_reset(self):
         html = '<input class="reset" id="f-field" name="field" type="reset" value="Reset" />'
-        el = Form('f').add_reset('field', 'Field')
+        el = Form('f').fields.add_reset('field', 'Field')
         self.assertEqual(str(el()), html)
         
         html = '<input class="reset" id="f-field" name="field" type="reset" value="r" />'
-        el = Form('f').add_reset('field', 'Field', defaultval='r')
+        el = Form('f').fields.add_reset('field', 'Field', defaultval='r')
         self.assertEqual(str(el()), html)
 
     def test_el_submit(self):
         html = '<input class="submit" id="f-field" name="field" type="submit" value="Submit" />'
-        el = Form('f').add_submit('field', 'Field')
+        el = Form('f').fields.add_submit('field', 'Field')
         self.assertEqual(str(el()), html)
         
         html = '<input class="submit" id="f-field" name="field" type="submit" value="s" />'
-        el = Form('f').add_submit('field', 'Field', defaultval='s')
+        el = Form('f').fields.add_submit('field', 'Field', defaultval='s')
         self.assertEqual(str(el()), html)
         
         # had a problem where we will get two class attributes
         html = '<input class="submit wymupdate" id="f-field" name="field" type="submit" value="Submit" />'
-        el = Form('f').add_submit('field', 'Field')
+        el = Form('f').fields.add_submit('field', 'Field')
         el.add_attr('class', 'wymupdate')
         self.assertEqual(str(el()), html)
         
         #submit button with a different name
         html = '<input class="submit" id="f-field" name="submitbtn" type="submit" value="Reset" />'
-        el = Form('f').add_submit('field', 'Field', defaultval='Reset', name='submitbtn')
+        el = Form('f').fields.add_submit('field', 'Field', defaultval='Reset', name='submitbtn')
         self.assertEqual(str(el()), html)
         
         # FIXED submit button after form post
         html = '<input class="submit" id="f-field" name="submitbtn" type="submit" value="Reset" />'
         form = Form('f')
-        el = form.add_submit('field', 'Field', defaultval='Reset', name='submitbtn')
+        el = form.fields.add_submit('field', 'Field', defaultval='Reset', name='submitbtn')
         el.submittedval = '1'
         self.assertEqual( el.value, '1')
         self.assertEqual(str(el()), html)
@@ -641,29 +641,29 @@ class InputElementsTest(unittest.TestCase):
         # submit button after form post
         html = '<input class="submit" id="f-field" name="submitbtn" type="submit" value="1" />'
         form = Form('f')
-        el = form.add_submit('field', 'Field', defaultval='Reset', name='submitbtn', fixed=False)
+        el = form.fields.add_submit('field', 'Field', defaultval='Reset', name='submitbtn', fixed=False)
         el.submittedval = '1'
         self.assertEqual( el.value, '1')
         self.assertEqual(str(el()), html)
         
     def test_el_cancel(self):
         html = '<input class="submit" id="f-field" name="field" type="submit" value="Cancel" />'
-        el = Form('f').add_cancel('field', 'Field')
+        el = Form('f').fields.add_cancel('field', 'Field')
         self.assertEqual(str(el()), html)
         
         html = '<input class="submit" id="f-field" name="field" type="submit" value="c" />'
-        el = Form('f').add_cancel('field', 'Field', defaultval='c')
+        el = Form('f').fields.add_cancel('field', 'Field', defaultval='c')
         self.assertEqual(str(el()), html)
 
     def test_el_text(self):
         html = '<input class="text" id="f-field" name="field" type="text" />'
         form = Form('f')
-        el = form.add_text('field', 'Field')
+        el = form.fields.add_text('field', 'Field')
         self.assertEqual(str(el()), html)
         
         html = '<input class="text" id="f-field" maxlength="1" name="field" type="text" />'
         form = Form('f')
-        el = form.add_text('field', 'Field', maxlength=1)
+        el = form.fields.add_text('field', 'Field', maxlength=1)
         self.assertEqual(str(el()), html)
         el.submittedval = '1'
         self.assertEqual( el.value, '1')
@@ -674,19 +674,19 @@ class InputElementsTest(unittest.TestCase):
         
         # no validator
         form = Form('f')
-        el = form.add_text('field', 'Field')        
+        el = form.fields.add_text('field', 'Field')        
         el.submittedval = '12'
         self.assertEqual( el.value, '12')
         
     def test_el_confirm(self):
         try:
-            Form('f').add_confirm('f')
+            Form('f').fields.add_confirm('f')
             self.fail('expected key error for missing "match"')
         except ProgrammingError, e:
             if 'match argument is required' not in str(e):
                 raise
         try:
-            Form('f').add_confirm('f', match='notthere')
+            Form('f').fields.add_confirm('f', match='notthere')
             self.fail('expected element does not exist error')
         except ProgrammingError, e:
             if 'match element "notthere" does not exist' != str(e):
@@ -694,7 +694,7 @@ class InputElementsTest(unittest.TestCase):
         
         try:
             datematch = datetime.datetime.now()
-            Form('f').add_confirm('f', match=datematch)
+            Form('f').fields.add_confirm('f', match=datematch)
             self.fail('expected wrong type error')
         except ProgrammingError, e:
             if 'match element was not of type HasValueElement' != str(e):
@@ -704,8 +704,8 @@ class InputElementsTest(unittest.TestCase):
         html = '<input class="password" id="f-f" name="f" type="password" />'
         vhtml = '<input class="password" id="f-f" name="f" type="password" value="foo" />'
         f = Form('f')
-        pel = f.add_password('p', 'password')
-        cel = f.add_confirm('f', match='p')
+        pel = f.fields.add_password('p', 'password')
+        cel = f.fields.add_confirm('f', match='p')
         self.assertEqual(str(cel()), html)
         pel.submittedval = 'foo'
         cel.submittedval = 'foo'
@@ -722,8 +722,8 @@ class InputElementsTest(unittest.TestCase):
         html = '<input class="text" id="f-f" name="f" type="text" />'
         vhtml = '<input class="text" id="f-f" name="f" type="text" value="foo" />'
         f = Form('f')
-        pel = f.add_text('e', 'email')
-        cel = f.add_confirm('f', match=pel)
+        pel = f.fields.add_text('e', 'email')
+        cel = f.fields.add_confirm('f', match=pel)
         self.assertEqual(str(cel()), html)
         pel.submittedval = 'foo'
         cel.submittedval = 'foo'
@@ -737,8 +737,8 @@ class InputElementsTest(unittest.TestCase):
     def test_el_confirm_empty(self):
         # empty confirm value
         f = Form('f')
-        pel = f.add_password('p', 'password')
-        cel = f.add_confirm('f', match='p')
+        pel = f.fields.add_password('p', 'password')
+        cel = f.fields.add_confirm('f', match='p')
         pel.submittedval = 'bar'
         cel.submittedval = ''
         assert not cel.is_valid()
@@ -747,8 +747,8 @@ class InputElementsTest(unittest.TestCase):
     def test_el_confirm_invalid(self):
         # empty confirm value
         f = Form('f')
-        pel = f.add_password('p', 'password', required=True)
-        cel = f.add_confirm('f', match='p')
+        pel = f.fields.add_password('p', 'password', required=True)
+        cel = f.fields.add_confirm('f', match='p')
         pel.submittedval = ''
         cel.submittedval = ''
         assert not pel.is_valid()
@@ -756,12 +756,12 @@ class InputElementsTest(unittest.TestCase):
 
     def test_el_date(self):
         html = '<input class="text" id="f-field" name="field" type="text" />'
-        el = Form('f').add_date('field', 'Field')
+        el = Form('f').fields.add_date('field', 'Field')
         self.assertEqual(str(el()), html)
         
         # our date-time object should get converted to the appropriate format
         html = '<input class="text" id="f-field" name="field" type="text" value="12/03/2009" />'
-        el = Form('f').add_date('field', 'Field', defaultval=datetime.date(2009, 12, 3))
+        el = Form('f').fields.add_date('field', 'Field', defaultval=datetime.date(2009, 12, 3))
         self.assertEqual(str(el()), html)
         el.submittedval = '1/5/09'
         assert el.value == datetime.date(2009, 1, 5)
@@ -770,7 +770,7 @@ class InputElementsTest(unittest.TestCase):
         
         # european style dates
         html = '<input class="text" id="f-field" name="field" type="text" value="03/12/2009" />'
-        el = Form('f').add_date('field', 'Field', defaultval=datetime.date(2009, 12, 3), month_style='dd/mm/yyyy')
+        el = Form('f').fields.add_date('field', 'Field', defaultval=datetime.date(2009, 12, 3), month_style='dd/mm/yyyy')
         self.assertEqual(str(el()), html)
         el.submittedval = '1/5/09'
         assert el.value == datetime.date(2009, 5, 1)
@@ -779,7 +779,7 @@ class InputElementsTest(unittest.TestCase):
         
         # no-day dates
         html = '<input class="text" id="f-field" name="field" type="text" value="12/2009" />'
-        el = Form('f').add_date('field', 'Field', defaultval=datetime.date(2009, 12, 3), accept_day=False)
+        el = Form('f').fields.add_date('field', 'Field', defaultval=datetime.date(2009, 12, 3), accept_day=False)
         self.assertEqual(str(el()), html)
         el.submittedval = '5/09'
         assert el.value == datetime.date(2009, 5, 1)
@@ -788,14 +788,14 @@ class InputElementsTest(unittest.TestCase):
         
         # date field not submitted
         f = Form('login')
-        el = f.add_date('field', 'Field')
+        el = f.fields.add_date('field', 'Field')
         post = {'login-submit-flag': 'submitted'}
         f.set_submitted(post)
         assert f.get_values() == {'field': NotGiven, 'login-submit-flag': 'submitted'}, f.get_values()
 
     def test_el_email(self):
         html = '<input class="text" id="f-field" name="field" type="text" />'
-        el = Form('f').add_email('field', 'Field')
+        el = Form('f').fields.add_email('field', 'Field')
         self.assertEqual(str(el()), html)
         el.submittedval = 'bob@example.com'
         assert el.value == 'bob@example.com'
@@ -804,7 +804,7 @@ class InputElementsTest(unittest.TestCase):
         
         try:
             import DNS
-            el = Form('f').add_email('field', 'Field', resolve_domain=True)
+            el = Form('f').fields.add_email('field', 'Field', resolve_domain=True)
             el.submittedval = 'bob@ireallyhopethisdontexistontheweb.com'
             assert not el.is_valid()
         except ImportError:
@@ -812,54 +812,54 @@ class InputElementsTest(unittest.TestCase):
         
     def test_el_password(self):
         html = '<input class="password" id="f-f" name="f" type="password" />'
-        el = Form('f').add_password('f')
+        el = Form('f').fields.add_password('f')
         self.assertEqual(str(el()), html)
         
         # default vals don't show up
-        el = Form('f').add_password('f', defaultval='test')
+        el = Form('f').fields.add_password('f', defaultval='test')
         self.assertEqual(str(el()), html)
         
         # submitted vals don't show up
-        el = Form('f').add_password('f')
+        el = Form('f').fields.add_password('f')
         el.submittedval = 'test'
         self.assertEqual(str(el()), html)
         
         # default vals w/ default_ok
         html = '<input class="password" id="f-f" name="f" type="password" value="test" />'
-        el = Form('f').add_password('f', defaultval='test', default_ok=True)
+        el = Form('f').fields.add_password('f', defaultval='test', default_ok=True)
         self.assertEqual(str(el()), html)
         
         # submitted vals w/ default_ok
-        el = Form('f').add_password('f', default_ok=True)
+        el = Form('f').fields.add_password('f', default_ok=True)
         el.submittedval = 'test'
         self.assertEqual(str(el()), html)
 
     def test_el_time(self):
         html = '<input class="text" id="f-f" name="f" type="text" />'
-        el = Form('f').add_date('f')
+        el = Form('f').fields.add_date('f')
         self.assertEqual(str(el()), html)
         
         # defaults
         html = '<input class="text" id="f-field" name="field" type="text" value="13:00:00" />'
-        el = Form('f').add_time('field', 'Field', defaultval=(13, 0))
+        el = Form('f').fields.add_time('field', 'Field', defaultval=(13, 0))
         self.assertEqual(str(el()), html)
         el.submittedval = '20:30'
         assert el.value == (20,30)
         
         # some validator options
         html = '<input class="text" id="f-field" name="field" type="text" value="1:00pm" />'
-        el = Form('f').add_time('field', 'Field', defaultval=(13, 0), use_ampm=True, use_seconds=False)
+        el = Form('f').fields.add_time('field', 'Field', defaultval=(13, 0), use_ampm=True, use_seconds=False)
         self.assertEqual(str(el()), html)
         el.submittedval = '8:30pm'
         assert el.value == (20,30)
 
     def test_el_url(self):
         html = '<input class="text" id="f-f" name="f" type="text" />'
-        el = Form('f').add_url('f')
+        el = Form('f').fields.add_url('f')
         self.assertEqual(str(el()), html)
         
         html = '<input class="text" id="f-f" name="f" type="text" value="example.org" />'
-        el = Form('f').add_url('f', defaultval="example.org", add_http=True)
+        el = Form('f').fields.add_url('f', defaultval="example.org", add_http=True)
         self.assertEqual(str(el()), html)
         el.submittedval = 'foo.com'
         self.assertEqual(el.value, 'http://foo.com')
@@ -873,7 +873,7 @@ class SelectTest(unittest.TestCase):
         '</option>\n<option value="-1">-------------------------</option>\n'\
         '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
         o = [(1, 'a'), (2, 'b')]
-        el = Form('f').add_select('f', o)
+        el = Form('f').fields.add_select('f', o)
         self.assertEqual(str(el()), html)
         
         # custom choose name
@@ -881,14 +881,14 @@ class SelectTest(unittest.TestCase):
         '<select id="f-f" name="f">\n<option value="-2">test:'\
         '</option>\n<option value="-1">-------------------------</option>\n'\
         '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
-        el = Form('f').add_select('f', o, choose='test:')
+        el = Form('f').fields.add_select('f', o, choose='test:')
         self.assertEqual(str(el()), html)
         
         # no choose
         html = \
         '<select id="f-f" name="f">\n'\
         '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
-        el = Form('f').add_select('f', o, choose=None)
+        el = Form('f').fields.add_select('f', o, choose=None)
         self.assertEqual(str(el()), html)
         
         # default values
@@ -896,95 +896,95 @@ class SelectTest(unittest.TestCase):
         '<select id="f-f" name="f">\n'\
         '<option selected="selected" value="1">a</option>\n<option value="2">'\
         'b</option>\n</select>'
-        el = Form('f').add_select('f', o, defaultval=1, choose=None)
+        el = Form('f').fields.add_select('f', o, defaultval=1, choose=None)
         self.assertEqual(str(el()), html)
-        el = Form('f').add_select('f', o, defaultval='1', choose=None)
+        el = Form('f').fields.add_select('f', o, defaultval='1', choose=None)
         self.assertEqual(str(el()), html)
-        el = Form('f').add_select('f', o, defaultval=u'1', choose=None)
+        el = Form('f').fields.add_select('f', o, defaultval=u'1', choose=None)
         self.assertEqual(str(el()), html)
-        el = Form('f').add_select('f', o, defaultval=decimal.Decimal('1'), choose=None)
+        el = Form('f').fields.add_select('f', o, defaultval=decimal.Decimal('1'), choose=None)
         self.assertEqual(str(el()), html)
         
         # value
-        el = Form('f').add_select('f', o, if_empty=1)
+        el = Form('f').fields.add_select('f', o, if_empty=1)
         self.assertEqual(el.value, 1)
-        el = Form('f').add_select('f', o, if_empty='1')
+        el = Form('f').fields.add_select('f', o, if_empty='1')
         self.assertEqual(el.value, '1')
-        el = Form('f').add_select('f', o, if_empty=3)
+        el = Form('f').fields.add_select('f', o, if_empty=3)
         assert not el.is_valid()
         self.assertEqual( el.errors[0], 'the value did not come from the given options')
         
         # no auto validate
-        el = Form('f').add_select('f', o, if_empty=3, auto_validate=False)
+        el = Form('f').fields.add_select('f', o, if_empty=3, auto_validate=False)
         assert el.is_valid()
         
         # conversion
-        el = Form('f').add_select('f', o, vtype='int', if_empty='1')
+        el = Form('f').fields.add_select('f', o, vtype='int', if_empty='1')
         self.assertEqual(el.value, 1)
         
         # custom error message
-        el = Form('f').add_select('f', o, if_empty=3, error_msg='test')
+        el = Form('f').fields.add_select('f', o, if_empty=3, error_msg='test')
         assert not el.is_valid()
         self.assertEqual( el.errors[0], 'test')
         
         # choose values are invalid only if a value is required
-        el = Form('f').add_select('f', o, if_empty=-2)
+        el = Form('f').fields.add_select('f', o, if_empty=-2)
         assert el.is_valid()
-        el = Form('f').add_select('f', o, if_empty=-2, required=True)
+        el = Form('f').fields.add_select('f', o, if_empty=-2, required=True)
         assert not el.is_valid(), el.value
         assert 'the value chosen is invalid' in el.errors, el.errors
-        el = Form('f').add_select('f', o, required=True)
+        el = Form('f').fields.add_select('f', o, required=True)
         el.submittedval = -2
         assert not el.is_valid()
         assert 'the value chosen is invalid' in el.errors, el.errors
         
         # correct required error message
-        el = Form('f').add_select('f', o, required=True)
+        el = Form('f').fields.add_select('f', o, required=True)
         el.submittedval = ''
         assert not el.is_valid()
         assert 'field is required' in el.errors, el.errors
         
         # custom invalid values
-        el = Form('f').add_select('f', o, if_empty=1, invalid=['2'])
+        el = Form('f').fields.add_select('f', o, if_empty=1, invalid=['2'])
         assert el.is_valid()
-        el = Form('f').add_select('f', o, if_empty=1, invalid=['1', '2'])
+        el = Form('f').fields.add_select('f', o, if_empty=1, invalid=['1', '2'])
         assert not el.is_valid()
-        el = Form('f').add_select('f', o, if_empty=1, invalid=1)
+        el = Form('f').fields.add_select('f', o, if_empty=1, invalid=1)
         assert not el.is_valid()
         
         # "empty" value when required, but there is an empty value in the
         # options.  It seems that required meaning 'must not be empty' should
         # take precidence.
-        el = Form('f').add_select('f', o+[('', 'blank')], if_empty='', required=True)
+        el = Form('f').fields.add_select('f', o+[('', 'blank')], if_empty='', required=True)
         assert not el.is_valid()
 
         # make sure choose values do not get returned when required=False
-        el = Form('f').add_select('f', o, if_empty=1)
+        el = Form('f').fields.add_select('f', o, if_empty=1)
         el.submittedval = -1
         self.assertEqual(el.value, 1)
-        el = Form('f').add_select('f', o)
+        el = Form('f').fields.add_select('f', o)
         el.submittedval = -1
         self.assertEqual(el.value, None)
         
         # if vtype = bool, then we need to make sure a "choose" option doesn't
         # get returned as True
-        el = Form('f').add_select('f', o, vtype='bool')
+        el = Form('f').fields.add_select('f', o, vtype='bool')
         el.submittedval = -1
         self.assertEqual(el.value, None)
         # but we should be able to specify if we always want a boolean value
-        el = Form('f').add_select('f', o, if_empty=1, vtype='bool')
+        el = Form('f').fields.add_select('f', o, if_empty=1, vtype='bool')
         el.submittedval = -1
         self.assertEqual(el.value, True)
         
         # make sure we do not accept multiple values if we aren't a multi
         # select
-        el = Form('f').add_select('f', o, if_empty=[1,2])
+        el = Form('f').fields.add_select('f', o, if_empty=[1,2])
         assert not el.is_valid()
 
         # check the processor to be sure both tuples and strings are
         # allowed as options
         el_options = [(-2, 'Choose:'), (-1, '-----------'), ('first', 'First Option'), 'Second Option']
-        el = Form('f').add_select('f', el_options)
+        el = Form('f').fields.add_select('f', el_options)
         el.submittedval = 'first'
         assert el.is_valid()
         el.submittedval = 'Second Option'
@@ -993,7 +993,7 @@ class SelectTest(unittest.TestCase):
     def test_el_select_not_submitted(self):
         o = [(1, 'a'), (2, 'b')]
         # not submitted value when not required
-        el = Form('f').add_select('f', o)
+        el = Form('f').fields.add_select('f', o)
         el.is_valid()
         assert el.is_valid()
         assert el.value is NotGiven
@@ -1001,7 +1001,7 @@ class SelectTest(unittest.TestCase):
     def test_el_select_strip(self):
         # make sure values get stripped
         el_options = [(-2, 'Choose:'), (-1, '-----------'), ('first', 'First Option'), 'Second Option']
-        el = Form('f').add_select('f', el_options)
+        el = Form('f').fields.add_select('f', el_options)
         el.submittedval = 'first '
         assert el.is_valid()
         el.submittedval = 'Second Option '
@@ -1009,7 +1009,7 @@ class SelectTest(unittest.TestCase):
     
     def test_el_select_strip_multi(self):
         el_options = [(-2, 'Choose:'), (-1, '-----------'), ('first', 'First Option'), 'Second Option']
-        el = Form('f').add_mselect('f', el_options)
+        el = Form('f').fields.add_mselect('f', el_options)
         el.submittedval = ['first ', 'Second Option ']
         assert el.is_valid()
     
@@ -1020,13 +1020,13 @@ class SelectTest(unittest.TestCase):
         '</option>\n<option value="-1">-------------------------</option>\n'\
         '<option value="1">a</option>\n<option value="2">b</option>\n</select>'
         o = [(1, 'a'), (2, 'b')]
-        el = Form('f').add_select('f', o, multiple=True)
+        el = Form('f').fields.add_select('f', o, multiple=True)
         self.assertEqual(str(el()), html)
-        el = Form('f').add_select('f', o, multiple=1)
+        el = Form('f').fields.add_select('f', o, multiple=1)
         self.assertEqual(str(el()), html)
-        el = Form('f').add_select('f', o, multiple='multiple')
+        el = Form('f').fields.add_select('f', o, multiple='multiple')
         self.assertEqual(str(el()), html)
-        el = Form('f').add_select('f', o, multiple=False)
+        el = Form('f').fields.add_select('f', o, multiple=False)
         assert 'multiple' not in str(el())
         
         # single default values
@@ -1034,9 +1034,9 @@ class SelectTest(unittest.TestCase):
         '<select id="f-f" multiple="multiple" name="f">\n'\
         '<option selected="selected" value="1">a</option>\n<option value="2">'\
         'b</option>\n</select>'
-        el = Form('f').add_mselect('f', o, defaultval=1, choose=None)
+        el = Form('f').fields.add_mselect('f', o, defaultval=1, choose=None)
         self.assertEqual(str(el()), html)
-        el = Form('f').add_mselect('f', o, defaultval=[1,3], choose=None)
+        el = Form('f').fields.add_mselect('f', o, defaultval=[1,3], choose=None)
         self.assertEqual(str(el()), html)
         
         # multiple default values
@@ -1045,57 +1045,57 @@ class SelectTest(unittest.TestCase):
         '<option selected="selected" value="1">a</option>\n'\
         '<option selected="selected" value="2">'\
         'b</option>\n</select>'
-        el = Form('f').add_mselect('f', o, defaultval=(1,2), choose=None)
+        el = Form('f').fields.add_mselect('f', o, defaultval=(1,2), choose=None)
         self.assertEqual(str(el()), html)
-        el = Form('f').add_mselect('f', o, defaultval=[1,2], choose=None)
+        el = Form('f').fields.add_mselect('f', o, defaultval=[1,2], choose=None)
         self.assertEqual(str(el()), html)
     
     def test_el_select_multi1(self):
         o = [(1, 'a'), (2, 'b')]
         # value
-        el = Form('f').add_mselect('f', o, if_empty=1)
+        el = Form('f').fields.add_mselect('f', o, if_empty=1)
         self.assertEqual(el.value, [1])
-        el = Form('f').add_mselect('f', o, if_empty=1, auto_validate=False)
+        el = Form('f').fields.add_mselect('f', o, if_empty=1, auto_validate=False)
         self.assertEqual(el.value, [1])
-        el = Form('f').add_mselect('f', o, if_empty=[1,2])
+        el = Form('f').fields.add_mselect('f', o, if_empty=[1,2])
         self.assertEqual(el.value, [1,2])
-        el = Form('f').add_mselect('f', o, if_empty=['1','2'])
+        el = Form('f').fields.add_mselect('f', o, if_empty=['1','2'])
         self.assertEqual(el.value, ['1', '2'])
-        el = Form('f').add_mselect('f', o)
+        el = Form('f').fields.add_mselect('f', o)
         el.submittedval = ['1','2']
         self.assertEqual(el.value, ['1', '2'])
-        el = Form('f').add_mselect('f', o, if_empty=[1,3])
+        el = Form('f').fields.add_mselect('f', o, if_empty=[1,3])
         assert not el.is_valid()
         self.assertEqual( el.errors[0], 'the value did not come from the given options')
         
         # no auto validate
-        el = Form('f').add_mselect('f', o, if_empty=[1,3], auto_validate=False)
+        el = Form('f').fields.add_mselect('f', o, if_empty=[1,3], auto_validate=False)
         assert el.is_valid()
         self.assertEqual(el.value, [1,3])
         
         # conversion
-        el = Form('f').add_mselect('f', o, vtype='int', if_empty=['1',2])
+        el = Form('f').fields.add_mselect('f', o, vtype='int', if_empty=['1',2])
         self.assertEqual(el.value, [1, 2])
         
         # choose values are invalid only if a value is required
-        el = Form('f').add_mselect('f', o, if_empty=(-2,1))
+        el = Form('f').fields.add_mselect('f', o, if_empty=(-2,1))
         assert el.is_valid()
-        el = Form('f').add_mselect('f', o, if_empty=(-2, 1), required=True)
+        el = Form('f').fields.add_mselect('f', o, if_empty=(-2, 1), required=True)
         assert not el.is_valid()
         
         # custom invalid values
-        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=['2'])
+        el = Form('f').fields.add_mselect('f', o, if_empty=(-1, 1), invalid=['2'])
         assert el.is_valid()
-        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=['1', '2'])
+        el = Form('f').fields.add_mselect('f', o, if_empty=(-1, 1), invalid=['1', '2'])
         assert not el.is_valid()
-        el = Form('f').add_mselect('f', o, if_empty=(-1, 1), invalid=1)
+        el = Form('f').fields.add_mselect('f', o, if_empty=(-1, 1), invalid=1)
         assert not el.is_valid()
         
     def test_el_select_multi2(self):
         o = [(1, 'a'), (2, 'b')]
         # not submitted value when not required is OK.
         # Should return NotGivenIter
-        el = Form('f').add_mselect('f', o)
+        el = Form('f').fields.add_mselect('f', o)
         assert el.is_valid()
         assert el.value is NotGivenIter, el.value
         for v in el.value:
@@ -1107,20 +1107,20 @@ class SelectTest(unittest.TestCase):
         # "empty" value when required, but there is an empty value in the
         # options.  It seems that required meaning 'must not be empty' should
         # take precidence.
-        el = Form('f').add_mselect('f', o+[('', 'blank')], if_empty='', required=True)
+        el = Form('f').fields.add_mselect('f', o+[('', 'blank')], if_empty='', required=True)
         assert not el.is_valid()
         
         # make sure choose values do not get returned when required=False
-        el = Form('f').add_mselect('f', o, if_empty=1)
+        el = Form('f').fields.add_mselect('f', o, if_empty=1)
         el.submittedval = [-2, -1]
         self.assertEqual(el.value, [1])
-        el = Form('f').add_mselect('f', o)
+        el = Form('f').fields.add_mselect('f', o)
         el.submittedval = [-1, -2]
         self.assertEqual(el.value, [])
-        el = Form('f').add_mselect('f', o)
+        el = Form('f').fields.add_mselect('f', o)
         el.submittedval = [-1, 1]
         self.assertEqual(el.value, [1])
-        el = Form('f').add_mselect('f', o)
+        el = Form('f').fields.add_mselect('f', o)
         el.submittedval = [-2]
         self.assertEqual(el.value, [])
         el.submittedval = -2
@@ -1132,7 +1132,7 @@ class SelectTest(unittest.TestCase):
         
         # choose values should not get stripped out when choose=False
         o = [(1, 'a'), (-2, 'b')]
-        el = Form('f').add_mselect('f', o, choose=False)
+        el = Form('f').fields.add_mselect('f', o, choose=False)
         el.submittedval = [-2]
         self.assertEqual(el.value, [-2])
 
@@ -1142,22 +1142,22 @@ class SelectTest(unittest.TestCase):
         '<select id="f-f" name="myselect">\n'\
         '<option selected="selected" value="1">a</option>\n<option value="2">'\
         'b</option>\n</select>'
-        el = Form('f').add_select('f', o, defaultval=1, choose=None, name="myselect")
+        el = Form('f').fields.add_select('f', o, defaultval=1, choose=None, name="myselect")
         self.assertEqual(str(el()), html)
         
 class OtherElementsTest(unittest.TestCase):
     def test_el_textarea(self):
         html = '<textarea class="foo" cols="40" id="f-f" name="f" rows="7"></textarea>'
-        el = Form('f').add_textarea('f')
+        el = Form('f').fields.add_textarea('f')
         self.assertEqual(str(el(class_='foo')), html)
         html = '<textarea cols="40" id="f-f" name="f" rows="7">foo</textarea>'
-        el = Form('f').add_textarea('f', defaultval='foo')
+        el = Form('f').fields.add_textarea('f', defaultval='foo')
         self.assertEqual(str(el()), html)
         
     def test_el_passthru(self):
         f = Form('f')
-        f.add_text('text')
-        el = f.add_passthru('f', 'foo')
+        f.fields.add_text('text')
+        el = f.fields.add_passthru('f', 'foo')
         assert el.value == 'foo'
         try:
             el.render()
@@ -1175,28 +1175,28 @@ class OtherElementsTest(unittest.TestCase):
         
         # need to test defaulting, passthru should also pick that up
         f = Form('f')
-        f.add_text('text')
-        el = f.add_passthru('f')
+        f.fields.add_text('text')
+        el = f.fields.add_passthru('f')
         f.set_defaults({'f':'foo'})
         f.set_submitted({'f':'bar', 'text':'baz', 'f-submit-flag':'submitted'})
         self.assertEqual(f.values, {'f':'foo', 'text':'baz', 'f-submit-flag':'submitted'})
     
     def test_el_fixed(self):
         f = Form('f')
-        el = f.add_fixed('f', defaultval='foo', title='baz')
+        el = f.fields.add_fixed('f', defaultval='foo', title='baz')
         self.assertEqual( el(class_='bar'), L('<div class="bar" id="f-f" title="baz">foo</div>'))
         
         # we want to be able to use a label on fixed elements
         f = Form('f')
-        el = f.add_fixed('f', 'Foo', 'foo', title='baz')
+        el = f.fields.add_fixed('f', 'Foo', 'foo', title='baz')
         self.assertEqual( el.label(), L('<label>Foo</label>'))
         self.assertEqual( el(class_='bar'), L('<div class="bar" id="f-f" title="baz">foo</div>'))
         
         
     def test_el_static(self):
         f = Form('f')
-        f.add_text('text')
-        el = f.add_static('f', 'label', 'foo')
+        f.fields.add_text('text')
+        el = f.fields.add_static('f', 'label', 'foo')
         assert el.render() == L('<div id="f-f">foo</div>')
         try:
             assert el.value == 'foo'
@@ -1216,25 +1216,25 @@ class OtherElementsTest(unittest.TestCase):
         
         # need to test defaulting, passthru should also pick that up
         f = Form('f')
-        f.add_text('text')
-        el = f.add_static('f', 'label')
+        f.fields.add_text('text')
+        el = f.fields.add_static('f', 'label')
         f.set_defaults({'f':'foo'})
         self.assertEqual(el(), L('<div id="f-f">foo</div>'))
     
     def test_el_header(self):
-        el = Form('f').add_header('f', 'heading')
+        el = Form('f').fields.add_header('f', 'heading')
         assert el.render() == L('<h3 id="f-f">heading</h3>')
     
         # different header
-        el = Form('f').add_header('f', 'heading', 'h2')
+        el = Form('f').fields.add_header('f', 'heading', 'h2')
         assert el.render() == L('<h2 id="f-f">heading</h2>')
         
         # with attributes
-        el = Form('f').add_header('f', 'foo', title='baz')
+        el = Form('f').fields.add_header('f', 'foo', title='baz')
         self.assertEqual( el(class_='bar'), L('<h3 class="bar" id="f-f" title="baz">foo</h3>'))
         
         # empty header
-        el = Form('f').add_header('f')
+        el = Form('f').fields.add_header('f')
         self.assertEqual( el.render(), L('<h3 id="f-f"></h3>'))
 
 class LogicalElementsTest(unittest.TestCase):
@@ -1243,36 +1243,36 @@ class LogicalElementsTest(unittest.TestCase):
         not_checked = L('<input class="checkbox" id="f-f" name="thegroup" type="checkbox" />')
         checked = L('<input checked="checked" class="checkbox" id="f-f" name="thegroup" type="checkbox" />')
 
-        el = Form('f').add_mcheckbox('f', 'label', group='thegroup' )
+        el = Form('f').fields.add_mcheckbox('f', 'label', group='thegroup' )
         self.assertEqual(el(), not_checked)
-        el = Form('f').add_mcheckbox('f', 'label', group='thegroup', checked=True)
+        el = Form('f').fields.add_mcheckbox('f', 'label', group='thegroup', checked=True)
         self.assertEqual(el(), checked)
-        el = Form('f').add_mcheckbox('f', 'label', group='thegroup')
+        el = Form('f').fields.add_mcheckbox('f', 'label', group='thegroup')
         self.assertEqual(el(checked='checked'), checked)
         
         not_checked = L('<input class="checkbox" id="f-f" name="thegroup" type="checkbox" value="foo" />')
         checked = L('<input checked="checked" class="checkbox" id="f-f" name="thegroup" type="checkbox" value="foo" />')
 
-        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup')
+        el = Form('f').fields.add_mcheckbox('f', 'label', 'foo', 'thegroup')
         self.assertEqual(el(), not_checked)
-        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup', checked=True)
+        el = Form('f').fields.add_mcheckbox('f', 'label', 'foo', 'thegroup', checked=True)
         self.assertEqual(el(), checked)
-        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup')
+        el = Form('f').fields.add_mcheckbox('f', 'label', 'foo', 'thegroup')
         self.assertEqual(el(checked='checked'), checked)
-        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup')
+        el = Form('f').fields.add_mcheckbox('f', 'label', 'foo', 'thegroup')
         el.chosen = True
         self.assertEqual(el(), checked)
         
         # can't have two elements in same group with same value
         f = Form('f')
-        el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
+        el1 = f.fields.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
         try:
-            f.add_mcheckbox('f2', 'label', 'foo', 'thegroup')
+            f.fields.add_mcheckbox('f2', 'label', 'foo', 'thegroup')
         except ValueError:
             pass
         
         # elements should not take submit values
-        el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup')
+        el = Form('f').fields.add_mcheckbox('f', 'label', 'foo', 'thegroup')
         try:
             el.submittedval = False
             self.fail('should not accept submittedval')
@@ -1282,15 +1282,15 @@ class LogicalElementsTest(unittest.TestCase):
 
         # cannot set required on an mcheckbox
         try:
-            el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup', required=True)
+            el = Form('f').fields.add_mcheckbox('f', 'label', 'foo', 'thegroup', required=True)
         except ProgrammingError, pe:
             assert pe.args[0] == 'Required is not allowed on this element. Set it for the logical group.'
             
     def test_mcheckbox2(self):
         # test the elements getting chosen by setting form defaults
         f = Form('f')
-        el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
-        el2 = f.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
+        el1 = f.fields.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
+        el2 = f.fields.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_defaults({'thegroup':'foo'})
         assert el1.chosen
@@ -1306,8 +1306,8 @@ class LogicalElementsTest(unittest.TestCase):
     def test_mcheckbox3(self):    
         # test the elements getting chosen by form submissions
         f = Form('f')
-        el1 = f.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
-        el2 = f.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
+        el1 = f.fields.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
+        el2 = f.fields.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
         assert f.thegroup.value == ['foo'], f.thegroup.value
@@ -1329,8 +1329,8 @@ class LogicalElementsTest(unittest.TestCase):
     def test_mcheckbox4(self):
         # test integer values
         f = Form('f')
-        el1 = f.add_mcheckbox('f1', 'label', 1, 'thegroup')
-        el2 = f.add_mcheckbox('f2', 'label', 2, 'thegroup')
+        el1 = f.fields.add_mcheckbox('f1', 'label', 1, 'thegroup')
+        el2 = f.fields.add_mcheckbox('f2', 'label', 2, 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':1})
         assert el1.chosen
@@ -1346,37 +1346,37 @@ class LogicalElementsTest(unittest.TestCase):
         not_selected= L('<input class="radio" id="f-f" name="thegroup" type="radio" />')
         selected = L('<input class="radio" id="f-f" name="thegroup" selected="selected" type="radio" />')
 
-        el = Form('f').add_radio('f', 'label', group='thegroup' )
+        el = Form('f').fields.add_radio('f', 'label', group='thegroup' )
         self.assertEqual(el(), not_selected)
-        el = Form('f').add_radio('f', 'label', group='thegroup', selected=True)
+        el = Form('f').fields.add_radio('f', 'label', group='thegroup', selected=True)
         self.assertEqual(el(), selected)
-        el = Form('f').add_radio('f', 'label', group='thegroup')
+        el = Form('f').fields.add_radio('f', 'label', group='thegroup')
         self.assertEqual(el(selected='selected'), selected)
         
         not_selected= L('<input class="radio" id="f-f" name="thegroup" type="radio" value="foo" />')
         selected = L('<input class="radio" id="f-f" name="thegroup" selected="selected" type="radio" value="foo" />')
 
-        el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
+        el = Form('f').fields.add_radio('f', 'label', 'foo', 'thegroup')
         self.assertEqual(el(), not_selected)
-        el = Form('f').add_radio('f', 'label', 'foo', 'thegroup', selected=True)
+        el = Form('f').fields.add_radio('f', 'label', 'foo', 'thegroup', selected=True)
         self.assertEqual(el(), selected)
-        el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
+        el = Form('f').fields.add_radio('f', 'label', 'foo', 'thegroup')
         self.assertEqual(el(selected='selected'), selected)
-        el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
+        el = Form('f').fields.add_radio('f', 'label', 'foo', 'thegroup')
         el.chosen = True
         self.assertEqual(el(), selected)
     
         # cannot set required on an mradio
         try:
-            el = Form('f').add_radio('f', 'label', 'foo', 'thegroup', required=True)
+            el = Form('f').fields.add_radio('f', 'label', 'foo', 'thegroup', required=True)
         except ProgrammingError, pe:
             assert pe.args[0] == 'Required is not allowed on this element. Set it for the logical group.'
             
     def test_radio2(self):
         # test the elements getting chosen by setting form defaults
         f = Form('f')
-        el1 = f.add_radio('f1', 'label', 'foo', 'thegroup')
-        el2 = f.add_radio('f2', 'label', 'bar', 'thegroup')
+        el1 = f.fields.add_radio('f1', 'label', 'foo', 'thegroup')
+        el2 = f.fields.add_radio('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_defaults({'thegroup':'foo'})
         assert el1.chosen
@@ -1392,8 +1392,8 @@ class LogicalElementsTest(unittest.TestCase):
     def test_radio3(self):    
         # test the elements getting chosen by form submissions
         f = Form('f')
-        el1 = f.add_radio('f1', 'label', 'foo', 'thegroup')
-        el2 = f.add_radio('f2', 'label', 'bar', 'thegroup')
+        el1 = f.fields.add_radio('f1', 'label', 'foo', 'thegroup')
+        el2 = f.fields.add_radio('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
         assert f.thegroup.value == 'foo'
@@ -1418,8 +1418,8 @@ class LogicalElementsTest(unittest.TestCase):
     def test_mradio4(self):
         # test integer values
         f = Form('f')
-        el1 = f.add_radio('f1', 'label', 1, 'thegroup')
-        el2 = f.add_radio('f2', 'label', 2, 'thegroup')
+        el1 = f.fields.add_radio('f1', 'label', 1, 'thegroup')
+        el2 = f.fields.add_radio('f2', 'label', 2, 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':1})
         assert el1.chosen
@@ -1433,25 +1433,25 @@ class LogicalElementsTest(unittest.TestCase):
 
     def test_dup_values(self):
         f = Form('f')
-        el = f.add_radio('radio1', 'Radio 1', group='rgroup1' )
+        el = f.fields.add_radio('radio1', 'Radio 1', group='rgroup1' )
         try:
-            el = f.add_radio('radio2', 'Radio 2', group='rgroup1' )
+            el = f.fields.add_radio('radio2', 'Radio 2', group='rgroup1' )
             self.fail('should have got duplicate value assertion')
         except ValueError, e:
             self.assertEqual(str(e), 'a member of this group already exists with value ""')
     
     def test_non_rendering(self):
         f = Form('f')
-        el = f.add_radio('radio1', 'Radio 1', group='rgroup1' )
+        el = f.fields.add_radio('radio1', 'Radio 1', group='rgroup1' )
         assert el.lgroup not in f._render_els, 'logical group is trying to render'
     
 class LogicalElementsTest2(unittest.TestCase):
     def setUp(self):
         self.f = f = Form('f')
-        self.el1 = f.add_mcheckbox('f1', 'label', 1, 'thegroup')
-        self.el2 = f.add_mcheckbox('f2', 'label', 2, 'thegroup')
-        self.el3 = f.add_mcheckbox('f3', 'label', 3, 'thegroup')
-        self.el3 = f.add_mcheckbox('f4', 'label', '', 'thegroup')
+        self.el1 = f.fields.add_mcheckbox('f1', 'label', 1, 'thegroup')
+        self.el2 = f.fields.add_mcheckbox('f2', 'label', 2, 'thegroup')
+        self.el3 = f.fields.add_mcheckbox('f3', 'label', 3, 'thegroup')
+        self.el3 = f.fields.add_mcheckbox('f4', 'label', '', 'thegroup')
         self.gel = f.thegroup
         
     def test_1(self):
@@ -1556,11 +1556,11 @@ class FileUploadsTest(unittest.TestCase):
     
     def test_html(self):
         html = L('<input class="file" id="f-f" name="f" type="file" />')
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         self.assertEqual(el(), html)
 
     def test_defaults(self):
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         self.assertEqual(el.defaultval, NotGiven)
         self.assertEqual(el.displayval, NotGiven)
         # setting to not given is ok
@@ -1573,7 +1573,7 @@ class FileUploadsTest(unittest.TestCase):
             self.assertEqual(str(e), 'FileElement doesn\'t support default values')
     
     def test_submitted(self):
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.submittedval = self.text
         assert el.is_valid()
         self.assertEqual(el.value.file_name, self.text.file_name)
@@ -1581,22 +1581,22 @@ class FileUploadsTest(unittest.TestCase):
         self.assertEqual(el.value.content_length, self.text.content_length)
     
     def test_no_file_submit(self):
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         assert el.is_valid()
         assert el.value is NotGiven
         
-        el = Form('f').add_file('f', required=True)
+        el = Form('f').fields.add_file('f', required=True)
         assert not el.is_valid()
     
     def test_maxsize(self):
         tosub = self.text
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.maxsize(5)
         el.submittedval = tosub
         assert not el.is_valid(), 'max size validation should have failed'
         assert el.errors[0] == 'file too big (10), max size 5'
         
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.maxsize(15)
         el.submittedval = tosub
         assert el.is_valid(), 'max size validation should have been ok'
@@ -1605,7 +1605,7 @@ class FileUploadsTest(unittest.TestCase):
         # this is probably going to be confusing since the content length is usually not given
         # for files by a browser, but lets test anyway
         tosub = BaseTranslator('text.txt', 'text/plain', 0)
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.maxsize(5)
         el.submittedval = tosub
         assert not el.is_valid(), 'max size validation should have failed'
@@ -1613,138 +1613,138 @@ class FileUploadsTest(unittest.TestCase):
         
         # none should be the same as zero
         tosub = BaseTranslator('text.txt', 'text/plain', None)
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.maxsize(5)
         el.submittedval = tosub
         assert not el.is_valid(), 'max size validation should have failed'
         assert el.errors[0] == 'maximum size requirement exists, but submitted file had no content length'
     
         # no submission should pass since maxsize should only run if a file is uploaded
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.maxsize(5)
         el.submittedval = self.blank
         assert el.is_valid(), el.errors
     
     def test_allowexts(self):
         tosub = self.text
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_extension('txt')
         el.submittedval = tosub
         assert el.is_valid()
         
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_extension('.txt')
         el.submittedval = tosub
         assert el.is_valid()
         
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_extension('pdf', 'doc')
         el.submittedval = tosub
         assert not el.is_valid()
         self.assertEqual(el.errors[0], 'extension ".txt" not allowed')
         
         tosub = self.noname
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_extension('txt')
         el.submittedval = tosub
         assert not el.is_valid()
         assert 'submitted file had no file name' in el.errors[0]
         
         tosub = self.noext
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_extension('txt')
         el.submittedval = tosub
         assert not el.is_valid()
         assert 'submitted file had no extension' in el.errors[0]
         
         # no submission should work
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_extension('txt')
         el.submittedval = self.blank
         assert el.is_valid(), el.errors
     
     def test_denyexts(self):
         tosub = self.text
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_extension('txt')
         el.submittedval = tosub
         assert not el.is_valid()
         
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_extension('.txt', '.pdf')
         el.submittedval = tosub
         assert not el.is_valid()
         assert el.errors[0] == 'extension ".txt" not permitted', el.errors
         
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_extension('pdf', 'doc')
         el.submittedval = tosub
         assert el.is_valid()
         
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_extension('txt')
         el.submittedval = self.noname
         assert not el.is_valid()
         assert 'submitted file had no file name' in el.errors[0]
 
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_extension('txt')
         el.submittedval = self.noext
         assert not el.is_valid()
         assert 'submitted file had no extension' in el.errors[0]
         
         # no submission should work
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_extension('txt')
         el.submittedval = self.blank
         assert el.is_valid()
         
     def test_allowtypes(self):
         tosub = self.text
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_type('text/plain')
         el.submittedval = tosub
         assert el.is_valid()
         
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_type('text/css', 'text/javascript')
         el.submittedval = tosub
         assert not el.is_valid()
         self.assertEqual(el.errors[0], 'content type "text/plain" not allowed')
         
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_type('text/css', 'text/javascript')
         el.submittedval = self.noct
         assert not el.is_valid()
         assert 'submitted file had no content-type' in el.errors[0], el.errors
         
         # no submission should work
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.allow_type('text/css', 'text/javascript')
         el.submittedval = self.blank
         assert el.is_valid()
         
     def test_denytypes(self):
         tosub = self.text
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_type('text/plain')
         el.submittedval = tosub
         assert not el.is_valid()
         self.assertEqual(el.errors[0], 'content type "text/plain" not permitted')
         
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_type('text/css', 'text/javascript')
         el.submittedval = tosub
         assert el.is_valid()
 
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_type('text/css', 'text/javascript')
         el.submittedval = self.noct
         assert not el.is_valid()
         assert 'submitted file had no content-type' in el.errors[0]
         
         # no submission should work
-        el = Form('f').add_file('f')
+        el = Form('f').fields.add_file('f')
         el.deny_type('text/css', 'text/javascript')
         el.submittedval = self.blank
         assert el.is_valid()
