@@ -6,14 +6,17 @@ from pysform.file_upload_translators import WerkzeugTranslator
 from pysform.processors import Wrapper
 from pysform.exceptions import ElementInvalid, ProgrammingError
 
-class FormBase(HtmlAttributeHolder, ElementRegistrar):
+class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
     """
     Base class for forms.
     """
     
     def __init__(self, name, static=False, **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
-        ElementRegistrar.__init__(self, self, self)
+        #ElementRegistrar.__init__(self, self, self)
+        
+        self.fields = ElementRegistrar()
+        self.f = self.fields
         
         self._name = name       
         # include a hidden field so we can check if this form was submitted

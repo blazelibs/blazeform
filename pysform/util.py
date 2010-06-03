@@ -138,7 +138,7 @@ class ElementRegistrar(object):
         elif self._formref._all_els.has_key(name):
             return self._formref._all_els[name]
         else:
-            raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
+            raise AttributeError("'%s' bobject has no attribute '%s'" % (self.__class__.__name__, name))
         
         def wrapper(eid, *args, **kwargs):
             return func(type, eid, *args, **kwargs)
