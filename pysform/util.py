@@ -150,8 +150,6 @@ class ElementRegistrar(object):
         if self._formref._all_els.has_key(eid):
             raise ValueError('element id "%s" already used' % eid)
         
-        
-        
         try:
             eclass = self._formref._registered_types[type]
         except KeyError:
