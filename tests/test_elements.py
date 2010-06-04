@@ -1292,7 +1292,9 @@ class LogicalElementsTest(unittest.TestCase):
         el1 = f.fields.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
         el2 = f.fields.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
+        
         f.set_defaults({'thegroup':'foo'})
+    
         assert el1.chosen
         assert not el2.chosen
         f.set_defaults({'thegroup':['foo', 'bar']})
@@ -1310,11 +1312,11 @@ class LogicalElementsTest(unittest.TestCase):
         el2 = f.fields.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
-        assert f.thegroup.value == ['foo'], f.thegroup.value
+        assert f.fields.thegroup.value == ['foo'], f.fields.thegroup.value
         assert el1.chosen
         assert not el2.chosen
         f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':['foo', 'bar']})
-        assert f.thegroup.value == ['foo', 'bar']
+        assert f.fields.thegroup.value == ['foo', 'bar']
         assert el1.chosen
         assert el2.chosen
         # it was chosen, but should "undo" when set again
@@ -1396,7 +1398,7 @@ class LogicalElementsTest(unittest.TestCase):
         el2 = f.fields.add_radio('f2', 'label', 'bar', 'thegroup')
         assert el1.chosen == el2.chosen == False
         f.set_submitted({'f-submit-flag': 'submitted', 'thegroup':'foo'})
-        assert f.thegroup.value == 'foo'
+        assert f.fields.thegroup.value == 'foo'
         assert el1.chosen
         assert not el2.chosen
         # a radio shouldn't accept multiple values, the children will not
@@ -1404,8 +1406,8 @@ class LogicalElementsTest(unittest.TestCase):
         f.set_submitted({'thegroup':['foo', 'bar']})
         assert el1.chosen
         assert not el2.chosen
-        assert not f.thegroup.is_valid()
-        assert f.thegroup.errors[0] == 'this field does not accept more than one value'
+        assert not f.fields.thegroup.is_valid()
+        assert f.fields.thegroup.errors[0] == 'this field does not accept more than one value'
         # it was chosen, but should "undo" when set again
         f.set_submitted({'thegroup':'bar'})
         assert not el1.chosen
@@ -1431,6 +1433,7 @@ class LogicalElementsTest(unittest.TestCase):
         assert not el1.chosen
         assert el2.chosen
 
+
     def test_dup_values(self):
         f = Form('f')
         el = f.fields.add_radio('radio1', 'Radio 1', group='rgroup1' )
@@ -1452,7 +1455,7 @@ class LogicalElementsTest2(unittest.TestCase):
         self.el2 = f.fields.add_mcheckbox('f2', 'label', 2, 'thegroup')
         self.el3 = f.fields.add_mcheckbox('f3', 'label', 3, 'thegroup')
         self.el3 = f.fields.add_mcheckbox('f4', 'label', '', 'thegroup')
-        self.gel = f.thegroup
+        self.gel = f.fields.thegroup
         
     def test_1(self):
         self.gel.if_empty=1

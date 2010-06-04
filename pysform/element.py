@@ -1117,7 +1117,7 @@ class LogicalSupportElement(ElementBase):
             
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
         if isinstance(group, basestring):
-            self.lgroup = getattr(form, group, None)
+            self.lgroup = getattr(form.fields, group, None)
             if not self.lgroup:
                 self.lgroup = LogicalGroupElement(self.is_multiple, form, group)
         elif not isinstance(group, LogicalGroupElement):
@@ -1184,7 +1184,7 @@ class LogicalSupportElement(ElementBase):
         else:
             todisplay = literal('&nbsp;')
         return HTML.div(todisplay, **self._static_attributes())
-    
+   
 class MultiCheckboxElement(LogicalSupportElement):
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, checked=False, **kwargs):
         chosen = bool(checked)
