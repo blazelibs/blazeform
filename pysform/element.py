@@ -72,7 +72,7 @@ class ElementBase(HtmlAttributeHolder):
         self._bind_to_form()
     
     def _bind_to_form(self):
-        self.form.fields.bind_element(self)
+        self.form.elements.bind_element(self)
     
     def _get_defaultval(self):
         return self._defaultval
@@ -482,7 +482,7 @@ class FileElement(InputElementBase):
         self._maxsize = NotGiven
     
     def _bind_to_form(self):
-        self.form.fields.bind_element(self, default=False)
+        self.form.elements.bind_element(self, default=False)
         
     def _get_defaultval(self):
         return NotGiven
@@ -926,7 +926,7 @@ class LogicalGroupElement(FormFieldElementBase):
         self.submittedval = NotGivenIter
 
     def _bind_to_form(self):
-        self.form.fields.bind_element(self, render=False)
+        self.form.elements.bind_element(self, render=False)
         
     def _get_defaultval(self):
         return self._defaultval
@@ -999,7 +999,7 @@ class PassThruElement(HasValueElement):
         HasValueElement.__init__(self, form, eid, label, defaultval, **kwargs)
 
     def _bind_to_form(self):
-        self.form.fields.bind_element(self, render=False, submit=False)
+        self.form.elements.bind_element(self, render=False, submit=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -1020,7 +1020,7 @@ class FixedElement(PassThruElement):
         PassThruElement.__init__(self, form, eid, defaultval, label, **kwargs)
 
     def _bind_to_form(self):
-        self.form.fields.bind_element(self, submit=False)
+        self.form.elements.bind_element(self, submit=False)
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
@@ -1039,7 +1039,7 @@ class StaticElement(ElementBase):
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
 
     def _bind_to_form(self):
-        self.form.fields.bind_element(self, submit=False, retval=False)
+        self.form.elements.bind_element(self, submit=False, retval=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -1060,7 +1060,7 @@ class StaticElement(ElementBase):
         return HTML.tag('div', displayval, **self.attributes)
 form_elements['static'] = StaticElement
 
-class GroupElement(StaticElement, ElementRegistrar):
+class GroupElement(StaticElement): #, ElementRegistrar):
     """
     HTML class for a form element group
     
@@ -1070,8 +1070,9 @@ class GroupElement(StaticElement, ElementRegistrar):
     """
     def __init__(self, form, eid, label=NotGiven, **kwargs):
         StaticElement.__init__(self, form, eid, label, NotGiven, **kwargs)
-        ElementRegistrar.__init__(self, form, self)
-
+        #ElementRegistrar.__init__(self, form, self)
+        members = ElementRegistrar(form, self)
+        
         # duplicate form variables for when the elements "bind" to us
         self._all_els = form._all_els
         self._defaultable_els = form._defaultable_els
@@ -1117,7 +1118,7 @@ class LogicalSupportElement(ElementBase):
             
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
         if isinstance(group, basestring):
-            self.lgroup = getattr(form.fields, group, None)
+            self.lgroup = getattr(form.elements, group, None)
             if not self.lgroup:
                 self.lgroup = LogicalGroupElement(self.is_multiple, form, group)
         elif not isinstance(group, LogicalGroupElement):
@@ -1129,7 +1130,7 @@ class LogicalSupportElement(ElementBase):
         self.chosen_attr = 'checked'
     
     def _bind_to_form(self):
-        self.form.fields.bind_element(self, submit=False, retval=False)
+        self.form.elements.bind_element(self, submit=False, retval=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')

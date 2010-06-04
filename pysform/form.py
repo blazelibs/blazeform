@@ -15,8 +15,8 @@ class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
         HtmlAttributeHolder.__init__(self, **kwargs)
         #ElementRegistrar.__init__(self, self, self)
         
-        self.fields = ElementRegistrar(self, self)
-        self.f = self.fields
+        self.elements = ElementRegistrar(self, self)
+        self.els = self.elements
         
         self._name = name       
         # include a hidden field so we can check if this form was submitted
@@ -48,7 +48,7 @@ class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
         
         # init actions
         self.register_elements(form_elements)
-        self.fields.add_hidden(self._form_ident_field, value='submitted')
+        self.elements.add_hidden(self._form_ident_field, value='submitted')
     
     def register_elements(self, dic):
         for type, eclass in dic.items():
@@ -73,7 +73,7 @@ class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
         return self._is_submitted()
     
     def _is_submitted(self):
-        if getattr(self.fields, self._form_ident_field).is_submitted():
+        if getattr(self.elements, self._form_ident_field).is_submitted():
             return True
         return False
     
@@ -152,7 +152,7 @@ class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
         
         # ident field first since we need to know that to now if we need to
         # apply the submitted values
-        identel = getattr(self.fields, self._form_ident_field)
+        identel = getattr(self.elements, self._form_ident_field)
         ident_key = identel.nameattr or identel.id
         if values.has_key(ident_key):
             identel.submittedval = values[ident_key]
