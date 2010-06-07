@@ -188,7 +188,7 @@ class FieldRenderer(Renderer):
         self.output.inc('<div id="%s-fw" class="field-wrapper%s">' %
                             (self.element.getidattr(), self.label_class))
     def required(self):
-        if self.element.required and not self.element.form._static:
+        if self.element.required and not self.element.container._static:
             self.output('<span class="required-star">*</span>')
     def notes(self):
         if len(self.element.notes) == 1:
@@ -263,10 +263,9 @@ class GroupRenderer(StaticRenderer):
     def render_children(self):
         on_first = True
         on_alt = False
-        #TODO: Remove, only for testing.
-        #raise AttributeError(self.element)
+
         for child in self.element._render_els:
-            rcls = self.element.form._renderer(child)
+            rcls = self.element.container._renderer(child)
             r = rcls(child, self.output, on_first, on_alt, 'grpel', self.settings)
             r.render()
             if r.uses_alt:
