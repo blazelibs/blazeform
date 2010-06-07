@@ -123,7 +123,7 @@ def is_given(object):
     return not isinstance(object, NotGivenBase)
 
 class ElementRegistrar(object):
-    def __init__(self, formref, render_section):
+    def __init__(self, formref, render_section, group = False):
         self._formref = formref
         self._rndr_sec = render_section
         

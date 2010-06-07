@@ -49,6 +49,6 @@ class TestForm(Form):
         #test element group with class attribute
         self.elements.add_header('eg-class-attr', 'Element Group with Class Attribute')
         sg = self.elements.add_elgroup('submit-group', class_='submit-only')
-        sg.members.add_submit('preview', defaultval="Preview")
-        el = sg.members.add_submit('submit')
+        sg.elements.add_submit('preview', defaultval="Preview")
+        el = sg.elements.add_submit('submit')
         el.add_attr('class', 'customclass')

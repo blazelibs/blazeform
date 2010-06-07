@@ -47,10 +47,10 @@ class Label(object):
 
 class ElementBase(HtmlAttributeHolder):
     """
-    Base class for form elements.
+    Base class for container/group (container) elements.
     """
-    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
-        # settings to overide the form's settings
+    def __init__(self, container, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
+        # settings to overide the container's settings
         self.settings = kwargs.pop('settings', {})
         self.label_after = kwargs.pop('label_after', False)
         
@@ -61,7 +61,7 @@ class ElementBase(HtmlAttributeHolder):
         
         self.id = eid
         self.label = Label(self, label)
-        self.form = form
+        self.container = container
 
         #: a list of user messages for this field (C{str})
         self.notes = []
@@ -72,7 +72,7 @@ class ElementBase(HtmlAttributeHolder):
         self._bind_to_form()
     
     def _bind_to_form(self):
-        self.form.elements.bind_element(self)
+        self.container.elements.bind_element(self)
     
     def _get_defaultval(self):
         return self._defaultval
@@ -91,7 +91,7 @@ class ElementBase(HtmlAttributeHolder):
         self._displayval = self._defaultval
     
     def getidattr(self):
-        return self.form._element_id_formatter % {'form_name':self.form._name, 'element_id':self.id}
+        return self.container._element_id_formatter % {'form_name':self.container._name, 'element_id':self.id}
 
     def add_note(self, note, escape = True):
         if escape:
@@ -110,7 +110,7 @@ class HasValueElement(ElementBase):
 
 class FormFieldElementBase(HasValueElement):
     """
-    Base class for form elements that represent form fields (input, select, etc.)
+    Base class for container elements that represent container fields (input, select, etc.)
     as opposed to Elements that are only for display (i.e. static, headers).
     """
     def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
@@ -120,7 +120,7 @@ class FormFieldElementBase(HasValueElement):
         self.if_empty = kwargs.pop('if_empty', NotGiven)
         # if the field is invalid, return this value
         self.if_invalid = kwargs.pop('if_invalid', NotGiven)
-        #: is this field required in order for the form submission to be valid?
+        #: is this field required in order for the container submission to be valid?
         self.required = kwargs.pop('required', False)
         #: name attribute
         self.nameattr = kwargs.pop('name', None)
@@ -134,7 +134,7 @@ class FormFieldElementBase(HasValueElement):
         self.processors = []
         #: whether or not this field is valid, None means the field has not been processed yet
         self._valid = None
-        #: allows a form/element to "expect" an exception and handle gracefully
+        #: allows a container/element to "expect" an exception and handle gracefully
         self.exception_handlers = []
         #: strip string submitted values?
         self.strip = strip
@@ -362,7 +362,7 @@ class FormFieldElementBase(HasValueElement):
 
 class InputElementBase(FormFieldElementBase):
     """
-    Base class for input form elements.
+    Base class for input container elements.
     
     Since <input> elements have very similar HTML representations, they have
     this common base class. You don't need to instantiate it directly,
@@ -379,7 +379,7 @@ class InputElementBase(FormFieldElementBase):
     
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        if self.form._static:
+        if self.container._static:
             return self.render_static()
         else:
             return self.render_html()
@@ -449,7 +449,7 @@ class CheckboxElement(InputElementBase):
     
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        if self.form._static:
+        if self.container._static:
             return self.render_static()
         else:
             return self.render_html()
@@ -482,7 +482,7 @@ class FileElement(InputElementBase):
         self._maxsize = NotGiven
     
     def _bind_to_form(self):
-        self.form.elements.bind_element(self, default=False)
+        self.container.elements.bind_element(self, default=False)
         
     def _get_defaultval(self):
         return NotGiven
@@ -504,7 +504,7 @@ class FileElement(InputElementBase):
         if isinstance(value, BaseTranslator):
             self._submittedval = value
         else:
-            self._submittedval = self.form._fu_translator(value)
+            self._submittedval = self.container._fu_translator(value)
     submittedval = property(_get_submittedval, _set_submittedval)
     
     def maxsize(self, size):
@@ -664,7 +664,7 @@ class ConfirmElement(TextElement):
               raise ProgrammingError('match argument is required for Confirm elements')
         elif isinstance(match, basestring):
             try:
-                self.mel = self.form._all_els[match]
+                self.mel = self.container._all_els[match]
             except KeyError, e:
                 if match not in str(e):
                     raise
@@ -819,7 +819,7 @@ class SelectElement(FormFieldElementBase):
         if self.multiple:
             self.set_attr('multiple', 'multiple')
         self.set_attrs(**kwargs)
-        if self.form._static:
+        if self.container._static:
             return self.render_static()
         else:
             return self.render_html()
@@ -891,7 +891,7 @@ class TextAreaElement(FormFieldElementBase):
 
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        if self.form._static:
+        if self.container._static:
             return self.render_static()
         else:
             return self.render_html()
@@ -922,11 +922,12 @@ class LogicalGroupElement(FormFieldElementBase):
         
         self.multiple = is_multiple
         self.members = {}
+        self.mbrs = self.members
         self.to_python_first = True
         self.submittedval = NotGivenIter
 
     def _bind_to_form(self):
-        self.form.elements.bind_element(self, render=False)
+        self.container.elements.bind_element(self, render=False)
         
     def _get_defaultval(self):
         return self._defaultval
@@ -999,7 +1000,7 @@ class PassThruElement(HasValueElement):
         HasValueElement.__init__(self, form, eid, label, defaultval, **kwargs)
 
     def _bind_to_form(self):
-        self.form.elements.bind_element(self, render=False, submit=False)
+        self.container.elements.bind_element(self, render=False, submit=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -1020,7 +1021,7 @@ class FixedElement(PassThruElement):
         PassThruElement.__init__(self, form, eid, defaultval, label, **kwargs)
 
     def _bind_to_form(self):
-        self.form.elements.bind_element(self, submit=False)
+        self.container.elements.bind_element(self, submit=False)
     
     def __call__(self, **kwargs):
         return self.render(**kwargs)
@@ -1039,7 +1040,7 @@ class StaticElement(ElementBase):
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
 
     def _bind_to_form(self):
-        self.form.elements.bind_element(self, submit=False, retval=False)
+        self.container.elements.bind_element(self, submit=False, retval=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -1062,7 +1063,7 @@ form_elements['static'] = StaticElement
 
 class GroupElement(StaticElement): #, ElementRegistrar):
     """
-    HTML class for a form element group
+    HTML class for a container element group
     
     Groups can be used both for visual grouping of the elements (e.g. putting
     "Submit" and "Reset" buttons in one row or two text fields for first and
@@ -1070,10 +1071,11 @@ class GroupElement(StaticElement): #, ElementRegistrar):
     """
     def __init__(self, form, eid, label=NotGiven, **kwargs):
         StaticElement.__init__(self, form, eid, label, NotGiven, **kwargs)
-        #ElementRegistrar.__init__(self, form, self)
-        self.members = ElementRegistrar(form, self)
+        #ElementRegistrar.__init__(self, container, self)
+        self.elements = ElementRegistrar(self, self)
+        self.els = self.elements
         
-        # duplicate form variables for when the elements "bind" to us
+        # duplicate container variables for when the elements "bind" to us
         self._all_els = form._all_els
         self._defaultable_els = form._defaultable_els
         self._submittable_els = form._submittable_els
@@ -1081,6 +1083,7 @@ class GroupElement(StaticElement): #, ElementRegistrar):
         self._element_id_formatter = form._element_id_formatter
         self._name = form._name
         self._static = form._static
+        self._registered_types = form._registered_types
         
         # but we keep the rendering elements to ourself
         self._render_els = []
@@ -1088,7 +1091,7 @@ form_elements['elgroup'] = GroupElement
 
 class HeaderElement(StaticElement):
     """
-    A rendering element used for adding headers to a form.  It can also be used,
+    A rendering element used for adding headers to a container.  It can also be used,
     depending on the renderer, to group together field elements into sections.
     
     Headers will normally be rendered differently than other static elements,
@@ -1130,7 +1133,7 @@ class LogicalSupportElement(ElementBase):
         self.chosen_attr = 'checked'
     
     def _bind_to_form(self):
-        self.form.elements.bind_element(self, submit=False, retval=False)
+        self.container.elements.bind_element(self, submit=False, retval=False)
     
     def _get_submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
@@ -1147,7 +1150,7 @@ class LogicalSupportElement(ElementBase):
 
     def render(self, **kwargs):
         self.set_attr('class_', self.etype)
-        if self.form._static:
+        if self.container._static:
             return self.render_static(**kwargs)
         else:
             return self.render_html(**kwargs)

@@ -1278,7 +1278,7 @@ class LogicalElementsTest(unittest.TestCase):
             self.fail('should not accept submittedval')
         except NotImplementedError:
             pass
-        el.form.set_submitted({'f':'test'})
+        el.container.set_submitted({'f':'test'})
 
         # cannot set required on an mcheckbox
         try:
