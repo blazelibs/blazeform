@@ -6,14 +6,13 @@ from pysform.file_upload_translators import WerkzeugTranslator
 from pysform.processors import Wrapper
 from pysform.exceptions import ElementInvalid, ProgrammingError
 
-class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
+class FormBase(HtmlAttributeHolder):
     """
     Base class for forms.
     """
-    
+ 
     def __init__(self, name, static=False, **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
-        #ElementRegistrar.__init__(self, self, self)
         
         self.elements = ElementRegistrar(self, self)
         self.els = self.elements
@@ -208,7 +207,7 @@ class Form(FormBase):
         # make the form's name the id
         if not kwargs.has_key('id'):
             kwargs['id'] = name
-            
+        
         FormBase.__init__(self, name, static, **kwargs)
         
         # import here or we get circular import problems

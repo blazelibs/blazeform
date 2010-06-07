@@ -263,6 +263,8 @@ class GroupRenderer(StaticRenderer):
     def render_children(self):
         on_first = True
         on_alt = False
+        #TODO: Remove, only for testing.
+        #raise AttributeError(self.element)
         for child in self.element._render_els:
             rcls = self.element.form._renderer(child)
             r = rcls(child, self.output, on_first, on_alt, 'grpel', self.settings)
