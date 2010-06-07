@@ -10,7 +10,7 @@ class FormBase(HtmlAttributeHolder):#, ElementRegistrar):
     """
     Base class for forms.
     """
-    
+ 
     def __init__(self, name, static=False, **kwargs):
         HtmlAttributeHolder.__init__(self, **kwargs)
         #ElementRegistrar.__init__(self, self, self)

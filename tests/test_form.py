@@ -77,7 +77,7 @@ class CommonFormUsageTest(unittest.TestCase):
         # make sure this works with grouped elements
         f = Form('f')
         fg = f.elements.add_elgroup('file-group')
-        fg.add_file('picture', 'Picture')
+        fg.members.add_file('picture', 'Picture')
         assert "multipart/form-data" in f.render()
         
     def test_submit_validation(self):

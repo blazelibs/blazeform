@@ -1071,7 +1071,7 @@ class GroupElement(StaticElement): #, ElementRegistrar):
     def __init__(self, form, eid, label=NotGiven, **kwargs):
         StaticElement.__init__(self, form, eid, label, NotGiven, **kwargs)
         #ElementRegistrar.__init__(self, form, self)
-        members = ElementRegistrar(form, self)
+        self.members = ElementRegistrar(form, self)
         
         # duplicate form variables for when the elements "bind" to us
         self._all_els = form._all_els
