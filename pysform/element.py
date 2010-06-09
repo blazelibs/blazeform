@@ -391,6 +391,7 @@ class InputElementBase(FormFieldElementBase):
     
     def _static_attributes(self):
         attrs = self.attributes.copy()
+        
         try:
             del attrs['name']
         except KeyError:
@@ -403,6 +404,7 @@ class InputElementBase(FormFieldElementBase):
             del attrs['checked']
         except KeyError:
             pass
+        attrs['class'] = attrs['class'] + ' static'
         return attrs
     
     def render_static(self):
@@ -1058,7 +1060,7 @@ class StaticElement(ElementBase):
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
         displayval = self.displayval if self.displayval or self.displayval == 0 else None
-        return HTML.tag('div', displayval, **self.attributes)
+        return HTML.tag('span', displayval, **self.attributes)
 form_elements['static'] = StaticElement
 
 class GroupElement(StaticElement): #, ElementRegistrar):
@@ -1176,6 +1178,13 @@ class LogicalSupportElement(ElementBase):
                 del attrs[attr]
             except KeyError:
                 pass
+            
+            #Add static class to the HTML output of static elements, if it is not already there
+            if 'class' in attrs:
+                if 'static' not in attrs['class']:
+                    attrs['class'] += ' static'
+            else:
+                attrs['class'] = 'static'
         return attrs
     
     def render_static(self, **kwargs):
