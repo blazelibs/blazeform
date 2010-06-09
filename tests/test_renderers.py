@@ -45,7 +45,7 @@ def test_all():
                         raise
                     filestr = '**file empty**'
                 #TODO: Restore to normal, changed for testing.
-                assert formstr == filestr, 'line %d not equal in %s\n  form: %s\n  file: %s' % (lnum+1, '%s.html' % rname, form_html_lines[178], file_html_lines[178]) # formstr, filestr)
+                assert formstr == filestr, 'line %d not equal in %s\n  form: %s\n  file: %s' % (lnum+1, '%s.html' % rname, formstr, filestr)
         except AssertionError:
             # write the form output next to the test file for an easy diff
             formfile = open(path.join(rendir, '%s.form.html' % rname), 'w')
