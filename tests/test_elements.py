@@ -1197,7 +1197,7 @@ class OtherElementsTest(unittest.TestCase):
         f = Form('f')
         f.elements.add_text('text')
         el = f.elements.add_static('f', 'label', 'foo')
-        assert el.render() == L('<div id="f-f">foo</div>')
+        assert el.render() == L('<span id="f-f">foo</span>')
         try:
             assert el.value == 'foo'
             self.fail('static should not have a value')
@@ -1219,7 +1219,7 @@ class OtherElementsTest(unittest.TestCase):
         f.elements.add_text('text')
         el = f.elements.add_static('f', 'label')
         f.set_defaults({'f':'foo'})
-        self.assertEqual(el(), L('<div id="f-f">foo</div>'))
+        self.assertEqual(el(), L('<span id="f-f">foo</span>'))
     
     def test_el_header(self):
         el = Form('f').elements.add_header('f', 'heading')

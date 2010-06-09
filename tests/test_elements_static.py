@@ -20,8 +20,8 @@ def test_el_button():
     assert el.render() == '', el.render()
 
 def test_el_checkbox():
-    not_checked = '<span class="checkbox" id="f-f">no</span>'
-    checked = '<span class="checkbox" id="f-f">yes</span>'
+    not_checked = '<span class="checkbox static" id="f-f">no</span>'
+    checked = '<span class="checkbox static" id="f-f">yes</span>'
     
     # no default
     f = Form('f', static=True)
@@ -60,7 +60,7 @@ def test_el_cancel():
     assert el() == '', el()
 
 def test_el_text():
-    html = '<span class="text" id="f-field">&nbsp;</span>'
+    html = '<span class="text static" id="f-field">&nbsp;</span>'
     form = Form('f', static=True)
     el = form.elements.add_text('field', 'Field')
     assert el() == html, el()
@@ -69,7 +69,7 @@ def test_el_text():
     el = form.elements.add_text('field', 'Field', maxlength=1)
     assert el() == html, el()
     
-    html = '<span class="text" id="f-field">one</span>'
+    html = '<span class="text static" id="f-field">one</span>'
     form = Form('f', static=True)
     el = form.elements.add_text('field', 'Field', defaultval='one')
     assert el() == html, el()
@@ -81,22 +81,22 @@ def test_el_confirm():
     assert cel() == '', cel()
 
 def test_el_date():
-    html = '<span class="text" id="f-field">&nbsp;</span>'
+    html = '<span class="text static" id="f-field">&nbsp;</span>'
     el = Form('f', static=True).elements.add_date('field', 'Field')
     assert el() == html, el()
     
     # our date-time object should get converted to the appropriate format
-    html = '<span class="text" id="f-field">12/03/2009</span>'
+    html = '<span class="text static" id="f-field">12/03/2009</span>'
     el = Form('f', static=True).elements.add_date('field', 'Field', defaultval=datetime.date(2009, 12, 3))
     assert el() == html, el()
     
     # european style dates
-    html = '<span class="text" id="f-field">03/12/2009</span>'
+    html = '<span class="text static" id="f-field">03/12/2009</span>'
     el = Form('f', static=True).elements.add_date('field', 'Field', defaultval=datetime.date(2009, 12, 3), month_style='dd/mm/yyyy')
     assert el() == html, el()
 
 def test_el_email():
-    html = '<span class="text" id="f-field">bob@example.com</span>'
+    html = '<span class="text static" id="f-field">bob@example.com</span>'
     el = Form('f', static=True).elements.add_email('field', 'Field', defaultval='bob@example.com')
     assert el() == html, el()
 
@@ -106,20 +106,20 @@ def test_el_password():
     assert el() == '', el()
 
 def test_el_time():
-    html = '<span class="text" id="f-field">13:00:00</span>'
+    html = '<span class="text static" id="f-field">13:00:00</span>'
     el = Form('f', static=True).elements.add_time('field', 'Field', defaultval=(13, 0))
     assert el() == html, el()
 
 def test_el_url():
-    html = '<span class="text" id="f-f">&nbsp;</span>'
+    html = '<span class="text static" id="f-f">&nbsp;</span>'
     el = Form('f', static=True).elements.add_url('f')
     assert el() == html, el()
     
-    html = '<span class="text" id="f-f">example.org</span>'
+    html = '<span class="text static" id="f-f">example.org</span>'
     el = Form('f', static=True).elements.add_url('f', defaultval="example.org")
     assert el() == html, el()
     
-    html = '<span class="text" id="f-f"><a href="http://example.org">http://example.org</a></span>'
+    html = '<span class="text static" id="f-f"><a href="http://example.org">http://example.org</a></span>'
     el = Form('f', static=True).elements.add_url('f', defaultval="http://example.org")
     assert el() == html, el()
 
@@ -173,7 +173,7 @@ def test_el_fixed():
     assert el(class_='bar') == html, el(class_='bar')
     
 def test_el_static():
-    html = '<div class="bar" id="f-f" title="baz">foo</div>'
+    html = '<span class="bar" id="f-f" title="baz">foo</span>'
     f = Form('f', static=True)
     el = f.elements.add_static('f', defaultval='foo', title='baz')
     assert el(class_='bar') == html, el(class_='bar')
@@ -184,7 +184,7 @@ def test_el_header():
     assert el(class_='bar') == html, el(class_='bar')
 
 def test_mcheckbox():
-    no_value = '<span class="checkbox" id="f-f">&nbsp;</span>'
+    no_value = '<span class="checkbox static" id="f-f">&nbsp;</span>'
     el = Form('f', static=True).elements.add_mcheckbox('f', 'label', group='thegroup' )
     assert el() == no_value, el()
     el = Form('f', static=True).elements.add_mcheckbox('f', 'label', group='thegroup', checked=True)
@@ -192,7 +192,7 @@ def test_mcheckbox():
     el = Form('f', static=True).elements.add_mcheckbox('f', 'label', group='thegroup')
     assert el(checked='checked') == no_value, el(checked='checked')
     
-    value = '<span class="checkbox" id="f-f">foo</span>'
+    value = '<span class="checkbox static" id="f-f">foo</span>'
     el = Form('f', static=True).elements.add_mcheckbox('f', 'label', defaultval='foo', group='thegroup' )
     assert el() == no_value, el()
     el = Form('f', static=True).elements.add_mcheckbox('f', 'label', defaultval='foo', group='thegroup', checked=True)
@@ -201,9 +201,9 @@ def test_mcheckbox():
     assert el(checked='checked') == value, el(checked='checked')
     
     # test the elements getting chosen by setting form defaults
-    no_value1 = '<span class="checkbox" id="f-f1">&nbsp;</span>'
-    value1 = '<span class="checkbox" id="f-f1">foo</span>'
-    no_value2 = '<span class="checkbox" id="f-f2">&nbsp;</span>'
+    no_value1 = '<span class="checkbox static" id="f-f1">&nbsp;</span>'
+    value1 = '<span class="checkbox static" id="f-f1">foo</span>'
+    no_value2 = '<span class="checkbox static" id="f-f2">&nbsp;</span>'
     f = Form('f', static=True)
     el1 = f.elements.add_mcheckbox('f1', 'label', 'foo', 'thegroup')
     el2 = f.elements.add_mcheckbox('f2', 'label', 'bar', 'thegroup')
@@ -214,7 +214,7 @@ def test_mcheckbox():
     assert el2() == no_value2, el2()
 
 def test_radio():
-    no_value = '<span class="radio" id="f-f">&nbsp;</span>'
+    no_value = '<span class="radio static" id="f-f">&nbsp;</span>'
     el = Form('f', static=True).elements.add_radio('f', 'label', group='thegroup' )
     assert el() == no_value, el()
     el = Form('f', static=True).elements.add_radio('f', 'label', group='thegroup', selected=True)
@@ -222,7 +222,7 @@ def test_radio():
     el = Form('f', static=True).elements.add_radio('f', 'label', group='thegroup')
     assert el(selected='selected') == no_value, el(selected='selected')
     
-    value = '<span class="radio" id="f-f">foo</span>'
+    value = '<span class="radio static" id="f-f">foo</span>'
     el = Form('f', static=True).elements.add_radio('f', 'label', defaultval='foo', group='thegroup' )
     assert el() == no_value, el()
     el = Form('f', static=True).elements.add_radio('f', 'label', defaultval='foo', group='thegroup', selected=True)
@@ -231,9 +231,9 @@ def test_radio():
     assert el(selected='selected') == value, el(selected='selected')
     
     # test the elements getting chosen by setting form defaults
-    no_value1 = '<span class="radio" id="f-f1">&nbsp;</span>'
-    value1 = '<span class="radio" id="f-f1">foo</span>'
-    no_value2 = '<span class="radio" id="f-f2">&nbsp;</span>'
+    no_value1 = '<span class="radio static" id="f-f1">&nbsp;</span>'
+    value1 = '<span class="radio static" id="f-f1">foo</span>'
+    no_value2 = '<span class="radio static" id="f-f2">&nbsp;</span>'
     f = Form('f', static=True)
     el1 = f.elements.add_radio('f1', 'label', 'foo', 'thegroup')
     el2 = f.elements.add_radio('f2', 'label', 'bar', 'thegroup')
