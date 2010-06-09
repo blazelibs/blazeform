@@ -413,7 +413,7 @@ class InputElementBase(FormFieldElementBase):
             todisplay = literal('&nbsp;')
         else:
             todisplay = self.displayval
-        return HTML.div(todisplay, **self._static_attributes())
+        return HTML.span(todisplay, **self._static_attributes())
 
 class ButtonElement(InputElementBase):
     def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
@@ -467,7 +467,7 @@ class CheckboxElement(InputElementBase):
         return HTML.input(type=self.etype, **self.attributes)
     
     def render_static(self):
-        return HTML.div('yes' if self.displayval else 'no', **self._static_attributes())
+        return HTML.span('yes' if self.displayval else 'no', **self._static_attributes())
 form_elements['checkbox'] = CheckboxElement
 
 class FileElement(InputElementBase):
@@ -748,7 +748,7 @@ class URLElement(TextElement):
                 todisplay = tags.link_to(self.displayval, self.displayval)
             else:
                 todisplay = self.displayval
-        return HTML.div(todisplay, **self._static_attributes())
+        return HTML.span(todisplay, **self._static_attributes())
         
 form_elements['url'] = URLElement
 
@@ -843,7 +843,7 @@ class SelectElement(FormFieldElementBase):
             todisplay = ', '.join(values)
             
         self.add_attr('class', 'select')
-        return HTML.div(todisplay, **self._static_attributes())
+        return HTML.span(todisplay, **self._static_attributes())
 
 form_elements['select'] = SelectElement
 
@@ -906,7 +906,7 @@ class TextAreaElement(FormFieldElementBase):
             todisplay = literal('&nbsp;')
         else:
             todisplay = self.displayval
-        return HTML.div(todisplay, **self._static_attributes())
+        return HTML.span(todisplay, **self._static_attributes())
 
 form_elements['textarea'] = TextAreaElement
 
@@ -1187,7 +1187,7 @@ class LogicalSupportElement(ElementBase):
                 todisplay = literal('&nbsp;')    
         else:
             todisplay = literal('&nbsp;')
-        return HTML.div(todisplay, **self._static_attributes())
+        return HTML.span(todisplay, **self._static_attributes())
    
 class MultiCheckboxElement(LogicalSupportElement):
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, checked=False, **kwargs):
