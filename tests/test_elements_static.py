@@ -123,8 +123,22 @@ def test_el_url():
     el = Form('f', static=True).elements.add_url('f', defaultval="http://example.org")
     assert el() == html, el()
 
-def test_el_select():
+def test_el_select_list_turples():
     o = [(1, 'a'), (2, 'b')]
+    html = '<span class="select" id="f-f">&nbsp;</span>'
+    el = Form('f', static=True).elements.add_select('f', o)
+    assert el() == html, el()
+    
+    html = '<span class="select" id="f-f">a</span>'
+    el = Form('f', static=True).elements.add_select('f', o, defaultval=1)
+    assert el() == html, el()
+    el = Form('f', static=True).elements.add_select('f', o, defaultval='1')
+    assert el() == html, el()
+    el = Form('f', static=True).elements.add_select('f', o, defaultval=u'1')
+    assert el() == html, el()
+    
+def test_el_select_list():
+    o = ['a','b']
     html = '<span class="select" id="f-f">&nbsp;</span>'
     el = Form('f', static=True).elements.add_select('f', o)
     assert el() == html, el()
