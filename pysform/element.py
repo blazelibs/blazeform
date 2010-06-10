@@ -110,7 +110,7 @@ class HasValueElement(ElementBase):
 
 class FormFieldElementBase(HasValueElement):
     """
-    Base class for container elements that represent container fields (input, select, etc.)
+    Base class for form elements that represent form fields (input, select, etc.)
     as opposed to Elements that are only for display (i.e. static, headers).
     """
     def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
@@ -362,7 +362,7 @@ class FormFieldElementBase(HasValueElement):
 
 class InputElementBase(FormFieldElementBase):
     """
-    Base class for input container elements.
+    Base class for input form elements.
     
     Since <input> elements have very similar HTML representations, they have
     this common base class. You don't need to instantiate it directly,
@@ -710,7 +710,7 @@ form_elements['email'] = EmailElement
 
 class PasswordElement(TextElement):
     """
-    techincally, password is on the same level as text as both are types
+    Techincally, password is on the same level as text as both are types
     of input elements, but I want to inherit the text maxlength validator
     """
     def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
@@ -914,7 +914,7 @@ form_elements['textarea'] = TextAreaElement
 
 class LogicalGroupElement(FormFieldElementBase):
     """
-        used to support MultiCheckboxElement and RadioElement
+        Used to support MultiCheckboxElement and RadioElement
     """
     def __init__(self, is_multiple, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
         self.auto_validate = kwargs.pop('auto_validate', True)
@@ -1065,7 +1065,7 @@ form_elements['static'] = StaticElement
 
 class GroupElement(StaticElement): #, ElementRegistrar):
     """
-    HTML class for a container element group
+    HTML class for a form element group
     
     Groups can be used both for visual grouping of the elements (e.g. putting
     "Submit" and "Reset" buttons in one row or two text fields for first and
@@ -1111,11 +1111,11 @@ form_elements['header'] = HeaderElement
 
 class LogicalSupportElement(ElementBase):
     """
-        a checkbox for "group" use.  `defaultval` is what goes in the "value"
-        attribute.  `chosen` is set by the parent LogicalGroupElement when
+        A checkbox for "group" use.  `Defaultval` is what goes in the "value"
+        attribute.  `Chosen` is set by the parent LogicalGroupElement when
         it's submitval is set.
         
-        these elements are used to support LogicalGroupElement
+        These elements are used to support LogicalGroupElement
     """
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, **kwargs):
         if kwargs.has_key('required'):
