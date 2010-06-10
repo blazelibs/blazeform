@@ -47,7 +47,7 @@ class Label(object):
 
 class ElementBase(HtmlAttributeHolder):
     """
-    Base class for container/group (container) elements.
+    Base class for form elements.
     """
     def __init__(self, container, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
         # settings to overide the container's settings
