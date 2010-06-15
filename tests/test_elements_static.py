@@ -144,11 +144,9 @@ def test_el_select_list():
     assert el() == html, el()
     
     html = '<span class="select" id="f-f">a</span>'
-    el = Form('f', static=True).elements.add_select('f', o, defaultval=1)
-#    assert el() == html, el()
-    el = Form('f', static=True).elements.add_select('f', o, defaultval='1')
-#    assert el() == html, el()
-    el = Form('f', static=True).elements.add_select('f', o, defaultval=u'1')
+    el = Form('f', static=True).elements.add_select('f', o, defaultval='a')
+    assert el() == html, el()
+    el = Form('f', static=True).elements.add_select('f', o, defaultval=u'a')
     assert el() == html, el()
 
 def test_el_select_multiple():

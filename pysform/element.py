@@ -762,7 +762,6 @@ class SelectElement(FormFieldElementBase):
     with the select's options.
     """
     
-    #TODO Remove debugging code
     def __init__(self, form, eid, options, label=NotGiven, vtype = NotGiven,
                  defaultval=NotGiven, strip=True, choose='Choose:',
                  auto_validate=True, invalid = [], error_msg = None,
@@ -847,7 +846,7 @@ class SelectElement(FormFieldElementBase):
                 except KeyError:
                     pass
             todisplay = ', '.join(values)
-
+         
         self.add_attr('class', 'select')
         return HTML.span(todisplay, **self._static_attributes())
 
