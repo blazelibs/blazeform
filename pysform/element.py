@@ -1,15 +1,17 @@
 from os import path
-import cgi
-from webhelpers.html import HTML, tags, literal
-import formencode
-import formencode.validators as fev
-from pysutils import DumbObject
-from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
-        tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, \
-        is_given
-from pysform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
 from pysform.exceptions import ElementInvalid, ProgrammingError
 from pysform.file_upload_translators import BaseTranslator
+from pysform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
+from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
+    tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, is_given
+from pysutils import DumbObject
+from webhelpers.html import HTML, tags, literal
+import cgi
+import formencode
+import formencode.validators as fev
+import types
+from cookielib import debug
+from genericpath import exists
 
 form_elements = {}
 
@@ -759,6 +761,8 @@ class SelectElement(FormFieldElementBase):
     Class to dynamically create an HTML select.  Includes methods for working
     with the select's options.
     """
+    
+    #TODO Remove debugging code
     def __init__(self, form, eid, options, label=NotGiven, vtype = NotGiven,
                  defaultval=NotGiven, strip=True, choose='Choose:',
                  auto_validate=True, invalid = [], error_msg = None,
@@ -835,7 +839,7 @@ class SelectElement(FormFieldElementBase):
             todisplay = literal('&nbsp;')
         else:
             values = []
-            mapf = lambda x: (unicode(x[0]), x[1])
+            mapf = lambda x: (unicode(x[0]), x[1] if type(x) == types.TupleType else x[0])
             lookup = dict(map(mapf, self.options))
             for key in tolist(self.displayval):
                 try:
@@ -843,7 +847,7 @@ class SelectElement(FormFieldElementBase):
                 except KeyError:
                     pass
             todisplay = ', '.join(values)
-            
+
         self.add_attr('class', 'select')
         return HTML.span(todisplay, **self._static_attributes())
 

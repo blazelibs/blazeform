@@ -984,6 +984,7 @@ class SelectTest(unittest.TestCase):
         # check the processor to be sure both tuples and strings are
         # allowed as options
         el_options = [(-2, 'Choose:'), (-1, '-----------'), ('first', 'First Option'), 'Second Option']
+        #TODO: Remove testing code
         el = Form('f').elements.add_select('f', el_options)
         el.submittedval = 'first'
         assert el.is_valid()
