@@ -16,7 +16,7 @@ class FormRenderer(object):
         attr = self.element.get_attrs()
         action = attr.pop('action', '')
         self.output.inc(tags.form(action, **attr))
-    
+
     def render(self, **kwargs):
         self.settings.update(kwargs)
         self.begin()
@@ -44,7 +44,7 @@ class FormRenderer(object):
                 on_first = False
         self.end()
         return self.output.get()
-    
+
     @property
     def required_note_level(self):
         try:
@@ -56,7 +56,7 @@ class FormRenderer(object):
             if 'req_note_level' not in str(e):
                 raise
         return None
-    
+
     def render_required_note(self, above_header):
         if self.required_note_level and not self.req_note_written:
             req_note = self.settings.get('req_note', '<div class="required_note%(above_header)s"><span class="star">*</span> = required field</div>')
@@ -68,9 +68,9 @@ class FormRenderer(object):
             self.req_note_written = True
 
     def rendering_els(self):
-        for el in self.element._render_els:
+        for el in self.element.renderable_els:
             yield el
-    
+
     def end(self):
         if self.header_section_open:
             self.output.dec('</div>')
@@ -97,17 +97,17 @@ class StaticFormRenderer(FormRenderer):
             except KeyError:
                 pass
         self.output.inc(HTML.div(None, _closed=False, **attrs.attributes))
-    
+
     def rendering_els(self):
-        for el in self.element._render_els:
+        for el in self.element.renderable_els:
             if not isinstance(el, self.no_render):
                 yield el
-            
+
     def end(self):
         if self.header_section_open:
             self.output.dec('</div>')
         self.output.dec('</div>')
-        
+
 class Renderer(object):
     def __init__(self, element, output, is_first, is_alt, wrap_type, settings):
         self.element = element
@@ -118,28 +118,28 @@ class Renderer(object):
         self.is_first = is_first
         self.is_alt = is_alt
         self.settings = settings
-            
+
     def first_class(self):
         if self.is_first:
             return ' first'
         return ''
-    
+
     def alt_class(self):
         if self.is_alt:
             return ' even'
         return ' odd'
-    
+
     def begin(self):
         pass
-    
+
     def render(self):
         self.begin()
         self.output(self.element.render())
         self.end()
-    
+
     def end(self):
         pass
-    
+
     def setting(self, key):
         return self.element.settings.get(key, self.settings.get(key, ''))
 
@@ -227,8 +227,8 @@ class FieldRenderer(Renderer):
             self.label()
         # close row
         self.output.dec('</div>')
-        
-        
+
+
 class InputRenderer(FieldRenderer):
     def begin_row(self):
         self.output.inc('<div id="%s-%s" class="%s %s%s%s">' %
@@ -241,9 +241,9 @@ class StaticRenderer(FieldRenderer):
         pass
     def errors(self):
         pass
-    
+
 class GroupRenderer(StaticRenderer):
-    
+
     def begin_row(self):
         self.element.set_attr('id', '%s-%s' % (self.element.getidattr(), self.wrap_type))
         class_str = '%s%s%s' % (self.wrap_type, self.alt_class(), self.first_class())
@@ -259,12 +259,12 @@ class GroupRenderer(StaticRenderer):
         self.begin()
         self.render_children()
         self.end()
-    
+
     def render_children(self):
         on_first = True
         on_alt = False
 
-        for child in self.element._render_els:
+        for child in self.element.renderable_els:
             rcls = self.element.container._renderer(child)
             r = rcls(child, self.output, on_first, on_alt, 'grpel', self.settings)
             r.render()
