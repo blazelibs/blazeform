@@ -53,8 +53,8 @@ class ElementBase(HtmlAttributeHolder):
     """
     Base class for form elements.
     """
-    def __init__(self, container, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
-        # settings to overide the container's settings
+    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
+        # settings to overide the form's settings
         self.settings = kwargs.pop('settings', {})
         self.label_after = kwargs.pop('label_after', False)
 
@@ -65,7 +65,7 @@ class ElementBase(HtmlAttributeHolder):
 
         self.id = eid
         self.label = Label(self, label)
-        self.container = container
+        self.form = form
 
         #: a list of user messages for this field (C{str})
         self.notes = []
@@ -97,7 +97,7 @@ class ElementBase(HtmlAttributeHolder):
         self._displayval = self._defaultval
 
     def getidattr(self):
-        return self.container._element_id_formatter % {'form_name':self.container._name, 'element_id':self.id}
+        return self.form._element_id_formatter % {'form_name':self.form._name, 'element_id':self.id}
 
     def add_note(self, note, escape = True):
         if escape:
@@ -126,7 +126,7 @@ class FormFieldElementBase(HasValueElement):
         self.if_empty = kwargs.pop('if_empty', NotGiven)
         # if the field is invalid, return this value
         self.if_invalid = kwargs.pop('if_invalid', NotGiven)
-        #: is this field required in order for the container submission to be valid?
+        #: is this field required in order for the form submission to be valid?
         self.required = kwargs.pop('required', False)
         #: name attribute
         self.nameattr = kwargs.pop('name', None)
@@ -140,7 +140,7 @@ class FormFieldElementBase(HasValueElement):
         self.processors = []
         #: whether or not this field is valid, None means the field has not been processed yet
         self._valid = None
-        #: allows a container/element to "expect" an exception and handle gracefully
+        #: allows a form/element to "expect" an exception and handle gracefully
         self.exception_handlers = []
         #: strip string submitted values?
         self.strip = strip
@@ -385,7 +385,7 @@ class InputElementBase(FormFieldElementBase):
 
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        if self.container._static:
+        if self.form._static:
             return self.render_static()
         else:
             return self.render_html()
@@ -457,7 +457,7 @@ class CheckboxElement(InputElementBase):
 
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        if self.container._static:
+        if self.form._static:
             return self.render_static()
         else:
             return self.render_html()
@@ -512,7 +512,7 @@ class FileElement(InputElementBase):
         if isinstance(value, BaseTranslator):
             self._submittedval = value
         else:
-            self._submittedval = self.container._fu_translator(value)
+            self._submittedval = self.form._fu_translator(value)
     submittedval = property(_get_submittedval, _set_submittedval)
 
     def maxsize(self, size):
@@ -828,7 +828,7 @@ class SelectElement(FormFieldElementBase):
         if self.multiple:
             self.set_attr('multiple', 'multiple')
         self.set_attrs(**kwargs)
-        if self.container._static:
+        if self.form._static:
             return self.render_static()
         else:
             return self.render_html()
@@ -900,7 +900,7 @@ class TextAreaElement(FormFieldElementBase):
 
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
-        if self.container._static:
+        if self.form._static:
             return self.render_static()
         else:
             return self.render_html()
@@ -1032,6 +1032,7 @@ class FixedElement(PassThruElement):
 
         # characterstics of this element
         self.is_submittable = False
+        self.is_renderable = True
 
     def __call__(self, **kwargs):
         return self.render(**kwargs)
@@ -1049,6 +1050,7 @@ class StaticElement(ElementBase):
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
 
+        # characterstics of this element
         self.is_submittable = False
         self.is_returning = False
 
@@ -1095,7 +1097,7 @@ form_elements['elgroup'] = GroupElement
 
 class HeaderElement(StaticElement):
     """
-    A rendering element used for adding headers to a container.  It can also be used,
+    A rendering element used for adding headers to a form.  It can also be used,
     depending on the renderer, to group together field elements into sections.
 
     Headers will normally be rendered differently than other static elements,
@@ -1125,9 +1127,10 @@ class LogicalSupportElement(ElementBase):
 
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
         if isinstance(group, basestring):
-            self.lgroup = getattr(form.elements, group, None)
+            self.lgroup = form.elements.get(group, None)
             if not self.lgroup:
                 self.lgroup = LogicalGroupElement(self.is_multiple, form, group)
+                form.els[group] = self.lgroup
         elif not isinstance(group, LogicalGroupElement):
             raise TypeError('lgroup should be a string or LogicalGroupElement')
         else:
@@ -1155,7 +1158,7 @@ class LogicalSupportElement(ElementBase):
 
     def render(self, **kwargs):
         self.set_attr('class_', self.etype)
-        if self.container._static:
+        if self.form._static:
             return self.render_static(**kwargs)
         else:
             return self.render_html(**kwargs)
