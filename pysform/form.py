@@ -1,12 +1,11 @@
 import formencode
-from pysutils.datastructures import LazyOrderedDict
-
 from pysform.element import form_elements, CancelElement, CheckboxElement, \
         MultiSelectElement, LogicalGroupElement
-from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
-from pysform.file_upload_translators import WerkzeugTranslator
-from pysform.processors import Wrapper
 from pysform.exceptions import ElementInvalid, ProgrammingError
+from pysform.file_upload_translators import WerkzeugTranslator      
+from pysform.processors import Wrapper      
+from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
+from pysutils.datastructures import LazyOrderedDict
 
 class FormBase(HtmlAttributeHolder, ElementRegistrar):
     """

@@ -1,19 +1,19 @@
+import cgi
+from cookielib import debug
+from genericpath import exists
 from os import path
+import types
+
+import formencode
+import formencode.validators as fev
 from pysform.exceptions import ElementInvalid, ProgrammingError
 from pysform.file_upload_translators import BaseTranslator
 from pysform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
     tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, is_given
 from pysutils import DumbObject
-from webhelpers.html import HTML, tags, literal
-import cgi
-import formencode
-import formencode.validators as fev
-import types
-from cookielib import debug
-from genericpath import exists
-
 from pysutils.datastructures import LazyOrderedDict
+from webhelpers.html import HTML, tags, literal
 
 form_elements = {}
 
