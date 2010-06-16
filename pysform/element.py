@@ -1,8 +1,5 @@
-import cgi
-from cookielib import debug
-from genericpath import exists
 from os import path
-import types
+import cgi
 
 import formencode
 import formencode.validators as fev
@@ -842,7 +839,7 @@ class SelectElement(FormFieldElementBase):
             todisplay = literal('&nbsp;')
         else:
             values = []
-            mapf = lambda x: (unicode(x[0]), x[1] if type(x) == types.TupleType else x[0])
+            mapf = lambda x: (unicode(x[0]), x[1] if isinstance(x, tuple) else x[0])
             lookup = dict(map(mapf, self.options))
             for key in tolist(self.displayval):
                 try:
