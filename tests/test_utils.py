@@ -1,4 +1,5 @@
 import unittest
+
 from pysform.util import multi_pop, NotGiven, is_iterable, NotGivenIter, \
     is_notgiven, HtmlAttributeHolder
 

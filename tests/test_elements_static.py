@@ -1,14 +1,14 @@
-import unittest
 import datetime
+import unittest
 import warnings
-from pysutils import DumbObject
+
 from formencode.validators import Int
 from nose.plugins.skip import SkipTest
-
 from pysform import Form
 from pysform.element import TextElement
-from pysform.util import NotGiven, NotGivenIter, literal
 from pysform.exceptions import ValueInvalid, ProgrammingError
+from pysform.util import NotGiven, NotGivenIter, literal
+from pysutils import DumbObject
 
 L = literal
 
