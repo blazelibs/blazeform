@@ -1,0 +1,5 @@
+pysform is maintained primarily by:
+
+    Randy Syring <rsyring@gmail.com>
+
+
