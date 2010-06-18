@@ -2,6 +2,7 @@ import decimal
 
 from formencode import Invalid
 from formencode.validators import FancyValidator
+
 from pysform.exceptions import ValueInvalid
 from pysform.util import tolist, is_iterable, is_notgiven
 

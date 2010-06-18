@@ -1,8 +1,9 @@
+from webhelpers.html import tags, HTML
+from webhelpers.html.builder import make_tag
+
 from pysform import element
 from pysform.form import FormBase
 from pysform.util import StringIndentHelper, NotGiven, HtmlAttributeHolder
-from webhelpers.html import tags, HTML
-from webhelpers.html.builder import make_tag
 
 class FormRenderer(object):
     def __init__(self, element):
