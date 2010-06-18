@@ -1,11 +1,12 @@
-from pysform import Form
 import unittest
 
+from webhelpers.html.builder import literal
+
+from pysform import Form
 from pysform.element import TextElement
 from pysform.exceptions import ValueInvalid, ElementInvalid, ProgrammingError
 from pysform.util import NotGivenIter, literal, NotGiven
 from pysutils import DumbObject
-from webhelpers.html.builder import literal
 
 L = literal
 

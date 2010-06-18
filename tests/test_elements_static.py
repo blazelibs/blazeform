@@ -4,11 +4,12 @@ import warnings
 
 from formencode.validators import Int
 from nose.plugins.skip import SkipTest
+from pysutils import DumbObject
+
 from pysform import Form
 from pysform.element import TextElement
 from pysform.exceptions import ValueInvalid, ProgrammingError
 from pysform.util import NotGiven, NotGivenIter, literal
-from pysutils import DumbObject
 
 L = literal
 
