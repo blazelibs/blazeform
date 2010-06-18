@@ -839,7 +839,11 @@ class SelectElement(FormFieldElementBase):
             todisplay = literal('&nbsp;')
         else:
             values = []
-            mapf = lambda x: (unicode(x[0]), x[1] if isinstance(x, tuple) else x[0])
+            def mapf(option):
+                if isinstance(option, tuple):
+                    return unicode(option[0]), option[1]
+                else:
+                    return unicode(option), option
             lookup = dict(map(mapf, self.options))
             for key in tolist(self.displayval):
                 try:
