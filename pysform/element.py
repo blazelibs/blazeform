@@ -12,6 +12,7 @@ from pysform.file_upload_translators import BaseTranslator
 from pysform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
 from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
     tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, is_given
+from sre_compile import isstring
 
 form_elements = {}
 
@@ -773,7 +774,8 @@ class SelectElement(FormFieldElementBase):
                 vtype, defaultval, strip, required=required, **kwargs)
 
         self.options = options
-        self.choose = None
+        self.choose = None     
+        
         if choose:
             if isinstance(choose, list):
                 self.choose = choose
@@ -820,6 +822,13 @@ class SelectElement(FormFieldElementBase):
             del attrs['multiple']
         except KeyError:
             pass
+        
+        if 'class' in attrs:
+            if 'select' not in attrs['class']:
+                attrs['class'] = attrs['class'] + ' select'
+        else:
+            attrs['class'] = 'select'
+        
         return attrs
 
     def render(self, **kwargs):
@@ -840,7 +849,13 @@ class SelectElement(FormFieldElementBase):
             todisplay = literal('&nbsp;')
         else:
             values = []
-            mapf = lambda x: (unicode(x[0]), x[1] if isinstance(x, tuple) else x[0])
+            
+            def mapf(x):
+                if isinstance(x, tuple):
+                    return (unicode(x[0]), x[1])
+                else:
+                    return (unicode(x), x)
+                
             lookup = dict(map(mapf, self.options))
             for key in tolist(self.displayval):
                 try:
@@ -849,7 +864,6 @@ class SelectElement(FormFieldElementBase):
                     pass
             todisplay = ', '.join(values)
 
-        self.add_attr('class', 'select')
         return HTML.span(todisplay, **self._static_attributes())
 
 form_elements['select'] = SelectElement
