@@ -1,4 +1,4 @@
-from pysform.exceptions import ValueInvalid
+from blazeform.exceptions import ValueInvalid
 
 def test_invalid_str():
     e = ValueInvalid('foo')

@@ -1,12 +1,12 @@
 import formencode
-from pysutils.datastructures import LazyOrderedDict
+from blazeutils.datastructures import LazyOrderedDict
 
-from pysform.element import form_elements, CancelElement, CheckboxElement, \
+from blazeform.element import form_elements, CancelElement, CheckboxElement, \
         MultiSelectElement, LogicalGroupElement
-from pysform.exceptions import ElementInvalid, ProgrammingError
-from pysform.file_upload_translators import WerkzeugTranslator      
-from pysform.processors import Wrapper      
-from pysform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
+from blazeform.exceptions import ElementInvalid, ProgrammingError
+from blazeform.file_upload_translators import WerkzeugTranslator      
+from blazeform.processors import Wrapper      
+from blazeform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
 
 class FormBase(HtmlAttributeHolder, ElementRegistrar):
     """
@@ -230,5 +230,5 @@ class Form(FormBase):
         FormBase.__init__(self, name, static, **kwargs)
 
         # import here or we get circular import problems
-        from pysform.render import get_renderer
+        from blazeform.render import get_renderer
         self._renderer = get_renderer

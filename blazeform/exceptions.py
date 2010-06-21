@@ -1,7 +1,7 @@
 
 class ProgrammingError(Exception):
     """ used to signify an error on the part of the developer if the
-        pysform API is used incorrectly.
+        BlazeForm API is used incorrectly.
     """
 
 class ElementInvalid(Exception):

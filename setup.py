@@ -2,7 +2,7 @@
 Introduction
 ---------------
 
-pysform is a library designed to facilitate the rendering/processing/validating
+BlazeForm is a library designed to facilitate the rendering/processing/validating
 of HTML forms.
 
 Features
@@ -12,7 +12,7 @@ Features
 - extensible rendering system() (don't have to use it)
 - will work with multiple WSGI frameworks (Werkzeug currently supported)
 - *extensive* unit tests
-- few dependencies: FormEncode, pysutils, WebHelpers
+- few dependencies: FormEncode, BlazeUtils, WebHelpers
 
 Code Sample
 --------------------
@@ -83,8 +83,8 @@ Current Status
 
 The code stays pretty stable, but the API is likely to change in the future.
 
-The `pysform tip <http://bitbucket.org/rsyring/pysform/get/tip.zip#egg=pysform-dev>`_
-is installable via `easy_install` with ``easy_install pysform==dev``
+The `blazeform tip <http://bitbucket.org/rsyring/blazeform/get/tip.zip#egg=blazeform-dev>`_
+is installable via `easy_install` with ``easy_install blazeform==dev``
 """
 import sys
 try:
@@ -97,23 +97,23 @@ except ImportError:
 version = "0.2.2"
 
 setup(
-    name = "pysform",
+    name = "BlazeForm",
     version = version,
     description = "A library for generating and validating HTML forms",
     long_description = __doc__,
     author = "Randy Syring",
     author_email = "rsyring@gmail.com",
-    url='http://pypi.python.org/pypi/pysform',
+    url='http://pypi.python.org/pypi/blazeform',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
       ],
     license='BSD',
-    packages=['pysform'],
+    packages=['blazeform'],
     install_requires = [
         "FormEncode>=1.2.2",
-        "pysutils>=0.2",
+        "BlazeUtils>=0.2",
         "WebHelpers>=0.6.4"
     ],
     test_suite='nose.collector',

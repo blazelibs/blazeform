@@ -6,11 +6,11 @@ import warnings
 from formencode.validators import Int
 from nose.plugins.skip import SkipTest
 
-from pysform import Form
-from pysform.element import TextElement
-from pysform.exceptions import ValueInvalid, ProgrammingError
-from pysform.file_upload_translators import BaseTranslator
-from pysform.util import NotGiven, NotGivenIter, literal
+from blazeform import Form
+from blazeform.element import TextElement
+from blazeform.exceptions import ValueInvalid, ProgrammingError
+from blazeform.file_upload_translators import BaseTranslator
+from blazeform.util import NotGiven, NotGivenIter, literal
 
 L = literal
 
