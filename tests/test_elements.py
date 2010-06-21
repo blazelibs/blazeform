@@ -5,6 +5,7 @@ import warnings
 
 from formencode.validators import Int
 from nose.plugins.skip import SkipTest
+
 from pysform import Form
 from pysform.element import TextElement
 from pysform.exceptions import ValueInvalid, ProgrammingError
