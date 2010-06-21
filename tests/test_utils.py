@@ -1,6 +1,6 @@
 import unittest
 
-from pysform.util import multi_pop, NotGiven, is_iterable, NotGivenIter, \
+from blazeform.util import multi_pop, NotGiven, is_iterable, NotGivenIter, \
     is_notgiven, HtmlAttributeHolder
 
 class TestUtilFunctions(unittest.TestCase):

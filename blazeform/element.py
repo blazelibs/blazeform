@@ -3,14 +3,14 @@ import cgi
 
 import formencode
 import formencode.validators as fev
-from pysutils import DumbObject
-from pysutils.datastructures import LazyOrderedDict
+from blazeutils import DumbObject
+from blazeutils.datastructures import LazyOrderedDict
 from webhelpers.html import HTML, tags, literal
 
-from pysform.exceptions import ElementInvalid, ProgrammingError
-from pysform.file_upload_translators import BaseTranslator
-from pysform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
-from pysform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
+from blazeform.exceptions import ElementInvalid, ProgrammingError
+from blazeform.file_upload_translators import BaseTranslator
+from blazeform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
+from blazeform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
     tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, is_given
 
 form_elements = {}
