@@ -22,7 +22,7 @@ Using it might look like this::
     class MyForm(Form):
         def __init__(self):
             Form.__init__(self, 'myform')
-            
+
             el = self.add_header('input-els', 'Optional Elements')
             el = self.add_button('button', 'Button', defaultval='PushMe')
             el = self.add_checkbox('checkbox', 'Checkbox')
@@ -59,7 +59,7 @@ and the view/controller code might look something like::
     class FormTest(HtmlTemplatePage):
         def prep(self):
             self.form = MyForm()
-            
+
         def post(self):
             if self.form.is_cancel():
                 self.assign('cancel', True)
@@ -69,7 +69,7 @@ and the view/controller code might look something like::
                 # form was submitted, but invalid
                 self.form.assign_user_errors()
             self.default()
-        
+
         def default(self):
             self.assign('form', self.form)
 
@@ -94,7 +94,8 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages
 
-version = "0.2.2"
+import blazeform
+version = blazeform.VERSION
 
 setup(
     name = "BlazeForm",
@@ -113,7 +114,7 @@ setup(
     packages=['blazeform'],
     install_requires = [
         "FormEncode>=1.2.2",
-        "BlazeUtils>=0.2",
+        "BlazeUtils>=dev",
         "WebHelpers>=0.6.4"
     ],
     test_suite='nose.collector',

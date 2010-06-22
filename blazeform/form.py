@@ -4,9 +4,15 @@ from blazeutils.datastructures import LazyOrderedDict
 from blazeform.element import form_elements, CancelElement, CheckboxElement, \
         MultiSelectElement, LogicalGroupElement
 from blazeform.exceptions import ElementInvalid, ProgrammingError
-from blazeform.file_upload_translators import WerkzeugTranslator      
-from blazeform.processors import Wrapper      
+from blazeform.file_upload_translators import WerkzeugTranslator
+from blazeform.processors import Wrapper
 from blazeform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
+
+# fix the bug in the formencode MaxLength validator
+from formencode.validators import MaxLength
+MaxLength._messages['__buggy_toolong'] = MaxLength._messages['tooLong']
+MaxLength._messages['tooLong'] = 'Enter a value not greater than %(maxLength)i characters long'
+
 
 class FormBase(HtmlAttributeHolder, ElementRegistrar):
     """
