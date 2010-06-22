@@ -76,7 +76,7 @@ and the view/controller code might look something like::
 Questions & Comments
 ---------------------
 
-Please visit: http://groups.google.com/group/pyslibs
+Please visit: http://groups.google.com/group/blazelibs
 
 Current Status
 ---------------
@@ -104,7 +104,7 @@ setup(
     long_description = __doc__,
     author = "Randy Syring",
     author_email = "rsyring@gmail.com",
-    url='http://pypi.python.org/pypi/blazeform',
+    url='http://pypi.python.org/pypi/BlazeForm',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
