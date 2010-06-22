@@ -1,5 +1,5 @@
 import datetime
-from blazeform import Form
+from blazeform.form import Form
 
 class TestForm(Form):
     def __init__(self):

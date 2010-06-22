@@ -6,7 +6,7 @@ import warnings
 from formencode.validators import Int
 from nose.plugins.skip import SkipTest
 
-from blazeform import Form
+from blazeform.form import Form
 from blazeform.element import TextElement
 from blazeform.exceptions import ValueInvalid, ProgrammingError
 from blazeform.file_upload_translators import BaseTranslator
