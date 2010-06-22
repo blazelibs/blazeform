@@ -6,7 +6,7 @@ from formencode.validators import Int
 from nose.plugins.skip import SkipTest
 from blazeutils import DumbObject
 
-from blazeform import Form
+from blazeform.form import Form
 from blazeform.element import TextElement
 from blazeform.exceptions import ValueInvalid, ProgrammingError
 from blazeform.util import NotGiven, NotGivenIter, literal

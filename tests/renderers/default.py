@@ -1,5 +1,5 @@
 import datetime
-from blazeform import Form
+from blazeform.form import Form
 
 class TestForm(Form):
     def __init__(self):
@@ -40,12 +40,12 @@ class TestForm(Form):
         el = self.add_header('header-for-div-wrap-only')
         el = self.add_text('hfdwo-t1', 'Text1')
         el = self.add_text('hfdwo-t2', 'Text2')
-        
+
         # test header with blank text
         el = self.add_header('header-blank-text', '')
         el = self.add_text('hbt-t1', 'Text1')
         el = self.add_text('hbt-t2', 'Text2')
-        
+
         #test element group with class attribute
         self.add_header('eg-class-attr', 'Element Group with Class Attribute')
         sg = self.add_elgroup('submit-group', class_='submit-only')

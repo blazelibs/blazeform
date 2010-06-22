@@ -1,5 +1,5 @@
 import datetime
-from blazeform import Form
+from blazeform.form import Form
 
 class TestForm(Form):
     """ required note at form-top position, but header not in first position """
