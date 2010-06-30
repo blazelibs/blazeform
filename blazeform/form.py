@@ -136,6 +136,17 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                 raise TypeError('validator must be a Formencode validator or a callable')
         self._validators.append((validator, msg))
 
+    def add_field_errors(self, errors):
+        for el in self.elements.keys():
+            if el in errors.keys():
+                if isinstance(el, str):
+                    getattr(self.elements, el).errors.append(errors[el])
+                elif isinstance(el, list):
+                    for error in el:
+                        getattr(self.elements, el).errors.append(errors[error])
+                else:
+                    raise TypeError('add_field_errors must be passed a dictionary with values of either strings, or lists of strings')
+
     def is_valid(self):
         if not self.is_submitted():
             return False

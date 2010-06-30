@@ -290,6 +290,32 @@ class CommonFormUsageTest(unittest.TestCase):
         f.set_submitted({'f-submit-flag': 'submitted', 'f1':'12'})
         assert not f.is_valid()
 
+    def test_add_field_errors_string(self):
+        form = Form('f')
+        form.add_text('text1', 'Value')
+        form.add_text('text2', 'Value')
+        
+        form.add_field_errors({
+                                'text1': 'Generic Error',
+                                'text2': 'Error'
+                               })
+        
+        self.assertEqual(form.elements.text1.errors, ['Generic Error'])
+        self.assertEqual(form.elements.text2.errors, ['Error'])
+        
+    def test_add_field_errors_list(self):
+        form = Form('f')
+        form.add_text('text1', 'Value')
+        form.add_text('text2', 'Value')
+        
+        form.add_field_errors({
+                                'text1': ['Generic Error 1', 'Generic Error 2'],
+                                'text2': ['Error 1', 'Error 2']
+                               })
+        
+        self.assertEqual(form.elements.text1.errors, ['Generic Error 1', 'Generic Error 2'])
+        self.assertEqual(form.elements.text2.errors, ['Error 1', 'Error 2'])
+
     def test_exception_handling(self):
         # works with an element handler
         form = Form('f')
