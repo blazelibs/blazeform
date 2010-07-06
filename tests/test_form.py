@@ -313,6 +313,7 @@ class CommonFormUsageTest(unittest.TestCase):
                                 'text2': ['Error 1', 'Error 2']
                                })
         
+        assert len(form.elements.text1.errors) == 2
         self.assertEqual(form.elements.text1.errors, ['Generic Error 1', 'Generic Error 2'])
         self.assertEqual(form.elements.text2.errors, ['Error 1', 'Error 2'])
 

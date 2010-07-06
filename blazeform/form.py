@@ -139,11 +139,11 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
     def add_field_errors(self, errors):
         for el in self.elements.keys():
             if el in errors.keys():
-                if isinstance(el, str):
+                if isinstance(errors[el], str):
                     getattr(self.elements, el).errors.append(errors[el])
-                elif isinstance(el, list):
-                    for error in el:
-                        getattr(self.elements, el).errors.append(errors[error])
+                elif isinstance(errors[el], list):
+                    for error in errors[el]:
+                        getattr(self.elements, el).errors.append(error)
                 else:
                     raise TypeError('add_field_errors must be passed a dictionary with values of either strings, or lists of strings')
 
