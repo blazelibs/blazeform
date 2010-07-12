@@ -6,7 +6,7 @@ from blazeform.element import form_elements, CancelElement, CheckboxElement, \
 from blazeform.exceptions import ElementInvalid, ProgrammingError
 from blazeform.file_upload_translators import WerkzeugTranslator
 from blazeform.processors import Wrapper
-from blazeform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar
+from blazeform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar, is_notgiven
 
 # fix the bug in the formencode MaxLength validator
 from formencode.validators import MaxLength
@@ -217,21 +217,37 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         return retval
     values = property(get_values)
 
-    def add_handler(self, exception_txt, error_msg, exc_type=None):
-        self._exception_handlers.append((exception_txt, error_msg, exc_type))
+    def add_handler(self, exception_txt=NotGiven, error_msg=NotGiven, exc_type=NotGiven, callback=NotGiven):
+        self._exception_handlers.append((exception_txt, error_msg, exc_type, callback))
 
     def handle_exception(self, exc):
+        def can_handle(error_msg):
+            self._valid = False
+            if is_notgiven(error_msg):
+                error_msg = str(exc)
+            self.add_error(error_msg)
+            return True
+
         # try element handlers first
         for el in self.submittable_els:
             if el.handle_exception(exc):
                 return True
-        # try our own handlers
-        for looking_for, error_msg, exc_type in self._exception_handlers:
-            if looking_for in str(exc) and (exc_type is None or isinstance(exc, exc_type)):
-                self._valid = False
-                self.add_error(error_msg)
-                return True
-        # if we get here, the exception wasn't handled, just return False
+
+        for looking_for, error_msg, exc_type, callback in self._exception_handlers:
+            if not is_notgiven(exc_type):
+                if isinstance(exc_type, basestring):
+                    if exc.__class__.__name__ != exc_type:
+                        continue
+                else:
+                    if not isinstance(exc, exc_type):
+                        continue
+            if is_notgiven(callback):
+                if is_notgiven(looking_for):
+                    return can_handle(error_msg)
+                elif looking_for in str(exc):
+                    return can_handle(error_msg)
+            else:
+                return callback(exc)
         return False
 
 class Form(FormBase):
