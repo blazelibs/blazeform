@@ -137,6 +137,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         self._validators.append((validator, msg))
 
     def add_field_errors(self, errors):
+        errors = errors.copy()
         for el in self.elements.keys():
             if el in errors.keys():
                 if isinstance(errors[el], str):
@@ -146,6 +147,11 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                         getattr(self.elements, el).errors.append(error)
                 else:
                     raise TypeError('add_field_errors must be passed a dictionary with values of either strings, or lists of strings')
+                del errors[el]
+        # indicate that some errors were not added
+        if errors:
+            return False
+        return True
 
     def is_valid(self):
         if not self.is_submitted():

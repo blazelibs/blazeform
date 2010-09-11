@@ -294,28 +294,42 @@ class CommonFormUsageTest(unittest.TestCase):
         form = Form('f')
         form.add_text('text1', 'Value')
         form.add_text('text2', 'Value')
-        
-        form.add_field_errors({
+
+        result = form.add_field_errors({
                                 'text1': 'Generic Error',
                                 'text2': 'Error'
                                })
-        
+        assert result
         self.assertEqual(form.elements.text1.errors, ['Generic Error'])
         self.assertEqual(form.elements.text2.errors, ['Error'])
-        
+
     def test_add_field_errors_list(self):
         form = Form('f')
         form.add_text('text1', 'Value')
         form.add_text('text2', 'Value')
-        
-        form.add_field_errors({
+
+        result = form.add_field_errors({
                                 'text1': ['Generic Error 1', 'Generic Error 2'],
                                 'text2': ['Error 1', 'Error 2']
                                })
-        
+        assert result
         assert len(form.elements.text1.errors) == 2
         self.assertEqual(form.elements.text1.errors, ['Generic Error 1', 'Generic Error 2'])
         self.assertEqual(form.elements.text2.errors, ['Error 1', 'Error 2'])
+
+    def test_add_field_errors_extras(self):
+        # the result of calling add_field_errors() when all errors are not
+        # processed should be False
+        form = Form('f')
+        form.add_text('text1', 'Value')
+        form.add_text('text2', 'Value')
+
+        result = form.add_field_errors({
+                                'text1': 'Generic Error',
+                                'text2': 'Error',
+                                'not there': 'Error'
+                               })
+        assert result == False
 
     def test_exception_handling(self):
         # works with an element handler
