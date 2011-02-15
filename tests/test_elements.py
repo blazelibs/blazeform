@@ -1348,24 +1348,24 @@ class LogicalElementsTest(unittest.TestCase):
 
     def test_radio(self):
         not_selected= L('<input class="radio" id="f-f" name="thegroup" type="radio" />')
-        selected = L('<input class="radio" id="f-f" name="thegroup" selected="selected" type="radio" />')
+        selected = L('<input checked="checked" class="radio" id="f-f" name="thegroup" type="radio" />')
 
         el = Form('f').add_radio('f', 'label', group='thegroup' )
         self.assertEqual(el(), not_selected)
         el = Form('f').add_radio('f', 'label', group='thegroup', selected=True)
         self.assertEqual(el(), selected)
         el = Form('f').add_radio('f', 'label', group='thegroup')
-        self.assertEqual(el(selected='selected'), selected)
+        self.assertEqual(el(checked='checked'), selected)
 
         not_selected= L('<input class="radio" id="f-f" name="thegroup" type="radio" value="foo" />')
-        selected = L('<input class="radio" id="f-f" name="thegroup" selected="selected" type="radio" value="foo" />')
+        selected = L('<input checked="checked" class="radio" id="f-f" name="thegroup" type="radio" value="foo" />')
 
         el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
         self.assertEqual(el(), not_selected)
         el = Form('f').add_radio('f', 'label', 'foo', 'thegroup', selected=True)
         self.assertEqual(el(), selected)
         el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
-        self.assertEqual(el(selected='selected'), selected)
+        self.assertEqual(el(checked='checked'), selected)
         el = Form('f').add_radio('f', 'label', 'foo', 'thegroup')
         el.chosen = True
         self.assertEqual(el(), selected)

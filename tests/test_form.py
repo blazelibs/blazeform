@@ -199,8 +199,8 @@ class CommonFormUsageTest(unittest.TestCase):
         f = Form('login')
         el1 = f.add_radio('radio1', 'Radio 1', 1, 'rgroup1', selected=True)
         el2 = f.add_radio('radio2', 'Radio 2', 2, 'rgroup1')
-        assert 'selected="selected"' in el1()
-        assert 'selected="selected"' not in el2()
+        assert 'checked="checked"' in el1()
+        assert 'checked="checked"' not in el2()
         post = {'login-submit-flag': 'submitted'}
         f.set_submitted(post)
         assert not f.get_values()['rgroup1']
