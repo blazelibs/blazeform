@@ -1223,6 +1223,6 @@ class RadioElement(LogicalSupportElement):
         self.is_multiple = False
         LogicalSupportElement.__init__(self, form, eid, label, defaultval, group, **kwargs)
         self.chosen = chosen
-        self.chosen_attr = 'selected'
+        self.chosen_attr = 'checked'
         self.etype = 'radio'
 form_elements['radio'] = RadioElement
