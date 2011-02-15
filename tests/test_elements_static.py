@@ -245,7 +245,7 @@ def test_radio():
     el = Form('f', static=True).add_radio('f', 'label', defaultval='foo', group='thegroup', selected=True)
     assert el() == value, el()
     el = Form('f', static=True).add_radio('f', 'label', defaultval='foo', group='thegroup')
-    assert el(selected='selected') == value, el(selected='selected')
+    assert el(checked='checked') == value, el(selected='selected')
 
     # test the elements getting chosen by setting form defaults
     no_value1 = '<span class="radio static" id="f-f1">&nbsp;</span>'
