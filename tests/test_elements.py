@@ -3,7 +3,7 @@ import decimal
 import unittest
 import warnings
 
-from formencode.validators import Int
+from formencode.validators import Int, MaxLength
 from nose.plugins.skip import SkipTest
 
 from blazeform.form import Form
@@ -1155,6 +1155,12 @@ class OtherElementsTest(unittest.TestCase):
         html = '<textarea cols="40" id="f-f" name="f" rows="7">foo</textarea>'
         el = Form('f').add_textarea('f', defaultval='foo')
         self.assertEqual(str(el()), html)
+        html = '<textarea class="foo" cols="40" id="f-f" maxlength="500" name="f" rows="7"></textarea>'
+        el = Form('f').add_textarea('f',maxlength=500)
+        self.assertEqual(str(el(class_='foo')), html)
+        self.assertEqual(el.get_attr('maxlength'), 500)
+        self.assertEqual(len(el.processors), 1)
+        assert type(el.processors[0][0]) == MaxLength
 
     def test_el_passthru(self):
         f = Form('f')
