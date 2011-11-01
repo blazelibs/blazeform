@@ -15,6 +15,21 @@ from blazeform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
 
 form_elements = {}
 
+class MaxLengthMixin(object):
+    def set_length(self, len):
+        # if size is none, set it to None and return
+        if len == None:
+            return
+
+        # make sure the size is an integer
+        if type(1) != type(len):
+            raise TypeError('maxlength should have been int but was %s' % type(size))
+
+        self.set_attr('maxlength', len)
+
+        # set a maxlength validator on this
+        self.add_processor(fev.MaxLength(len))
+
 class Label(object):
     """
     A class which represents the label associated with an element
@@ -640,26 +655,12 @@ class CancelElement(SubmitElement):
     displayval = property(_get_displayval)
 form_elements['cancel'] = CancelElement
 
-class TextElement(InputElementBase):
+class TextElement(InputElementBase, MaxLengthMixin):
     def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
         maxlength = kwargs.pop('maxlength', None)
         InputElementBase.__init__(self, 'text', form, eid, label, vtype, defaultval, strip, **kwargs)
 
         self.set_length(maxlength)
-
-    def set_length(self, len):
-        # if size is none, set it to None and return
-        if len == None:
-            return
-
-        # make sure the size is an integer
-        if type(1) != type(len):
-            raise TypeError('maxlength should have been int but was %s' % type(size))
-
-        self.set_attr('maxlength', len)
-
-        # set a maxlength validator on this
-        self.add_processor(fev.MaxLength(len))
 form_elements['text'] = TextElement
 
 class ConfirmElement(TextElement):
@@ -871,7 +872,7 @@ class MultiSelectElement(SelectElement):
         self.submittedval = NotGivenIter
 form_elements['mselect'] = MultiSelectElement
 
-class TextAreaElement(FormFieldElementBase):
+class TextAreaElement(FormFieldElementBase, MaxLengthMixin):
     """
     HTML class for a textarea type field
     """
@@ -879,7 +880,10 @@ class TextAreaElement(FormFieldElementBase):
         # set default values
         kwargs['rows'] = kwargs.pop('rows', 7)
         kwargs['cols'] = kwargs.pop('cols', 40)
+        maxlength = kwargs.pop('maxlength', None)
         FormFieldElementBase.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
+
+        self.set_length(maxlength)
 
     def __call__(self, **kwargs):
         return self.render(**kwargs)
@@ -896,6 +900,10 @@ class TextAreaElement(FormFieldElementBase):
             pass
         try:
             del attrs['cols']
+        except KeyError:
+            pass
+        try:
+            del attrs['maxlength']
         except KeyError:
             pass
         return attrs
