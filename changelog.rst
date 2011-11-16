@@ -1,6 +1,11 @@
 Change Log
 ----------
 
+0.3.3 released 2011-11-16
+=========================
+
+* TextAreaElement now uses maxlength kwarg
+
 0.3.2 released 2011-06-11
 =========================
 
