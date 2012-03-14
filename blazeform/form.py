@@ -1,3 +1,4 @@
+from collections import defaultdict
 import formencode
 from blazeutils.datastructures import LazyOrderedDict
 
@@ -255,6 +256,29 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
             else:
                 return callback(exc)
         return False
+
+    def all_errors(self, id_as_key=False):
+        """
+            Returns a tuple with two elements.  First element is a list of all
+            the form-level error strings.  The second is a dict where (by
+            default) the keys are field label strings and the value is a list
+            of that fields's error strings.
+
+            If you set id_as_key=True, the dict of field errors will use the
+            field's id, instead of it's label, as the key of the dict.
+        """
+        form_errors = list(self._errors)
+        field_errors = {}
+        for el in self.submittable_els:
+            for msg in el.errors:
+                if not id_as_key:
+                    key = el.label.value
+                else:
+                    key = el.id
+                if key not in field_errors:
+                    field_errors[key] = []
+                field_errors[key].append(msg)
+        return form_errors, field_errors
 
 class Form(FormBase):
     """
