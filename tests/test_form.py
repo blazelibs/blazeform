@@ -410,6 +410,33 @@ class CommonFormUsageTest(unittest.TestCase):
             assert False, 'expected exception for submitting to static form'
         except ProgrammingError:
             pass
+
+    def test_all_errors(self):
+        def validator(form):
+            if form.elements.myfield.is_valid():
+                if form.elements.myfield.value != 'foo':
+                    raise ValueInvalid('My Field: must be "foo", not "%s"' % form.elements.myfield.value)
+
+        f1 = Form('login1')
+        f1.add_text('field', 'Field', required=True)
+        f1.add_text('myfield', 'My Field', required=True)
+        f1.add_validator(validator)
+
+        post = {
+            'login1-submit-flag': 'submitted',
+            'myfield': 'bar'
+        }
+        f1.set_submitted(post)
+        assert not f1.is_valid()
+
+        form_errors, field_errors = f1.all_errors()
+        self.assertEqual(field_errors, {'Field': ['field is required']})
+        self.assertEqual(form_errors, ['My Field: must be "foo", not "bar"'])
+
+        # now make sure we can set the id as the field errors dict key if needed
+        form_errors, field_errors = f1.all_errors(id_as_key=True)
+        self.assertEqual(field_errors, {'field': ['field is required']})
+
 # run the tests if module called directly
 if __name__ == "__main__":
     unittest.main()

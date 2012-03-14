@@ -1,6 +1,12 @@
 Change Log
 ----------
 
+0.3.4 released ???
+=========================
+
+* form now has all_errors() method which returns form and field errors as (list,
+    dict) tuple (respectively).
+
 0.3.3 released 2011-11-16
 =========================
 
