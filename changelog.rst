@@ -5,11 +5,11 @@ Change Log
 =========================
 
 * form now has all_errors() method which returns form and field errors as (list,
-    dict) tuple (respectively).
+  dict) tuple (respectively).
 * update the way file uploads are checked for being sent.  Previously, we were
-testing for the filename header to be None, but Werkzeug is sending it over as
-an empty string in the FileStorage object now.  Could theoretically result in
-behavior change, but only in narrow edge cases.
+  testing for the filename header to be None, but Werkzeug is sending it over as
+  an empty string in the FileStorage object now.  Could theoretically result in
+  behavior change, but only in narrow edge cases.
 
 0.3.3 released 2011-11-16
 =========================
