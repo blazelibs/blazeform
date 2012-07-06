@@ -1560,9 +1560,11 @@ class LogicalElementsTest2(unittest.TestCase):
 class FileUploadsTest(unittest.TestCase):
 
     blank = BaseTranslator(None, 'application/octet-stream', 0)
+    # technically, we shouldn't get a size with an emptystring name, but just
+    # in case
+    noname = BaseTranslator('', 'text/plain', 10)
     text = BaseTranslator('text.txt', 'text/plain', 10)
     noext = BaseTranslator('nofileext', 'text/plain', 10)
-    noname = BaseTranslator('', 'text/plain', 10)
     noct = BaseTranslator('text.txt', '', 10)
 
     def test_html(self):
@@ -1654,13 +1656,6 @@ class FileUploadsTest(unittest.TestCase):
         assert not el.is_valid()
         self.assertEqual(el.errors[0], 'extension ".txt" not allowed')
 
-        tosub = self.noname
-        el = Form('f').add_file('f')
-        el.allow_extension('txt')
-        el.submittedval = tosub
-        assert not el.is_valid()
-        assert 'submitted file had no file name' in el.errors[0]
-
         tosub = self.noext
         el = Form('f').add_file('f')
         el.allow_extension('txt')
@@ -1691,12 +1686,6 @@ class FileUploadsTest(unittest.TestCase):
         el.deny_extension('pdf', 'doc')
         el.submittedval = tosub
         assert el.is_valid()
-
-        el = Form('f').add_file('f')
-        el.deny_extension('txt')
-        el.submittedval = self.noname
-        assert not el.is_valid()
-        assert 'submitted file had no file name' in el.errors[0]
 
         el = Form('f').add_file('f')
         el.deny_extension('txt')
@@ -1759,6 +1748,30 @@ class FileUploadsTest(unittest.TestCase):
         el.deny_type('text/css', 'text/javascript')
         el.submittedval = self.blank
         assert el.is_valid()
+
+    def test_required(self):
+        # None value for file name is valid as long as field isn't required
+        el = Form('f').add_file('f')
+        el.submittedval = self.blank
+        assert el.is_valid()
+
+        # ditto for empty string name
+        el = Form('f').add_file('f')
+        el.submittedval = self.noname
+        assert el.is_valid()
+
+        # making required should result in error
+        el = Form('f').add_file('f', required=True)
+        el.submittedval = self.noname
+        assert not el.is_valid()
+        assert el.errors[0] == 'field is required'
+
+        # ditto for empty string name
+        el = Form('f').add_file('f', required=True)
+        el.submittedval = self.noname
+        assert not el.is_valid()
+        assert el.errors[0] == 'field is required'
+
 
 # need to test adding group first and then members
 # test setting attributes for each element with a render()

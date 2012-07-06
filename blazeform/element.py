@@ -560,23 +560,19 @@ class FileElement(InputElementBase):
             value = BaseTranslator(None, None, 0)
 
         if value.is_uploaded:
-            if value.file_name:
-                _ , ext = path.splitext(value.file_name)
-                ext  = ext.lower()
-                if not ext and (self._allowed_exts or self._denied_exts):
-                    valid = False
-                    self.add_error('extension requirement exists, but submitted file had no extension')
-
-                if self._allowed_exts and ext not in self._allowed_exts:
-                    valid = False
-                    self.add_error('extension "%s" not allowed' % ext)
-
-                if self._denied_exts and ext in self._denied_exts:
-                    valid = False
-                    self.add_error('extension "%s" not permitted' % ext)
-            elif value.file_name is not None and (self._allowed_exts or self._denied_exts):
+            _ , ext = path.splitext(value.file_name)
+            ext  = ext.lower()
+            if not ext and (self._allowed_exts or self._denied_exts):
                 valid = False
-                self.add_error('extension requirements exist, but submitted file had no file name')
+                self.add_error('extension requirement exists, but submitted file had no extension')
+
+            if self._allowed_exts and ext not in self._allowed_exts:
+                valid = False
+                self.add_error('extension "%s" not allowed' % ext)
+
+            if self._denied_exts and ext in self._denied_exts:
+                valid = False
+                self.add_error('extension "%s" not permitted' % ext)
 
             if value.content_type:
                 if self._allowed_types and value.content_type not in self._allowed_types:
