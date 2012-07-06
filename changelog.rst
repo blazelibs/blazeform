@@ -1,7 +1,7 @@
 Change Log
 ----------
 
-0.3.4 released ???
+0.3.4 released 2012-07-05
 =========================
 
 * form now has all_errors() method which returns form and field errors as (list,
