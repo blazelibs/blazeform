@@ -1,3 +1,4 @@
+from formencode.validators import Int
 import unittest
 
 from webhelpers.html.builder import literal
@@ -257,6 +258,18 @@ class CommonFormUsageTest(unittest.TestCase):
         f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'bar'})
         assert not f.is_valid()
         self.assertEqual(f._errors[0], 'value incorrect')
+
+    def test_validator_fe_class(self):
+        form = Form('f')
+        el = form.add_text('units', 'Units')
+        form.add_validator(Int)
+        assert isinstance(form._validators[0][0], Int)
+
+    def test_validator_fe_instance(self):
+        form = Form('f')
+        el = form.add_text('units', 'Units')
+        form.add_validator(Int())
+        assert isinstance(form._validators[0][0], Int)
 
     def test_validator_recursion(self):
         """
