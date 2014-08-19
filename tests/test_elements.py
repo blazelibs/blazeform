@@ -267,6 +267,18 @@ class CommonTest(unittest.TestCase):
         self.assertEqual('foo', form.elements.username.value)
         self.assertEqual(2, v.vcalled)
 
+    def test_processor_fe_class(self):
+        form = Form('f')
+        el = form.add_text('units', 'Units')
+        el.add_processor(Int)
+        assert isinstance(el.processors[0][0], Int)
+
+    def test_processor_fe_instance(self):
+        form = Form('f')
+        el = form.add_text('units', 'Units')
+        el.add_processor(Int())
+        assert isinstance(el.processors[0][0], Int)
+
     def test_error_messages(self):
         form = Form('f')
         el = form.add_text('username', 'User Name', required=True)

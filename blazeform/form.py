@@ -1,5 +1,6 @@
 from collections import defaultdict
 import formencode
+import inspect
 from blazeutils.datastructures import LazyOrderedDict
 
 from blazeform.element import form_elements, CancelElement, CheckboxElement, \
@@ -135,6 +136,12 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                 validator = Wrapper(to_python=validator)
             else:
                 raise TypeError('validator must be a Formencode validator or a callable')
+        else:
+            # FE validators may be passed as the class or an instance
+            #   if class, then make it an instance
+            if inspect.isclass(validator):
+                validator = validator()
+
         self._validators.append((validator, msg))
 
     def add_field_errors(self, errors):

@@ -1,3 +1,4 @@
+import inspect
 from os import path
 import cgi
 
@@ -347,6 +348,11 @@ class FormFieldElementBase(HasValueElement):
                 processor = Wrapper(to_python=processor)
             else:
                 raise TypeError('processor must be a Formencode validator or a callable')
+        else:
+            # FE validators may be passed as the class or an instance
+            #   if class, then make it an instance
+            if inspect.isclass(processor):
+                processor = processor()
 
         self.processors.append((processor, msg))
 
