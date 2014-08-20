@@ -1,10 +1,11 @@
 Change Log
 ----------
 
-0.3.5 released ???
+0.3.5 released 2014-08-20
 =========================
 
-* ???
+* ensure that form validators and element processors which are FE validators
+  are instances
 
 
 0.3.4 released 2012-07-05
