@@ -1141,7 +1141,8 @@ class LogicalSupportElement(ElementBase):
         if isinstance(group, basestring):
             self.lgroup = form.elements.get(group, None)
             if not self.lgroup:
-                self.lgroup = LogicalGroupElement(self.is_multiple, form, group)
+                group_label = kwargs.get('group_label', group)
+                self.lgroup = LogicalGroupElement(self.is_multiple, form, group_label)
                 form.els[group] = self.lgroup
         elif not isinstance(group, LogicalGroupElement):
             raise TypeError('lgroup should be a string or LogicalGroupElement')
