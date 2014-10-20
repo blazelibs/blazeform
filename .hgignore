@@ -1,0 +1,12 @@
+^MANIFEST$
+^(build|dist|BlazeForm\.egg-info)/
+\.py[co]$
+\.DS_Store$
+^env$
+^docs/_build
+[^/]+-stats\.txt$
+syntax: glob
+.coverage
+coverage.xml
+nosetests.xml
+*komodo*

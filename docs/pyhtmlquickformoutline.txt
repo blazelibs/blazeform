@@ -1,0 +1,130 @@
+
+WARNING: this is not up to date
+
+ElementBase
+    * get/set default
+    * id (html attribute)
+    * name (the name used to submit the element)
+    * label
+    * html attributes
+    * render = True
+-   ReturnValueElement
+        * get value (will show up in form.get_values())
+        * render_group
+    -   FormFieldElementBase
+            * set/get submitted
+            * notes
+            * errors
+            * exception handlers
+            * processors (validators and/or filters)
+        -   InputElementBase
+            -   ButtonElement
+            -   CheckboxElement (bool)
+            -   FileElement (probably somewhere else)
+            -   HiddenElement
+            -   ImageElement
+            -   SubmitElement
+                    ResetElement
+                    CancelElement
+            -   TextElement
+                    ConfirmElement
+                    DateElement
+                    DateTimeElement
+                    EmailElement
+                    PasswordElement
+                    TimeElement
+                    URLElement
+        -   SelectElement (optgroup, multi)
+        -   TextAreaElement
+        -   LogicalGroupElement
+            * render = False
+            * multi = True
+            * not_in_render_group
+    -   PassThru
+        * render = ??
+        * if render == False, can not go in RenderGroup
+-   DisplayElement
+        * not_in_render_group
+    -   StaticElement
+    -   RenderGroupElement
+            * wrap_in = (div, ul)
+    -   HeaderElement
+            * no label
+-   InLogicalGroupElement
+        -   RadioElement
+        -   CheckboxGroupElement
+
+== Form Features ==
+    * form level errors
+    * is submitted
+
+== Non Rendering ==
+    * no labels
+    * no html attributes
+    * type not important
+
+== In Logical Group ==
+    * like static element, but doesn't return a value
+
+== Element Features ==
+    * type
+        * used to put a class on input elements
+        * used in the form renderer
+    * render ?
+        * Anything in a RenderGroup would not render on the main level, but would
+            render
+        * PassThru might not render
+        * InLogicalGroupElement would not render
+    * takes submit ?
+        * none of the static elements take a submit value
+        * InLogicalGroupElement do not take submit values
+    * returns value ?
+        * InLogicalGroupElement do not return values
+        * Static elements do not return values
+    * multi ?
+        * SelectElement optional
+        * InLogicalGroupElement always
+
+== Types ==
+    * Boolean
+    * Int
+    * Number (Int/Float)
+    * String
+    * Unicode
+
+== Values ==
+    * default (default from code)
+    * display (after from_python())
+    * submitted (raw user value)
+    * to_process (submitted_value or display_value)
+    * value
+    
+== Multi-Value ==
+    * makes us use a list for validation/return values
+
+== Need Logical Group ==
+    * checkbox
+    * radiobutton
+
+== All HTML Elements ==
+    * Input
+        * button
+        * checkbox
+        * file
+        * hidden
+        * image
+        * password
+        * radio
+        * reset
+        * submit
+        * text
+    * Textarea
+    * Select
+        * Optgroup
+        * Option
+    * Button
+
+== Rendering ==
+    * would we like to do a "render row" feature, that way we would have more
+        flexibility in the layout process and could do element.render_row()
+        and get the wrapper along with css classes for alternating colors, etc.

@@ -1,0 +1,53 @@
+
+WARNING: this is not up to date
+
+ElementBase
+    * get/set default
+    * id (html attribute)
+    * name (the name used to submit the element)
+    * label
+    * html attributes
+    * render = True
+-   HasValueElement
+        * get value (will show up in form.get_values())
+        * render_group
+    -   FormFieldElementBase
+            * set/get submitted
+            * notes
+            * errors
+            * exception handlers
+            * processors (validators and/or filters)
+        -   InputElementBase
+            -   ButtonElement
+            -   CheckboxElement
+            -   FileElement
+            -   HiddenElement
+            -   ImageElement
+            -   ResetElement
+            -   SubmitElement
+                -   CancelElement
+            -   TextElement
+                    ConfirmElement
+                    DateElement
+                    DateTimeElement
+                    EmailElement
+                    PasswordElement
+                    TimeElement
+                    URLElement
+        -   SelectElement
+        -   MultiSelectElement
+        -   TextAreaElement
+        -   LogicalGroupElement
+            * render = False
+            * multi = True
+            * not_in_render_group
+    -   PassThru
+        * render = ??
+        * if render == False, can not go in RenderGroup
+        - FixedElement
+-   StaticElement
+    -   GroupElement
+    -   HeaderElement
+-   LogicalSupportElement
+    - MultiCheckBoxElement
+    - RadioElement
