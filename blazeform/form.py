@@ -190,6 +190,14 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
 
         return valid
 
+    def _set_submitted_values(self, values):
+        for el in self.submittable_els:
+                key = el.nameattr or el.id
+                if values.has_key(key):
+                    el.submittedval = values[key]
+                elif isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
+                    el.submittedval = None
+
     def set_submitted(self, values):
         """ values should be dict like """
 
@@ -207,12 +215,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
             identel.submittedval = values[ident_key]
 
         if self._is_submitted():
-            for el in self.submittable_els:
-                key = el.nameattr or el.id
-                if values.has_key(key):
-                    el.submittedval = values[key]
-                elif isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
-                        el.submittedval = None
+            self._set_submitted_values(values)
 
     def set_defaults(self, values):
         for el in self.defaultable_els:
