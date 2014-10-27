@@ -465,7 +465,18 @@ class CheckboxElement(InputElementBase):
     def _set_submittedval(self, value):
         self._valid = None
         self.errors = []
-        self._submittedval = bool(value)
+
+        # this is really not correct, submitted values should be strings only.  But the library
+        # was built this way to begin with and for BC reasons, I'm keeping it for now.
+        #
+        # We do however need to handle the empty string as a special case since it's bool value
+        # is False, but for checkboxes, any value sent over should be considered "on."  Most
+        # browsers send the string "on" including compliant browsers and IE 8.  However, IE 9 and
+        # 10 proved to send the name of the field with an empty value to indicate "on".
+        if value == '':
+            self._submittedval = True
+        else:
+            self._submittedval = bool(value)
     submittedval = property(_get_submittedval, _set_submittedval)
 
     def required_empty_test(self, value):

@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.3.7 released <in development>
+0.3.7 released 2014-10-27
 =========================
 
-* ?
+* fix checkbox element to handle empty value as on/true for IE 9/10 compat.
 
 0.3.6 released 2014-10-15
 =========================
