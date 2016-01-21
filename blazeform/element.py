@@ -300,7 +300,7 @@ class FormFieldElementBase(HasValueElement):
             # process type conversion
             if self.vtype is not NotGiven:
                 if self.vtype in ('boolean', 'bool'):
-                    tvalidator = formencode.compound.Any(fev.Bool(), fev.StringBoolean())
+                    tvalidator = formencode.compound.Any(fev.Bool(), fev.StringBool())
                 elif self.vtype in ('integer', 'int'):
                     tvalidator = fev.Int
                 elif self.vtype in ('number', 'num', 'float'):

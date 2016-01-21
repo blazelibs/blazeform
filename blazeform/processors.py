@@ -1,5 +1,6 @@
 import decimal
 
+import formencode
 from formencode import Invalid
 from formencode.validators import FancyValidator
 
@@ -7,7 +8,20 @@ from blazeform.exceptions import ValueInvalid
 from blazeform.util import tolist, is_iterable, is_notgiven
 
 
-class Select(FancyValidator):
+class BaseValidator(FancyValidator):
+    def __classinit__(cls, new_attrs):
+        depricated_methods = getattr(cls, '_deprecated_methods', None) or \
+            new_attrs.get('_deprecated_methods')
+        if depricated_methods is not None:
+            for old, new in depricated_methods:
+                if old in new_attrs:
+                    method = new_attrs.pop(old)
+                    setattr(cls, new, method)
+                    new_attrs[new] = method
+        return FancyValidator.__classinit__(cls, new_attrs)
+
+
+class Select(BaseValidator):
     """
     Invalid if the value(s) did not come from the options or came from the
     invalid options list
@@ -55,7 +69,7 @@ class Select(FancyValidator):
         
         return
     
-class Confirm(FancyValidator):
+class Confirm(BaseValidator):
     """
         Matches one field's value with another
     """
@@ -74,7 +88,7 @@ class Confirm(FancyValidator):
             raise Invalid(self.message('notequal', state, field=str(self.tomatch.label)), value, state)
 
     
-class MultiValues(FancyValidator):
+class MultiValues(BaseValidator):
     """
         Ensures that single value fields never get a list/tuple and therefore
         always return a non-iterable value.  For INTERNAL use.
@@ -110,8 +124,9 @@ class MultiValues(FancyValidator):
             for v in tolist(value):
                 retval.append(self.validator.to_python(v, state))
             return retval
+    _convert_from_python = _to_python
 
-class Wrapper(FancyValidator):
+class Wrapper(BaseValidator):
 
     """
     Used to convert functions to validator/converters.
@@ -136,11 +151,17 @@ class Wrapper(FancyValidator):
             if kw.has_key(n):
                 kw['func_%s' % n] = kw[n]
                 del kw[n]
-        FancyValidator.__init__(self, *args, **kw)
-        self._to_python = self.wrap(self.func_to_python)
-        self._from_python = self.wrap(self.func_from_python)
-        self.validate_python = self.wrap(self.func_validate_python)
-        self.validate_other = self.wrap(self.func_validate_other)
+        BaseValidator.__init__(self, *args, **kw)
+        if hasattr(self, '_deprecated_methods'):
+            self._convert_to_python = self.wrap(self.func_to_python)
+            self._convert_from_python = self.wrap(self.func_from_python)
+            self._validate_python = self.wrap(self.func_validate_python)
+            self._validate_other = self.wrap(self.func_validate_other)
+        else:
+            self._to_python = self.wrap(self.func_to_python)
+            self._from_python = self.wrap(self.func_from_python)
+            self.validate_python = self.wrap(self.func_validate_python)
+            self.validate_other = self.wrap(self.func_validate_other)
 
     def wrap(self, func):
         if not func:
@@ -152,11 +173,10 @@ class Wrapper(FancyValidator):
                 raise Invalid(str(e), {}, value, state)
         return result
 
-class Decimal(FancyValidator):
+class Decimal(BaseValidator):
 
     def _to_python(self, value, state):
         try:
             return decimal.Decimal(value)
         except decimal.DecimalException, e:
             raise Invalid(str(e), value, state)
-        
