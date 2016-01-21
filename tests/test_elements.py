@@ -566,6 +566,10 @@ class InputElementsTest(unittest.TestCase):
         el = Form('f').add_checkbox('f', 'f')
         el.submittedval = 'checked'
         self.assertEqual(el.value, True)
+        el.submittedval = 'on'
+        self.assertEqual(el.value, True)
+        el.submittedval = ''
+        self.assertEqual(el.value, True)
 
         # false submit values
         el = Form('f').add_checkbox('f', 'f')
