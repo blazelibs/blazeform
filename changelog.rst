@@ -1,10 +1,21 @@
 Change Log
 ----------
 
-0.3.6 released ???
+
+0.3.8 released <in dev>
 =========================
 
-* ??
+* ?
+
+0.3.7 released 2014-10-27
+=========================
+
+* fix checkbox element to handle empty value as on/true for IE 9/10 compat.
+
+0.3.6 released 2014-10-15
+=========================
+
+* allow labels for logical groups, such as radio buttons or checkboxes
 
 0.3.5 released 2014-08-20
 =========================
