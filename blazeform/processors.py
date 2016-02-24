@@ -1,6 +1,5 @@
 import decimal
 
-import formencode
 from formencode import Invalid
 from formencode.validators import FancyValidator
 
@@ -26,7 +25,7 @@ class Select(BaseValidator):
     Invalid if the value(s) did not come from the options or came from the
     invalid options list
     """
-    
+
     invalid = []
     as_empty = []
     handles_multiples = True
