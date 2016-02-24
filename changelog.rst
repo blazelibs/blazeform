@@ -2,10 +2,10 @@ Change Log
 ----------
 
 
-0.3.8 released <in dev>
+0.3.8 released 2016-02-24
 =========================
 
-* ?
+* update compatibility with FormEncode to include 1.3
 
 0.3.7 released 2014-10-27
 =========================
