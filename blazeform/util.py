@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from webhelpers.html import literal
 
 class StringIndentHelper(object):
@@ -33,7 +35,7 @@ class StringIndentHelper(object):
         return retval
 
 def is_empty(value):
-    if not value and value is not 0 and value is not False:
+    if not value and not isinstance(value, (Decimal, int, float, bool)):
         return True
     return False
 

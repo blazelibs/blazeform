@@ -1,7 +1,9 @@
+from decimal import Decimal
 import unittest
 
 from blazeform.util import multi_pop, NotGiven, is_iterable, NotGivenIter, \
-    is_notgiven, HtmlAttributeHolder
+    is_notgiven, HtmlAttributeHolder, is_empty
+
 
 class TestUtilFunctions(unittest.TestCase):
 
@@ -50,6 +52,17 @@ class TestUtilFunctions(unittest.TestCase):
         assert is_notgiven(NotGiven)
         assert is_notgiven(NotGivenIter)
         assert not is_notgiven(None)
+
+    def test_is_empty(self):
+        assert is_empty(NotGiven)
+        assert is_notgiven(NotGivenIter)
+        assert is_empty('')
+        assert is_empty(None)
+        assert not is_empty('foo')
+        assert not is_empty(False)
+        assert not is_empty(0)
+        assert not is_empty(0.0)
+        assert not is_empty(Decimal(0))
 
 class TestHtmlAttributeHolder(unittest.TestCase):
     def test_init(self):
