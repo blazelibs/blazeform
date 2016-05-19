@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from webhelpers.html import literal
 
 class StringIndentHelper(object):
@@ -35,8 +33,16 @@ class StringIndentHelper(object):
         return retval
 
 def is_empty(value):
-    if not value and not isinstance(value, (Decimal, int, float, bool)):
+    # empty values:
+    #   * None
+    #   * NotGiven/NotGivenIter
+    #   * sequence with length 0 (includes empty string)
+    if value is None or is_notgiven(value):
         return True
+    try:
+        return len(value) == 0
+    except TypeError:
+        pass
     return False
 
 def multi_pop(d, *args):
