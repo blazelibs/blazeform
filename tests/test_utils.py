@@ -56,13 +56,19 @@ class TestUtilFunctions(unittest.TestCase):
     def test_is_empty(self):
         assert is_empty(NotGiven)
         assert is_notgiven(NotGivenIter)
-        assert is_empty('')
         assert is_empty(None)
+        assert is_empty('')
+        assert is_empty([])
+        assert is_empty({})
+        assert is_empty(set())
         assert not is_empty('foo')
         assert not is_empty(False)
         assert not is_empty(0)
         assert not is_empty(0.0)
         assert not is_empty(Decimal(0))
+        assert not is_empty([0])
+        assert not is_empty({'foo': 'bar'})
+        assert not is_empty({''})
 
 class TestHtmlAttributeHolder(unittest.TestCase):
     def test_init(self):
