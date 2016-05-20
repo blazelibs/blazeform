@@ -2,10 +2,10 @@ Change Log
 ----------
 
 
-0.3.9 released <in development>
+0.3.9 released 2016-05-20
 =========================
 
-* ?
+* make is_empty more general with respect to input type, 0 should not be empty
 
 0.3.8 released 2016-02-24
 =========================
