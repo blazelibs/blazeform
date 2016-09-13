@@ -6,12 +6,13 @@ import warnings
 
 from formencode.validators import Int, MaxLength
 from nose.plugins.skip import SkipTest
+from webhelpers2.html import literal
 
 from blazeform.form import Form
 from blazeform.element import TextElement
 from blazeform.exceptions import ValueInvalid, ProgrammingError
 from blazeform.file_upload_translators import BaseTranslator
-from blazeform.util import NotGiven, NotGivenIter, literal
+from blazeform.util import NotGiven, NotGivenIter
 
 L = literal
 

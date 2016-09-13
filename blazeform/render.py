@@ -1,6 +1,5 @@
 from __future__ import absolute_import
-from webhelpers.html import tags, HTML
-from webhelpers.html.builder import make_tag
+from webhelpers2.html import tags, HTML
 
 from blazeform import element
 from blazeform.form import FormBase
@@ -249,10 +248,10 @@ class GroupRenderer(StaticRenderer):
         self.element.set_attr('id', '%s-%s' % (self.element.getidattr(), self.wrap_type))
         class_str = '%s%s%s' % (self.wrap_type, self.alt_class(), self.first_class())
         self.element.add_attr('class', class_str)
-        # make_tag should not close the div
+        # HTML.tag should not close the div
         attrs = self.element.get_attrs()
         attrs['_closed'] = False
-        self.output.inc(make_tag('div', **attrs))
+        self.output.inc(HTML.tag('div', **attrs))
     def field_wrapper(self):
         self.output.inc('<div id="%s-fw" class="group-wrapper%s">' %
                             (self.element.getidattr(), self.label_class))
