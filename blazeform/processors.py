@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import decimal
 
 from formencode import Invalid
@@ -5,6 +6,7 @@ from formencode.validators import FancyValidator
 
 from blazeform.exceptions import ValueInvalid
 from blazeform.util import tolist, is_iterable, is_notgiven
+import six
 
 
 class BaseValidator(FancyValidator):
@@ -37,8 +39,8 @@ class Select(BaseValidator):
     
     def _to_python(self, value, state):
         valiter = tolist(value)
-        as_empty = [unicode(d) for d in tolist(self.as_empty)]
-        vallist = [unicode(d) for d in valiter]
+        as_empty = [six.text_type(d) for d in tolist(self.as_empty)]
+        vallist = [six.text_type(d) for d in valiter]
         # single
         if len(vallist) == 1:
             if vallist[0] in as_empty:
@@ -56,9 +58,9 @@ class Select(BaseValidator):
         return valiter
         
     def validate_other(self, values, state):
-        soptions = set([unicode(d[0] if isinstance(d, tuple) else d) for d in self.options])
-        sinvalid = set([unicode(d) for d in tolist(self.invalid)])
-        svalues = set([unicode(d) for d in tolist(values)])
+        soptions = set([six.text_type(d[0] if isinstance(d, tuple) else d) for d in self.options])
+        sinvalid = set([six.text_type(d) for d in tolist(self.invalid)])
+        svalues = set([six.text_type(d) for d in tolist(values)])
  
         if len(sinvalid.intersection(svalues)) != 0:
             raise Invalid(self.message('invalid', state), values, state)
@@ -147,7 +149,7 @@ class Wrapper(BaseValidator):
     def __init__(self, *args, **kw):
         for n in ['to_python', 'from_python', 'validate_python',
                   'validate_other']:
-            if kw.has_key(n):
+            if n in kw:
                 kw['func_%s' % n] = kw[n]
                 del kw[n]
         BaseValidator.__init__(self, *args, **kw)
@@ -168,7 +170,7 @@ class Wrapper(BaseValidator):
         def result(value, state, func=func):
             try:
                 return func(value)
-            except ValueInvalid, e:
+            except ValueInvalid as e:
                 raise Invalid(str(e), {}, value, state)
         return result
 
@@ -177,5 +179,5 @@ class Decimal(BaseValidator):
     def _to_python(self, value, state):
         try:
             return decimal.Decimal(value)
-        except decimal.DecimalException, e:
+        except decimal.DecimalException as e:
             raise Invalid(str(e), value, state)

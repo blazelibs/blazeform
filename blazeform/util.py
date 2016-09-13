@@ -1,4 +1,6 @@
+from __future__ import absolute_import
 from webhelpers.html import literal
+import six
 
 class StringIndentHelper(object):
 
@@ -48,7 +50,7 @@ def is_empty(value):
 def multi_pop(d, *args):
     retval = {}
     for key in args:
-        if d.has_key(key):
+        if key in d:
             retval[key] = d.pop(key)
     return retval
 
@@ -116,7 +118,7 @@ def tolist(x, default=[]):
     return [x]
 
 def is_iterable(possible_iterable):
-    if isinstance(possible_iterable, basestring):
+    if isinstance(possible_iterable, six.string_types):
         return False
     try:
         iter(possible_iterable)
@@ -143,7 +145,7 @@ class ElementRegistrar(object):
         if name.startswith('add_'):
             type = name.replace('add_', '')
             func = self._create_element
-        elif self._formref.els.has_key(name):
+        elif name in self._formref.els:
             return self._formref.els[name]
         else:
             raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
@@ -155,7 +157,7 @@ class ElementRegistrar(object):
     def _create_element(self, type, eid, *args, **kwargs):
         if type == 'file':
             self._formref.set_attr('enctype', 'multipart/form-data')
-        if self._formref.els.has_key(eid):
+        if eid in self._formref.els:
             raise ValueError('element id "%s" already used' % eid)
 
         try:
@@ -192,7 +194,7 @@ class HtmlAttributeHolder(object):
         """
         if key.endswith('_'):
             key = key[:-1]
-        if self.attributes.has_key(key):
+        if key in self.attributes:
             self.attributes[key] = self.attributes[key] + ' ' + value
         else:
             self.attributes[key] = value

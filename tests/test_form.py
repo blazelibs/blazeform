@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from formencode.validators import Int
 import unittest
 
@@ -279,14 +280,14 @@ class CommonFormUsageTest(unittest.TestCase):
         def validator(form):
             try:
                 foo = f.elements.myfield.value
-            except ElementInvalid, e:
+            except ElementInvalid as e:
                 raise ValueInvalid(e)
         el = f.add_text('myfield', 'My Field', maxlength=1)
         el.add_processor(validator)
         f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'12'})
         try:
             assert not f.is_valid()
-        except RuntimeError, e:
+        except RuntimeError as e:
             assert 'maximum recursion depth exceeded' in str(e), str(e)
 
     def test_validator_element_invalid(self):

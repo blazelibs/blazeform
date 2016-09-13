@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from formencode import Invalid
 from formencode.validators import MaxLength
 
@@ -8,5 +9,5 @@ def test_maxlength_bug_fix():
     try:
         ml.to_python('123456')
         assert False, 'expected exception'
-    except Invalid, e:
+    except Invalid as e:
         assert str(e) == 'Enter a value not greater than 5 characters long'

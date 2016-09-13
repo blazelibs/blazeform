@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import datetime
 import decimal
 import unittest
@@ -209,7 +210,7 @@ class CommonTest(unittest.TestCase):
         try:
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
-        except Exception, e:
+        except Exception as e:
             if str(e) != '"value" attribute accessed, but element "User Name" is invalid':
                 raise
 
@@ -217,7 +218,7 @@ class CommonTest(unittest.TestCase):
         try:
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
-        except Exception, e:
+        except Exception as e:
             if str(e) != '"value" attribute accessed, but element "User Name" is invalid':
                 raise
 
@@ -225,7 +226,7 @@ class CommonTest(unittest.TestCase):
         try:
             v = el.value
             self.fail('expected exception when trying to use .value when element is invalid')
-        except Exception, e:
+        except Exception as e:
             if str(e) != '"value" attribute accessed, but element "User Name" is invalid':
                 raise
 
@@ -483,13 +484,13 @@ class CommonTest(unittest.TestCase):
         form = Form('f')
         try:
             form.add_text('f1', 'Field', 'badvtype')
-        except ValueError, e:
+        except ValueError as e:
             self.assertEqual('invalid vtype "badvtype"', str(e))
 
         # test wrong type of vtype
         try:
             form.add_text('f2', 'Field', ())
-        except TypeError, e:
+        except TypeError as e:
             self.assertEqual('vtype should have been a string, got <type \'tuple\'> instead', str(e))
     #
     #def from_python_exception(self):
@@ -699,13 +700,13 @@ class InputElementsTest(unittest.TestCase):
         try:
             Form('f').add_confirm('f')
             self.fail('expected key error for missing "match"')
-        except ProgrammingError, e:
+        except ProgrammingError as e:
             if 'match argument is required' not in str(e):
                 raise
         try:
             Form('f').add_confirm('f', match='notthere')
             self.fail('expected element does not exist error')
-        except ProgrammingError, e:
+        except ProgrammingError as e:
             if 'match element "notthere" does not exist' != str(e):
                 raise
 
@@ -713,7 +714,7 @@ class InputElementsTest(unittest.TestCase):
             datematch = datetime.datetime.now()
             Form('f').add_confirm('f', match=datematch)
             self.fail('expected wrong type error')
-        except ProgrammingError, e:
+        except ProgrammingError as e:
             if 'match element was not of type HasValueElement' != str(e):
                 raise
 
@@ -1307,7 +1308,7 @@ class LogicalElementsTest(unittest.TestCase):
         # cannot set required on an mcheckbox
         try:
             el = Form('f').add_mcheckbox('f', 'label', 'foo', 'thegroup', required=True)
-        except ProgrammingError, pe:
+        except ProgrammingError as pe:
             assert pe.args[0] == 'Required is not allowed on this element. Set it for the logical group.'
 
     def test_mcheckbox2(self):
@@ -1395,7 +1396,7 @@ class LogicalElementsTest(unittest.TestCase):
         # cannot set required on an mradio
         try:
             el = Form('f').add_radio('f', 'label', 'foo', 'thegroup', required=True)
-        except ProgrammingError, pe:
+        except ProgrammingError as pe:
             assert pe.args[0] == 'Required is not allowed on this element. Set it for the logical group.'
 
     def test_radio2(self):
@@ -1464,7 +1465,7 @@ class LogicalElementsTest(unittest.TestCase):
         try:
             el = f.add_radio('radio2', 'Radio 2', group='rgroup1' )
             self.fail('should have got duplicate value assertion')
-        except ValueError, e:
+        except ValueError as e:
             self.assertEqual(str(e), 'a member of this group already exists with value ""')
 
     def test_non_rendering(self):
@@ -1598,7 +1599,7 @@ class FileUploadsTest(unittest.TestCase):
         try:
             el.defaultval = 'foo'
             self.fail('file element should not support default values')
-        except NotImplementedError, e:
+        except NotImplementedError as e:
             self.assertEqual(str(e), 'FileElement doesn\'t support default values')
 
     def test_submitted(self):
