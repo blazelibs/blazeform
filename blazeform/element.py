@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import inspect
 from os import path
 import cgi
@@ -13,6 +14,8 @@ from blazeform.file_upload_translators import BaseTranslator
 from blazeform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
 from blazeform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
     tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, is_given
+import six
+from six.moves import map
 
 form_elements = {}
 
@@ -167,7 +170,7 @@ class FormFieldElementBase(HasValueElement):
                 vtype = vtype.lower()
                 if vtype not in vtypes:
                     raise ValueError('invalid vtype "%s"' % vtype)
-            except AttributeError, e:
+            except AttributeError as e:
                 raise TypeError('vtype should have been a string, got %s instead' % type(vtype))
         self.vtype = vtype
 
@@ -229,12 +232,12 @@ class FormFieldElementBase(HasValueElement):
         value = self.submittedval
 
         # strip if necessary
-        if self.strip and isinstance(value, basestring):
+        if self.strip and isinstance(value, six.string_types):
             value = value.strip()
         elif self.strip and is_iterable(value):
             newvalue = []
             for item in value:
-                if isinstance(item, basestring):
+                if isinstance(item, six.string_types):
                     newvalue.append(item.strip())
                 else:
                     newvalue.append(item)
@@ -268,7 +271,7 @@ class FormFieldElementBase(HasValueElement):
                 # and returns None on us.  We override that here.
                 if ap_value is not None or value is not NotGiven:
                     value = ap_value
-            except formencode.Invalid, e:
+            except formencode.Invalid as e:
                 valid = False
                 self.add_error((msg or str(e)))
         else:
@@ -314,7 +317,7 @@ class FormFieldElementBase(HasValueElement):
                 try:
                     tvalidator = MultiValues(tvalidator, multi_check=False)
                     value = tvalidator.to_python(value, self)
-                except formencode.Invalid, e:
+                except formencode.Invalid as e:
                     valid = False
                     self.add_error(str(e))
 
@@ -370,7 +373,7 @@ class FormFieldElementBase(HasValueElement):
         for looking_for, error_msg, exc_type, callback in self.exception_handlers:
             if is_notgiven(callback):
                 if not is_notgiven(exc_type):
-                    if isinstance(exc_type, basestring):
+                    if isinstance(exc_type, six.string_types):
                         if exc.__class__.__name__ != exc_type:
                             continue
                     else:
@@ -682,10 +685,10 @@ class ConfirmElement(TextElement):
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         if not match:
               raise ProgrammingError('match argument is required for Confirm elements')
-        elif isinstance(match, basestring):
+        elif isinstance(match, six.string_types):
             try:
                 self.mel = self.form.els[match]
-            except KeyError, e:
+            except KeyError as e:
                 if match not in str(e):
                     raise
                 raise ProgrammingError('match element "%s" does not exist' % match)
@@ -856,13 +859,13 @@ class SelectElement(FormFieldElementBase):
             values = []
             def mapf(option):
                 if isinstance(option, tuple):
-                    return unicode(option[0]), option[1]
+                    return six.text_type(option[0]), option[1]
                 else:
-                    return unicode(option), option
+                    return six.text_type(option), option
             lookup = dict(map(mapf, self.options))
             for key in tolist(self.displayval):
                 try:
-                    values.append(lookup[unicode(key)])
+                    values.append(lookup[six.text_type(key)])
                 except KeyError:
                     pass
             todisplay = ', '.join(values)
@@ -1007,17 +1010,17 @@ class LogicalGroupElement(FormFieldElementBase):
     def _set_members(self, values):
         # convert to dict with unicode keys so our comparisons are always
         # the same type
-        values = dict([(unicode(v), 1) for v in tolist(values)])
+        values = dict([(six.text_type(v), 1) for v in tolist(values)])
 
         # based on our values, set our members to chosen or not chosen
         for key, el in self.members.items():
-            if values.has_key(unicode(key)):
+            if six.text_type(key) in values:
                 el.chosen = True
             else:
                 el.chosen = False
 
     def add_member(self, el):
-        if self.members.has_key(el.displayval):
+        if el.displayval in self.members:
             raise ValueError('a member of this group already exists with value "%s"' % el.displayval)
         self.members[el.displayval] = el
 
@@ -1145,11 +1148,11 @@ class LogicalSupportElement(ElementBase):
         These elements are used to support LogicalGroupElement
     """
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, **kwargs):
-        if kwargs.has_key('required'):
+        if 'required' in kwargs:
             raise ProgrammingError('Required is not allowed on this element. Set it for the logical group.')
 
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
-        if isinstance(group, basestring):
+        if isinstance(group, six.string_types):
             self.lgroup = form.elements.get(group, None)
             if not self.lgroup:
                 group_label = kwargs.get('group_label', group)

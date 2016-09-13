@@ -1,8 +1,10 @@
+from __future__ import absolute_import
 from decimal import Decimal
 import unittest
 
 from blazeform.util import multi_pop, NotGiven, is_iterable, NotGivenIter, \
     is_notgiven, HtmlAttributeHolder, is_empty
+import six
 
 
 class TestUtilFunctions(unittest.TestCase):
@@ -20,7 +22,7 @@ class TestUtilFunctions(unittest.TestCase):
         assert NotGiven is NotGiven
         assert NotGiven == NotGiven
         assert str(NotGiven) == ''
-        assert unicode(NotGiven) == u''
+        assert six.text_type(NotGiven) == u''
     
     def test_notgiveniter(self):
         assert not NotGivenIter
@@ -32,7 +34,7 @@ class TestUtilFunctions(unittest.TestCase):
         assert not [] != NotGivenIter
         assert NotGivenIter == []
         assert str(NotGivenIter) == '[]'
-        assert unicode(NotGivenIter) == u'[]'
+        assert six.text_type(NotGivenIter) == u'[]'
         assert is_iterable(NotGivenIter)
         assert len(NotGivenIter) == 0
 
@@ -102,8 +104,8 @@ class TestHtmlAttributeHolder(unittest.TestCase):
         ah = HtmlAttributeHolder(src='src', class_='class')
         ah.del_attr('src')
         ah.del_attr('class')
-        assert not ah.attributes.has_key('src')
-        assert not ah.attributes.has_key('class')
+        assert 'src' not in ah.attributes
+        assert 'class' not in ah.attributes
     
     def test_add_attr(self):
         ah = HtmlAttributeHolder(src='src', class_='class')

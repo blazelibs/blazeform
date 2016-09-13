@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from blazeform.exceptions import ValueInvalid
 
 def test_invalid_str():

@@ -1,4 +1,6 @@
+from __future__ import absolute_import
 from os import path
+from six.moves import range
 
 renderers = ('default', 'withaction', 'all_els', 'static', 'noteprefix',
              'reqnote_formtop', 'reqnote_formtop_header', 'reqnote_section')
@@ -14,12 +16,12 @@ def test_all():
         try:
             tf.set_submitted(rmod.submitted_vals)
             tf.is_valid()
-        except AttributeError, e:
+        except AttributeError as e:
             if 'submitted_vals' not in str(e):
                 raise
         try:
             form_html = tf.render(**rmod.render_opts)
-        except AttributeError, e:
+        except AttributeError as e:
             if 'render_opts' not in str(e):
                 raise
             form_html = tf.render()
@@ -35,13 +37,13 @@ def test_all():
                 try:
                     formstr = form_html_lines[lnum]
                 except IndexError:
-                    if lnum <> 0:
+                    if lnum != 0:
                         raise
                     formstr = '**form output empty**'
                 try:
                     filestr = file_html_lines[lnum]
                 except IndexError:
-                    if lnum <> 0:
+                    if lnum != 0:
                         raise
                     filestr = '**file empty**'
                 #TODO: Restore to normal, changed for testing.

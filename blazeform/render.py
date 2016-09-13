@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from webhelpers.html import tags, HTML
 from webhelpers.html.builder import make_tag
 
@@ -52,7 +53,7 @@ class FormRenderer(object):
                 return 'form'
             if self.settings['req_note_level'] == 'section':
                 return 'section'
-        except KeyError, e:
+        except KeyError as e:
             if 'req_note_level' not in str(e):
                 raise
         return None

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from collections import defaultdict
 import formencode
 import inspect
@@ -12,6 +13,7 @@ from blazeform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar, is_n
 
 # fix the bug in the formencode MaxLength validator
 from formencode.validators import MaxLength
+import six
 MaxLength._messages['__buggy_toolong'] = MaxLength._messages['tooLong']
 MaxLength._messages['tooLong'] = 'Enter a value not greater than %(maxLength)i characters long'
 
@@ -81,7 +83,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
             self.register_element_type(type, eclass)
 
     def register_element_type(self, type, eclass):
-        if self._registered_types.has_key(type):
+        if type in self._registered_types:
             raise ValueError('type "%s" is already registered' % type)
         self._registered_types[type] = eclass
 
@@ -175,12 +177,12 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         for validator, msg in self._validators:
             try:
                 value = validator.to_python(self)
-            except formencode.Invalid, e:
+            except formencode.Invalid as e:
                 valid = False
                 msg = (msg or str(e))
                 if msg:
                     self.add_error(msg)
-            except ElementInvalid, e:
+            except ElementInvalid as e:
                 # since we are getting an ElementInvalid exception, that means
                 # our validator needed the value of an element to complete
                 # validation, but that element is invalid.  In that case,
@@ -193,7 +195,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
     def _set_submitted_values(self, values):
         for el in self.submittable_els:
                 key = el.nameattr or el.id
-                if values.has_key(key):
+                if key in values:
                     el.submittedval = values[key]
                 elif isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
                     el.submittedval = None
@@ -211,7 +213,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         # apply the submitted values
         identel = getattr(self.elements, self._form_ident_field)
         ident_key = identel.nameattr or identel.id
-        if values.has_key(ident_key):
+        if ident_key in values:
             identel.submittedval = values[ident_key]
 
         if self._is_submitted():
@@ -219,7 +221,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
 
     def set_defaults(self, values):
         for el in self.defaultable_els:
-            if values.has_key(el.id):
+            if el.id in values:
                 el.defaultval = values[el.id]
 
     def get_values(self):
@@ -252,7 +254,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
 
         for looking_for, error_msg, exc_type, callback in self._exception_handlers:
             if not is_notgiven(exc_type):
-                if isinstance(exc_type, basestring):
+                if isinstance(exc_type, six.string_types):
                     if exc.__class__.__name__ != exc_type:
                         continue
                 else:
@@ -297,7 +299,7 @@ class Form(FormBase):
     """
     def __init__(self, name, static=False, **kwargs):
         # make the form's name the id
-        if not kwargs.has_key('id'):
+        if 'id' not in kwargs:
             kwargs['id'] = name
 
         FormBase.__init__(self, name, static, **kwargs)
