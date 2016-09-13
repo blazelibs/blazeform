@@ -2,12 +2,12 @@ from __future__ import absolute_import
 from formencode.validators import Int
 import unittest
 
-from webhelpers.html.builder import literal
+from webhelpers2.html.builder import literal
 
 from blazeform.form import Form
 from blazeform.element import TextElement
 from blazeform.exceptions import ValueInvalid, ElementInvalid, ProgrammingError
-from blazeform.util import NotGivenIter, literal, NotGiven
+from blazeform.util import NotGivenIter, NotGiven
 from blazeutils import DumbObject
 
 L = literal

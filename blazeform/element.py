@@ -7,7 +7,7 @@ import formencode
 import formencode.validators as fev
 from blazeutils import DumbObject
 from blazeutils.datastructures import LazyOrderedDict
-from webhelpers.html import HTML, tags, literal
+from webhelpers2.html import HTML, tags, literal
 
 from blazeform.exceptions import ElementInvalid, ProgrammingError
 from blazeform.file_upload_translators import BaseTranslator

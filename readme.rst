@@ -11,7 +11,7 @@ Features
 - extensible rendering system() (don't have to use it)
 - will work with multiple WSGI frameworks (Werkzeug currently supported)
 - *extensive* unit tests
-- few dependencies: FormEncode, BlazeUtils, WebHelpers
+- few dependencies: FormEncode, BlazeUtils, WebHelpers2
 
 Code Sample
 --------------------

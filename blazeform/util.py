@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from webhelpers.html import literal
 import six
 
 class StringIndentHelper(object):

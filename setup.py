@@ -38,7 +38,7 @@ setup(
     install_requires = [
         "FormEncode>=1.2.2",
         "BlazeUtils>=0.3.0",
-        "WebHelpers>=1.0"
+        "WebHelpers2"
     ],
     test_suite='nose.collector',
     # tests will issue warning if run without pydns, but only one test uses it
