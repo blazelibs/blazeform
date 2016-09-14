@@ -6,11 +6,12 @@ import warnings
 from formencode.validators import Int
 from nose.plugins.skip import SkipTest
 from blazeutils import DumbObject
+from webhelpers2.html import literal
 
 from blazeform.form import Form
 from blazeform.element import TextElement
 from blazeform.exceptions import ValueInvalid, ProgrammingError
-from blazeform.util import NotGiven, NotGivenIter, literal
+from blazeform.util import NotGiven, NotGivenIter
 
 L = literal
 

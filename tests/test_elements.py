@@ -492,7 +492,9 @@ class CommonTest(unittest.TestCase):
         try:
             form.add_text('f2', 'Field', ())
         except TypeError as e:
-            self.assertEqual('vtype should have been a string, got <type \'tuple\'> instead', str(e))
+            self.assertRegexpMatches(
+                str(e), r'vtype should have been a string, got <(type|class) \'tuple\'> instead'
+            )
     #
     #def from_python_exception(self):
     #    # waht do we do with from_python validation problems, anything?  Right now
