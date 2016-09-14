@@ -65,6 +65,9 @@ class NotGivenBase(object):
     def __nonzero__(self):
         return False
 
+    def __bool__(self):
+        return False
+
     def __ne__(self, other):
         if other == '' or other == u'' or other is None or isinstance(other, NotGivenBase):
             return False
@@ -74,6 +77,9 @@ class NotGivenBase(object):
         if other == '' or other == u'' or other is None or isinstance(other, NotGivenBase):
             return True
         return False
+
+    def __hash__(self):
+        return hash(self.__class__)
 NotGiven = NotGivenBase()
 
 class NotGivenIterBase(NotGivenBase):
@@ -101,6 +107,9 @@ class NotGivenIterBase(NotGivenBase):
         return self
 
     def next(self):
+        raise StopIteration
+
+    def __next__(self):
         raise StopIteration
 
     def __len__(self):
