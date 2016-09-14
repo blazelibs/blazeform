@@ -912,6 +912,13 @@ class SelectTest(unittest.TestCase):
         el = Form('f').add_select('f', o, choose=None)
         self.assertEqual(str(el()), html)
 
+        # single element options
+        html = '<select id="f-f" name="f">\n<option value="-2">Choose:'\
+            '</option>\n<option value="-1">-------------------------</option>\n'\
+            '<option value="0">0</option>\n<option value="1">1</option>\n</select>'
+        el = Form('f').add_select('f', [0, 1])
+        self.assertEqual(str(el()), html)
+
         # default values
         html = \
         '<select id="f-f" name="f">\n'\
