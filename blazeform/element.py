@@ -97,18 +97,20 @@ class ElementBase(HtmlAttributeHolder):
         self.is_returning = True
         self.renders_in_group = False
 
-    def _get_defaultval(self):
+    @property
+    def defaultval(self):
         return self._defaultval
-    def _set_defaultval(self, value):
+
+    @defaultval.setter
+    def defaultval(self, value):
         self._displayval = NotGiven
         self._defaultval = value
-    defaultval = property(_get_defaultval, _set_defaultval)
 
-    def _get_displayval(self):
+    @property
+    def displayval(self):
         if self._displayval is NotGiven:
             self._from_python_processing()
         return self._displayval
-    displayval = property(_get_displayval)
 
     def _from_python_processing(self):
         self._displayval = self._defaultval
@@ -127,9 +129,9 @@ class HasValueElement(ElementBase):
 
         self.render_group = None
 
-    def _get_value(self):
+    @property
+    def value(self):
         raise NotImplimentedError('this method needs to be overriden')
-    value = property(_get_value)
 
 class FormFieldElementBase(HasValueElement):
     """
@@ -181,26 +183,28 @@ class FormFieldElementBase(HasValueElement):
         kwargs['name'] = name
         HasValueElement.set_attrs(self, **kwargs)
 
-    def _get_submittedval(self):
+    @property
+    def submittedval(self):
         return self._submittedval
-    def _set_submittedval(self, value):
+
+    @submittedval.setter
+    def submittedval(self, value):
         self._valid = None
         self.errors = []
         self._submittedval = value
-    submittedval = property(_get_submittedval, _set_submittedval)
 
-    def _get_displayval(self):
+    @property
+    def displayval(self):
         if is_notgiven(self.submittedval):
-            return HasValueElement._get_displayval(self)
+            return super(FormFieldElementBase, self).displayval
         return self.submittedval
-    displayval = property(_get_displayval)
 
-    def _get_value(self):
+    @property
+    def value(self):
         self._to_python_processing()
         if self._valid != True:
             raise ElementInvalid(self.label)
         return self._safeval
-    value = property(_get_value)
 
     def _from_python_processing(self):
         # process processors
@@ -463,9 +467,12 @@ class CheckboxElement(InputElementBase):
         if self.defaultval is NotGiven:
             self.defaultval = bool(checked)
 
-    def _get_submittedval(self):
+    @property
+    def submittedval(self):
         return self._submittedval
-    def _set_submittedval(self, value):
+
+    @submittedval.setter
+    def submittedval(self, value):
         self._valid = None
         self.errors = []
 
@@ -480,7 +487,6 @@ class CheckboxElement(InputElementBase):
             self._submittedval = True
         else:
             self._submittedval = bool(value)
-    submittedval = property(_get_submittedval, _set_submittedval)
 
     def required_empty_test(self, value):
         return not bool(value)
@@ -525,28 +531,27 @@ class FileElement(InputElementBase):
         # characterstics of this element
         self.is_defaultable = False
 
-    def _get_defaultval(self):
+    @property
+    def defaultval(self):
         return NotGiven
-    def _set_defaultval(self, value):
+
+    @defaultval.setter
+    def defaultval(self, value):
         if is_given(value):
             raise NotImplementedError('FileElement doesn\'t support default values')
-    defaultval = property(_get_defaultval, _set_defaultval)
 
-    def _get_displayval(self):
-        return NotGiven
-    displayval = property(_get_displayval)
-
-    def _get_submittedval(self):
+    @property
+    def submittedval(self):
         return self._submittedval
 
-    def _set_submittedval(self, value):
+    @submittedval.setter
+    def submittedval(self, value):
         self._valid = None
         self.errors = []
         if isinstance(value, BaseTranslator):
             self._submittedval = value
         else:
             self._submittedval = self.form._fu_translator(value)
-    submittedval = property(_get_submittedval, _set_submittedval)
 
     def maxsize(self, size):
         "set the maximum allowed file upload size"
@@ -607,7 +612,7 @@ class FileElement(InputElementBase):
                 self.add_error('content-type requirements exist, but submitted file had no content-type')
 
             if self._maxsize:
-                if not value.content_length :
+                if not value.content_length:
                     valid = False
                     self.add_error('maximum size requirement exists, but submitted file had no content length')
                 elif value.content_length > self._maxsize:
@@ -651,11 +656,12 @@ class SubmitElement(InputElementBase):
         if self.defaultval is NotGiven:
             self.defaultval = 'Submit'
         self.fixed = fixed
-    def _get_displayval(self):
+
+    @property
+    def displayval(self):
         if is_notgiven(self.submittedval) or self.fixed:
-            return HasValueElement._get_displayval(self)
+            return HasValueElement.displayval.fget(self)
         return self.submittedval
-    displayval = property(_get_displayval)
 form_elements['submit'] = SubmitElement
 
 class CancelElement(SubmitElement):
@@ -664,11 +670,12 @@ class CancelElement(SubmitElement):
         if self.defaultval is NotGiven:
             self.defaultval = 'Cancel'
         self.fixed = fixed
-    def _get_displayval(self):
+
+    @property
+    def displayval(self):
         if is_notgiven(self.submittedval) or self.fixed:
-            return HasValueElement._get_displayval(self)
+            return HasValueElement.displayval.fget(self)
         return self.submittedval
-    displayval = property(_get_displayval)
 form_elements['cancel'] = CancelElement
 
 class TextElement(InputElementBase, MaxLengthMixin):
@@ -705,11 +712,11 @@ class ConfirmElement(TextElement):
 
         self.add_processor(Confirm(self.mel))
 
-    def _get_displayval(self):
+    @property
+    def displayval(self):
         if isinstance(self.mel, PasswordElement) and not self.mel.default_ok:
             return None
-        return TextElement._get_displayval(self)
-    displayval = property(_get_displayval)
+        return super(ConfirmElement, self).displayval
 
     def render_static(self):
         return ''
@@ -742,11 +749,11 @@ class PasswordElement(TextElement):
         # class attribute set already, override that too
         self.set_attr('class_', 'password')
 
-    def _get_displayval(self):
+    @property
+    def displayval(self):
         if self.default_ok:
-            return TextElement._get_displayval(self)
+            return super(PasswordElement, self).displayval
         return None
-    displayval = property(_get_displayval)
 form_elements['password'] = PasswordElement
 
 class TimeElement(TextElement):
@@ -850,7 +857,9 @@ class SelectElement(FormFieldElementBase):
 
     def render_html(self):
         displayval = self.displayval if self.displayval or self.displayval == 0 else None
-        return tags.select(self.nameattr or self.id, tolist(displayval), self.options, **self.attributes)
+        displayval = [six.text_type(val) for val in tolist(displayval)]
+        options = [tags.Option(label, six.text_type(value)) for value, label in self.options]
+        return tags.select(self.nameattr or self.id, displayval, options, **self.attributes)
 
     def render_static(self):
         if self.displayval == '':
@@ -953,20 +962,23 @@ class LogicalGroupElement(FormFieldElementBase):
         self.auto_validate = kwargs.pop('auto_validate', True)
         self.error_msg = kwargs.pop('error_msg', None)
         self.invalid = kwargs.pop('invalid', [])
+        self.submittedval = NotGivenIter
+        self.members = {}
         FormFieldElementBase.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
 
         self.multiple = is_multiple
-        self.members = {}
         self.mbrs = self.members
         self.to_python_first = True
-        self.submittedval = NotGivenIter
 
         # characterstics of this element
         self.is_renderable = False
 
-    def _get_defaultval(self):
+    @property
+    def defaultval(self):
         return self._defaultval
-    def _set_defaultval(self, value):
+
+    @defaultval.setter
+    def defaultval(self, value):
         self._displayval = NotGiven
         self._defaultval = value
 
@@ -975,13 +987,15 @@ class LogicalGroupElement(FormFieldElementBase):
         # _submittedval is created in FormFieldElementBase, and we get an error
         if value:
             # call displayval to make sure any _from_python processing gets done
-            displayval = FormFieldElementBase._get_displayval(self)
+            displayval = super(LogicalGroupElement, self).defaultval
             self._set_members(displayval)
-    defaultval = property(_get_defaultval, _set_defaultval)
 
-    def _get_submittedval(self):
+    @property
+    def submittedval(self):
         return self._submittedval
-    def _set_submittedval(self, value):
+
+    @submittedval.setter
+    def submittedval(self, value):
         self._valid = None
         self.errors = []
         self._submittedval = value
@@ -989,7 +1003,6 @@ class LogicalGroupElement(FormFieldElementBase):
         # use self.value to make sure processing gets done
         if is_given(value) and self.is_valid():
             self._set_members(self.value)
-    submittedval = property(_get_submittedval, _set_submittedval)
 
     def _to_python_processing(self):
         """
@@ -1038,15 +1051,17 @@ class PassThruElement(HasValueElement):
         self.is_submittable = False
         self.is_renderable = False
 
-    def _get_submittedval(self):
+    @property
+    def submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
-    def _set_submittedval(self, value):
-        raise NotImplementedError('element does not allow submitted values')
-    submittedval = property(_get_submittedval, _set_submittedval)
 
-    def _get_value(self):
+    @submittedval.setter
+    def submittedval(self, value):
+        raise NotImplementedError('element does not allow submitted values')
+
+    @property
+    def value(self):
         return self.defaultval
-    value = property(_get_value)
 form_elements['passthru'] = PassThruElement
 
 class FixedElement(PassThruElement):
@@ -1080,15 +1095,17 @@ class StaticElement(ElementBase):
         self.is_submittable = False
         self.is_returning = False
 
-    def _get_submittedval(self):
+    @property
+    def submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
-    def _set_submittedval(self, value):
-        raise NotImplementedError('element does not allow submitted values')
-    submittedval = property(_get_submittedval, _set_submittedval)
 
-    def _get_value(self):
+    @submittedval.setter
+    def submittedval(self, value):
+        raise NotImplementedError('element does not allow submitted values')
+
+    @property
+    def value(self):
         raise NotImplementedError('element does not have a value')
-    value = property(_get_value)
 
     def __call__(self, **kwargs):
         return self.render(**kwargs)
@@ -1170,15 +1187,17 @@ class LogicalSupportElement(ElementBase):
         self.is_submittable = False
         self.is_returning = False
 
-    def _get_submittedval(self):
+    @property
+    def submittedval(self):
         raise NotImplementedError('element does not allow submitted values')
-    def _set_submittedval(self, value):
-        raise NotImplementedError('element does not allow submitted values')
-    submittedval = property(_get_submittedval, _set_submittedval)
 
-    def _get_value(self):
+    @submittedval.setter
+    def submittedval(self, value):
+        raise NotImplementedError('element does not allow submitted values')
+
+    @property
+    def value(self):
         raise NotImplementedError('element does not have a value')
-    value = property(_get_value)
 
     def __call__(self, **kwargs):
         return self.render(**kwargs)
