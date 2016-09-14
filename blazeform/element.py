@@ -856,9 +856,16 @@ class SelectElement(FormFieldElementBase):
             return self.render_html()
 
     def render_html(self):
+        def option_tag(opt):
+            if isinstance(opt, (list, tuple)):
+                value, label = opt
+            else:
+                value = label = opt
+            return tags.Option(label, six.text_type(value))
+
         displayval = self.displayval if self.displayval or self.displayval == 0 else None
         displayval = [six.text_type(val) for val in tolist(displayval)]
-        options = [tags.Option(label, six.text_type(value)) for value, label in self.options]
+        options = [option_tag(opt) for opt in self.options]
         return tags.select(self.nameattr or self.id, displayval, options, **self.attributes)
 
     def render_static(self):
