@@ -9,7 +9,7 @@ rendir = ''
 def test_all():
     global rendir
     for rname in renderers:
-        rmod = __import__('renderers.%s' % rname, globals(), locals(), ['TestForm'])
+        rmod = __import__('tests.renderers.%s' % rname, globals(), locals(), ['TestForm'])
         if rendir == '':
             rendir = path.dirname(rmod.__file__)
         tf = rmod.TestForm()

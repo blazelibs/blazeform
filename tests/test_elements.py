@@ -823,13 +823,9 @@ class InputElementsTest(unittest.TestCase):
         el.submittedval = 'bob'
         assert not el.is_valid()
 
-        try:
-            import DNS
-            el = Form('f').add_email('field', 'Field', resolve_domain=True)
-            el.submittedval = 'bob@ireallyhopethisdontexistontheweb.com'
-            assert not el.is_valid()
-        except ImportError:
-            raise SkipTest
+        el = Form('f').add_email('field', 'Field', resolve_domain=True)
+        el.submittedval = 'bob@ireallyhopethisdontexistontheweb.com'
+        assert not el.is_valid()
 
     def test_el_password(self):
         html = '<input class="password" id="f-f" name="f" type="password" />'

@@ -1,0 +1,10 @@
+blazeutils
+formencode
+webhelpers2
+
+# testing libs
+codecov
+coverage
+dnspython
+flake8
+nose
