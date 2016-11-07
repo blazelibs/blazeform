@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from collections import defaultdict
 import formencode
 import inspect
 from blazeutils.datastructures import LazyOrderedDict
@@ -66,17 +65,18 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         for el in self.els.values():
             if el.is_submittable:
                 yield el
+
     @property
     def renderable_els(self):
         for el in self.els.values():
             if el.is_renderable and not el.renders_in_group:
                 yield el
+
     @property
     def returning_els(self):
         for el in self.els.values():
             if el.is_returning:
                 yield el
-
 
     def register_elements(self, dic):
         for type, eclass in dic.items():
@@ -120,7 +120,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                     return True
         return False
 
-    def add_validator(self, validator, msg = None):
+    def add_validator(self, validator, msg=None):
         """
             form level validators are only validators, no manipulation of
             values can take place.  The validator should be a formencode
@@ -156,7 +156,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                     for error in errors[el]:
                         getattr(self.elements, el).errors.append(error)
                 else:
-                    raise TypeError('add_field_errors must be passed a dictionary with values of either strings, or lists of strings')
+                    raise TypeError('add_field_errors must be passed a dictionary with '
+                                    'values of either strings, or lists of strings')
                 del errors[el]
         # indicate that some errors were not added
         if errors:
@@ -176,7 +177,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         # whole form validation
         for validator, msg in self._validators:
             try:
-                value = validator.to_python(self)
+                validator.to_python(self)
             except formencode.Invalid as e:
                 valid = False
                 msg = (msg or str(e))
@@ -236,7 +237,8 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
         return retval
     values = property(get_values)
 
-    def add_handler(self, exception_txt=NotGiven, error_msg=NotGiven, exc_type=NotGiven, callback=NotGiven):
+    def add_handler(self, exception_txt=NotGiven, error_msg=NotGiven, exc_type=NotGiven,
+                    callback=NotGiven):
         self._exception_handlers.append((exception_txt, error_msg, exc_type, callback))
 
     def handle_exception(self, exc):
@@ -291,6 +293,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                     field_errors[key] = []
                 field_errors[key].append(msg)
         return form_errors, field_errors
+
 
 class Form(FormBase):
     """

@@ -12,6 +12,7 @@ class BaseTranslator(object):
         # If its None, empty string, False, etc., the file was not uploaded.
         return bool(self.file_name)
 
+
 class WerkzeugTranslator(BaseTranslator):
 
     def __init__(self, value):

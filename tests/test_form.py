@@ -7,10 +7,11 @@ from webhelpers2.html.builder import literal
 from blazeform.form import Form
 from blazeform.element import TextElement
 from blazeform.exceptions import ValueInvalid, ElementInvalid, ProgrammingError
-from blazeform.util import NotGivenIter, NotGiven
+from blazeform.util import NotGiven
 from blazeutils import DumbObject
 
 L = literal
+
 
 class TypeRegistrationTest(unittest.TestCase):
     def setUp(self):
@@ -32,6 +33,7 @@ class TypeRegistrationTest(unittest.TestCase):
             pass
         else:
             self.fail("expected a ValueError")
+
 
 class CommonFormUsageTest(unittest.TestCase):
 
@@ -115,35 +117,44 @@ class CommonFormUsageTest(unittest.TestCase):
         f.add_text('username', 'User Name')
         f.add_file('file')
         filesub = DumbObject(filename='text.txt', content_type='text/plain', content_length=10)
-        f.set_defaults({'username':'test1', 'file':filesub})
-        self.assertEqual('<input class="text" id="login-username" name="username" type="text" value="test1" />', str(f.elements.username.render()))
+        f.set_defaults({'username': 'test1', 'file': filesub})
+        self.assertEqual(
+            '<input class="text" id="login-username" name="username" type="text" value="test1" />',
+            str(f.elements.username.render())
+        )
 
     def test_submit(self):
         f = Form('login')
         f.add_text('username', 'User Name')
-        f.set_defaults({'username':'test1'})
-        post = {'login-submit-flag': 'submitted', 'username':'test2'}
+        f.set_defaults({'username': 'test1'})
+        post = {'login-submit-flag': 'submitted', 'username': 'test2'}
         f.set_submitted(post)
-        self.assertEqual('<input class="text" id="login-username" name="username" type="text" value="test2" />', str(f.elements.username.render()))
+        self.assertEqual(
+            '<input class="text" id="login-username" name="username" type="text" value="test2" />',
+            str(f.elements.username.render())
+        )
         assert f.get_values() == {'username': 'test2', 'login-submit-flag': 'submitted'}
 
     def test_submit_by_name(self):
         f = Form('login')
         f.add_text('username', 'User Name')
         f.add_submit('submit')
-        post = {'login-submit-flag': 'submitted', 'username':'test2', 'submit':'Submit'}
+        post = {'login-submit-flag': 'submitted', 'username': 'test2', 'submit': 'Submit'}
         f.set_submitted(post)
-        assert f.get_values() == {'username': 'test2', 'login-submit-flag': 'submitted', 'submit':'Submit'}
+        assert f.get_values() == {'username': 'test2', 'login-submit-flag': 'submitted',
+                                  'submit': 'Submit'}
 
         f = Form('login')
         f.add_text('username', 'User Name', name="unfield")
         f.add_submit('submit', name="submitbtn")
-        post = {'login-submit-flag': 'submitted', 'unfield':'test2', 'submitbtn':'Submit'}
+        post = {'login-submit-flag': 'submitted', 'unfield': 'test2', 'submitbtn': 'Submit'}
         f.set_submitted(post)
-        self.assertEqual( f.get_values(),  {'unfield': 'test2', 'login-submit-flag': 'submitted', 'submitbtn':'Submit'})
+        self.assertEqual(f.get_values(),  {'unfield': 'test2', 'login-submit-flag': 'submitted',
+                                           'submitbtn': 'Submit'})
 
     def test_blank_checkbox(self):
-        html = L('<input checked="checked" class="checkbox" id="login-disabled" name="disabled" type="checkbox" />')
+        html = L('<input checked="checked" class="checkbox" id="login-disabled" name="disabled" '
+                 'type="checkbox" />')
         f = Form('login')
         el = f.add_checkbox('disabled', 'Disabled', defaultval=True)
         self.assertEqual(el(), html)
@@ -156,9 +167,9 @@ class CommonFormUsageTest(unittest.TestCase):
         html = L('<input class="checkbox" id="login-disabled" name="disabled" type="checkbox" />')
         self.assertEqual(el(), html)
 
-
     def test_blank_checkbox_nameattr(self):
-        html = L('<input checked="checked" class="checkbox" id="login-disabled" name="mycb" type="checkbox" />')
+        html = L('<input checked="checked" class="checkbox" id="login-disabled" name="mycb" '
+                 'type="checkbox" />')
         f = Form('login')
         el = f.add_checkbox('disabled', 'Disabled', defaultval=True, name="mycb")
         self.assertEqual(el(), html)
@@ -234,21 +245,22 @@ class CommonFormUsageTest(unittest.TestCase):
         assert not f.is_valid()
         f.set_submitted({'f-submit-flag': 'submitted'})
         assert not f.is_valid()
-        f.set_submitted({'f-submit-flag': 'submitted', 'f':'foo'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'f': 'foo'})
         assert f.is_valid()
 
     def test_form_validators(self):
         def validator(form):
             if form.elements.myfield.is_valid():
                 if form.elements.myfield.value != 'foo':
-                    raise ValueInvalid('My Field: must be "foo", not "%s"' % form.elements.myfield.value)
+                    raise ValueInvalid('My Field: must be "foo", not "%s"' %
+                                       form.elements.myfield.value)
         f = Form('f')
         f.add_text('myfield', 'My Field')
         f.add_validator(validator)
-        f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'bar'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'myfield': 'bar'})
         assert not f.is_valid()
         self.assertEqual(f._errors[0], 'My Field: must be "foo", not "bar"')
-        f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'foo'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'myfield': 'foo'})
         assert f.is_valid()
         assert len(f._errors) == 0
 
@@ -256,19 +268,19 @@ class CommonFormUsageTest(unittest.TestCase):
         f = Form('f')
         f.add_text('myfield', 'My Field')
         f.add_validator(validator, 'value incorrect')
-        f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'bar'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'myfield': 'bar'})
         assert not f.is_valid()
         self.assertEqual(f._errors[0], 'value incorrect')
 
     def test_validator_fe_class(self):
         form = Form('f')
-        el = form.add_text('units', 'Units')
+        form.add_text('units', 'Units')
         form.add_validator(Int)
         assert isinstance(form._validators[0][0], Int)
 
     def test_validator_fe_instance(self):
         form = Form('f')
-        el = form.add_text('units', 'Units')
+        form.add_text('units', 'Units')
         form.add_validator(Int())
         assert isinstance(form._validators[0][0], Int)
 
@@ -277,14 +289,15 @@ class CommonFormUsageTest(unittest.TestCase):
             referencing .value from that field's validator causes a recursion
         """
         f = Form('f')
+
         def validator(form):
             try:
-                foo = f.elements.myfield.value
+                f.elements.myfield.value
             except ElementInvalid as e:
                 raise ValueInvalid(e)
         el = f.add_text('myfield', 'My Field', maxlength=1)
         el.add_processor(validator)
-        f.set_submitted({'f-submit-flag': 'submitted', 'myfield':'12'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'myfield': '12'})
         try:
             assert not f.is_valid()
         except RuntimeError as e:
@@ -296,12 +309,13 @@ class CommonFormUsageTest(unittest.TestCase):
             that exception propogate
         """
         f = Form('f')
+
         def validator(form):
-            foo = f.elements.f1.value
-        el = f.add_text('f1', 'f1', maxlength=1)
-        el = f.add_text('f2', 'f2')
+            f.elements.f1.value
+        f.add_text('f1', 'f1', maxlength=1)
+        f.add_text('f2', 'f2')
         f.add_validator(validator)
-        f.set_submitted({'f-submit-flag': 'submitted', 'f1':'12'})
+        f.set_submitted({'f-submit-flag': 'submitted', 'f1': '12'})
         assert not f.is_valid()
 
     def test_add_field_errors_string(self):
@@ -343,7 +357,7 @@ class CommonFormUsageTest(unittest.TestCase):
                                 'text2': 'Error',
                                 'not there': 'Error'
                                })
-        assert result == False
+        assert result is False
 
     def test_exception_handling(self):
         # works with an element handler
@@ -407,7 +421,6 @@ class CommonFormUsageTest(unittest.TestCase):
         assert f1.is_submitted()
         assert f1.elements.field.value == 'foo'
 
-
         f2.set_submitted(post)
         assert not f2.is_submitted()
         assert f2.elements.field.value is NotGiven
@@ -429,7 +442,8 @@ class CommonFormUsageTest(unittest.TestCase):
         def validator(form):
             if form.elements.myfield.is_valid():
                 if form.elements.myfield.value != 'foo':
-                    raise ValueInvalid('My Field: must be "foo", not "%s"' % form.elements.myfield.value)
+                    raise ValueInvalid('My Field: must be "foo", not "%s"' %
+                                       form.elements.myfield.value)
 
         f1 = Form('login1')
         f1.add_text('field', 'Field', required=True)

@@ -36,7 +36,7 @@ class Select(BaseValidator):
         'notthere': "the value did not come from the given options",
         'invalid': "the value chosen is invalid",
         }
-    
+
     def _to_python(self, value, state):
         valiter = tolist(value)
         as_empty = [six.text_type(d) for d in tolist(self.as_empty)]
@@ -56,25 +56,26 @@ class Select(BaseValidator):
             del valiter[index-adjust]
             adjust += 1
         return valiter
-        
+
     def validate_other(self, values, state):
         soptions = set([six.text_type(d[0] if isinstance(d, tuple) else d) for d in self.options])
         sinvalid = set([six.text_type(d) for d in tolist(self.invalid)])
         svalues = set([six.text_type(d) for d in tolist(values)])
- 
+
         if len(sinvalid.intersection(svalues)) != 0:
             raise Invalid(self.message('invalid', state), values, state)
 
         if len(soptions.intersection(svalues)) != len(svalues):
             raise Invalid(self.message('notthere', state), values, state)
-        
+
         return
-    
+
+
 class Confirm(BaseValidator):
     """
         Matches one field's value with another
     """
-    
+
     __unpackargs__ = ('tomatch', )
     messages = {
         'notequal': 'does not match field "%(field)s"'
@@ -83,24 +84,26 @@ class Confirm(BaseValidator):
     def is_empty(self, value):
         """need to override, otherwise validate_python never gets called"""
         return False
-    
+
     def validate_python(self, value, state):
         if self.tomatch.is_valid() and self.tomatch.value != value:
-            raise Invalid(self.message('notequal', state, field=str(self.tomatch.label)), value, state)
+            raise Invalid(
+                self.message('notequal', state, field=str(self.tomatch.label)), value, state
+            )
 
-    
+
 class MultiValues(BaseValidator):
     """
         Ensures that single value fields never get a list/tuple and therefore
         always return a non-iterable value.  For INTERNAL use.
     """
-    
+
     multi_check = True
-    __unpackargs__ = ('validator','multi_check')
+    __unpackargs__ = ('validator', 'multi_check')
     messages = {
         'nonmultiple': 'this field does not accept more than one value'
         }
-    
+
     def is_empty(self, value):
         """ need this so our confirm element can function correctly """
         if isinstance(self.validator, FancyValidator):
@@ -108,7 +111,7 @@ class MultiValues(BaseValidator):
         # None and '' are "empty"
         return value is None or value == '' or (
             isinstance(value, (list, tuple, dict)) and not value)
-    
+
     def _to_python(self, value, state):
         field = state
         multiple = getattr(field, 'multiple', False)
@@ -118,7 +121,8 @@ class MultiValues(BaseValidator):
                     raise Invalid(self.message('nonmultiple', state), value, state)
 
         # now apply the validator to the value
-        if not multiple or is_notgiven(value) or getattr(self.validator, 'handles_multiples', False):
+        if not multiple or is_notgiven(value) or \
+                getattr(self.validator, 'handles_multiples', False):
             return self.validator.to_python(value, state)
         else:
             retval = []
@@ -126,6 +130,7 @@ class MultiValues(BaseValidator):
                 retval.append(self.validator.to_python(v, state))
             return retval
     _convert_from_python = _to_python
+
 
 class Wrapper(BaseValidator):
 
@@ -167,12 +172,14 @@ class Wrapper(BaseValidator):
     def wrap(self, func):
         if not func:
             return None
+
         def result(value, state, func=func):
             try:
                 return func(value)
             except ValueInvalid as e:
                 raise Invalid(str(e), {}, value, state)
         return result
+
 
 class Decimal(BaseValidator):
 

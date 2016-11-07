@@ -5,7 +5,6 @@ import cgi
 
 import formencode
 import formencode.validators as fev
-from blazeutils import DumbObject
 from blazeutils.datastructures import LazyOrderedDict
 from webhelpers2.html import HTML, tags, literal
 
@@ -19,25 +18,29 @@ from six.moves import map
 
 form_elements = {}
 
+
 class MaxLengthMixin(object):
+
     def set_length(self, len):
         # if size is none, set it to None and return
-        if len == None:
+        if len is None:
             return
 
         # make sure the size is an integer
-        if type(1) != type(len):
-            raise TypeError('maxlength should have been int but was %s' % type(size))
+        if not isinstance(1, type(len)):
+            raise TypeError('maxlength should have been int but was %s' % type(len))
 
         self.set_attr('maxlength', len)
 
         # set a maxlength validator on this
         self.add_processor(fev.MaxLength(len))
 
+
 class Label(object):
     """
     A class which represents the label associated with an element
     """
+
     def __init__(self, element, value):
         """
         @param element: the parent element of this label
@@ -48,7 +51,7 @@ class Label(object):
             #: the parent element this label is attached to
             self.element = element
         else:
-            raise TypeError('Label expects pyHtmlQuickForm.element.ElementBase' )
+            raise TypeError('Label expects pyHtmlQuickForm.element.ElementBase')
 
         #: the value of the label
         self.value = value
@@ -66,10 +69,12 @@ class Label(object):
             return self.element.id
         return self.value
 
+
 class ElementBase(HtmlAttributeHolder):
     """
     Base class for form elements.
     """
+
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
         # settings to overide the form's settings
         self.settings = kwargs.pop('settings', {})
@@ -116,14 +121,17 @@ class ElementBase(HtmlAttributeHolder):
         self._displayval = self._defaultval
 
     def getidattr(self):
-        return self.form._element_id_formatter % {'form_name':self.form._name, 'element_id':self.id}
+        return self.form._element_id_formatter % {'form_name': self.form._name,
+                                                  'element_id': self.id}
 
-    def add_note(self, note, escape = True):
+    def add_note(self, note, escape=True):
         if escape:
             note = cgi.escape(note)
         self.notes.append(note)
 
+
 class HasValueElement(ElementBase):
+
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
 
@@ -131,14 +139,17 @@ class HasValueElement(ElementBase):
 
     @property
     def value(self):
-        raise NotImplimentedError('this method needs to be overriden')
+        raise NotImplementedError('this method needs to be overriden')
+
 
 class FormFieldElementBase(HasValueElement):
     """
     Base class for form elements that represent form fields (input, select, etc.)
     as opposed to Elements that are only for display (i.e. static, headers).
     """
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         # if this field was not submitted, we can substitute
         self.if_missing = kwargs.pop('if_missing', NotGiven)
         # if the field was submitted, but is an empty value
@@ -166,17 +177,17 @@ class FormFieldElementBase(HasValueElement):
 
         # types
         vtypes = ('boolean', 'bool', 'int', 'integer', 'number', 'num',
-                        'str', 'string', 'unicode', 'uni', 'float', 'decimal')
+                  'str', 'string', 'unicode', 'uni', 'float', 'decimal')
         if vtype is not NotGiven:
             try:
                 vtype = vtype.lower()
                 if vtype not in vtypes:
                     raise ValueError('invalid vtype "%s"' % vtype)
-            except AttributeError as e:
+            except AttributeError:
                 raise TypeError('vtype should have been a string, got %s instead' % type(vtype))
         self.vtype = vtype
 
-    def set_attrs(self, **kwargs ):
+    def set_attrs(self, **kwargs):
         name = kwargs.pop('name', None)
         if not name:
             name = self.nameattr or self.id
@@ -202,7 +213,7 @@ class FormFieldElementBase(HasValueElement):
     @property
     def value(self):
         self._to_python_processing()
-        if self._valid != True:
+        if not self._valid:
             raise ElementInvalid(self.label)
         return self._safeval
 
@@ -222,14 +233,14 @@ class FormFieldElementBase(HasValueElement):
     def required_empty_test(self, value):
         return is_empty(value)
 
-    def _to_python_processing(self):
+    def _to_python_processing(self):  # noqa
         """
         filters, validates, and converts the submitted value based on
         element settings and processors
         """
 
         # if the value has already been processed, don't process it again
-        if self._valid != None:
+        if self._valid is not None:
             return
 
         valid = True
@@ -295,7 +306,8 @@ class FormFieldElementBase(HasValueElement):
             value = None
 
         # process required
-        if self.required and self.required_empty_test(value) and 'field is required' not in self.errors:
+        if self.required and self.required_empty_test(value) and \
+                'field is required' not in self.errors:
             valid = False
             self.add_error('field is required')
 
@@ -349,7 +361,7 @@ class FormFieldElementBase(HasValueElement):
     def add_error(self, error):
         self.errors.append(error)
 
-    def add_processor(self, processor, msg = None):
+    def add_processor(self, processor, msg=None):
         if not formencode.is_validator(processor):
             if callable(processor):
                 processor = Wrapper(to_python=processor)
@@ -363,7 +375,8 @@ class FormFieldElementBase(HasValueElement):
 
         self.processors.append((processor, msg))
 
-    def add_handler(self, exception_txt=NotGiven, error_msg=NotGiven, exc_type=NotGiven, callback=NotGiven):
+    def add_handler(self, exception_txt=NotGiven, error_msg=NotGiven, exc_type=NotGiven,
+                    callback=NotGiven):
         self.exception_handlers.append((exception_txt, error_msg, exc_type, callback))
 
     def handle_exception(self, exc):
@@ -392,6 +405,7 @@ class FormFieldElementBase(HasValueElement):
                     return can_handle(error_msg)
         return False
 
+
 class InputElementBase(FormFieldElementBase):
     """
     Base class for input form elements.
@@ -400,7 +414,9 @@ class InputElementBase(FormFieldElementBase):
     this common base class. You don't need to instantiate it directly,
     use one of the child classes.
     """
-    def __init__(self, etype, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, etype, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven,
+                 strip=True, **kwargs):
         FormFieldElementBase.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         # use to override using the id as the default "name" attribute
         self.add_attr('class', etype)
@@ -441,7 +457,7 @@ class InputElementBase(FormFieldElementBase):
 
     def render_static(self):
         if self.etype in ('button', 'file', 'hidden', 'image', 'submit',
-            'reset', 'password'):
+                          'reset', 'password'):
             return ''
         if self.displayval == '':
             todisplay = literal('&nbsp;')
@@ -449,15 +465,23 @@ class InputElementBase(FormFieldElementBase):
             todisplay = self.displayval
         return HTML.span(todisplay, **self._static_attributes())
 
+
 class ButtonElement(InputElementBase):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
-        InputElementBase.__init__(self, 'button', form, eid, label, vtype, defaultval, strip, **kwargs)
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
+        InputElementBase.__init__(self, 'button', form, eid, label, vtype, defaultval, strip,
+                                  **kwargs)
 form_elements['button'] = ButtonElement
 
+
 class CheckboxElement(InputElementBase):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         checked = kwargs.pop('checked', NotGiven)
-        InputElementBase.__init__(self, 'checkbox', form, eid, label, vtype, defaultval, strip, **kwargs)
+        InputElementBase.__init__(self, 'checkbox', form, eid, label, vtype, defaultval, strip,
+                                  **kwargs)
 
         # some sane defaults for a checkbox IMO
         if self.vtype is NotGiven:
@@ -517,9 +541,13 @@ class CheckboxElement(InputElementBase):
         return HTML.span('yes' if self.displayval else 'no', **self._static_attributes())
 form_elements['checkbox'] = CheckboxElement
 
+
 class FileElement(InputElementBase):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
-        InputElementBase.__init__(self, 'file', form, eid, label, vtype, defaultval, strip, **kwargs)
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
+        InputElementBase.__init__(self, 'file', form, eid, label, vtype, defaultval, strip,
+                                  **kwargs)
 
         # validation related
         self._allowed_exts = []
@@ -574,8 +602,8 @@ class FileElement(InputElementBase):
         self._denied_types.extend(args)
 
     def _to_python_processing(self):
-         # if the value has already been processed, don't process it again
-        if self._valid != None:
+        # if the value has already been processed, don't process it again
+        if self._valid is not None:
             return
 
         valid = True
@@ -585,8 +613,8 @@ class FileElement(InputElementBase):
             value = BaseTranslator(None, None, 0)
 
         if value.is_uploaded:
-            _ , ext = path.splitext(value.file_name)
-            ext  = ext.lower()
+            _, ext = path.splitext(value.file_name)
+            ext = ext.lower()
             if not ext and (self._allowed_exts or self._denied_exts):
                 valid = False
                 self.add_error('extension requirement exists, but submitted file had no extension')
@@ -609,12 +637,14 @@ class FileElement(InputElementBase):
                     self.add_error('content type "%s" not permitted' % value.content_type)
             elif value.content_type is not None and (self._allowed_types or self._denied_types):
                 valid = False
-                self.add_error('content-type requirements exist, but submitted file had no content-type')
+                self.add_error('content-type requirements exist, but submitted file had '
+                               'no content-type')
 
             if self._maxsize:
                 if not value.content_length:
                     valid = False
-                    self.add_error('maximum size requirement exists, but submitted file had no content length')
+                    self.add_error('maximum size requirement exists, but submitted file had '
+                                   'no content length')
                 elif value.content_length > self._maxsize:
                     valid = False
                     self.add_error('file too big (%s), max size %s' %
@@ -627,32 +657,47 @@ class FileElement(InputElementBase):
         if valid:
             self._safeval = self.submittedval
 
-    def add_processor(self, processor, msg = None):
+    def add_processor(self, processor, msg=None):
         """ NotImplementedError: FileElement does not support add_processor() """
         raise NotImplementedError('FileElement does not support add_processor()')
 form_elements['file'] = FileElement
 
+
 class HiddenElement(InputElementBase):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
-        InputElementBase.__init__(self, 'hidden', form, eid, label, vtype, defaultval, strip, **kwargs)
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
+        InputElementBase.__init__(self, 'hidden', form, eid, label, vtype, defaultval, strip,
+                                  **kwargs)
 form_elements['hidden'] = HiddenElement
 
+
 class ImageElement(InputElementBase):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
-        InputElementBase.__init__(self, 'image', form, eid, label, vtype, defaultval, strip, **kwargs)
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
+        InputElementBase.__init__(self, 'image', form, eid, label, vtype, defaultval, strip,
+                                  **kwargs)
 form_elements['image'] = ImageElement
 
+
 class ResetElement(InputElementBase):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
-        InputElementBase.__init__(self, 'reset', form, eid, label, vtype, defaultval, strip, **kwargs)
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
+        InputElementBase.__init__(self, 'reset', form, eid, label, vtype, defaultval, strip,
+                                  **kwargs)
         if self.defaultval is NotGiven:
             self.defaultval = 'Reset'
 form_elements['reset'] = ResetElement
 
+
 class SubmitElement(InputElementBase):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven,
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven,
                  defaultval=NotGiven, strip=True, fixed=True, **kwargs):
-        InputElementBase.__init__(self, 'submit', form, eid, label, vtype, defaultval, strip, **kwargs)
+        InputElementBase.__init__(self, 'submit', form, eid, label, vtype, defaultval, strip,
+                                  **kwargs)
         if self.defaultval is NotGiven:
             self.defaultval = 'Submit'
         self.fixed = fixed
@@ -664,9 +709,13 @@ class SubmitElement(InputElementBase):
         return self.submittedval
 form_elements['submit'] = SubmitElement
 
+
 class CancelElement(SubmitElement):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, fixed=True, **kwargs):
-        InputElementBase.__init__(self, 'submit', form, eid, label, vtype, defaultval, strip, **kwargs)
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 fixed=True, **kwargs):
+        InputElementBase.__init__(self, 'submit', form, eid, label, vtype, defaultval, strip,
+                                  **kwargs)
         if self.defaultval is NotGiven:
             self.defaultval = 'Cancel'
         self.fixed = fixed
@@ -678,20 +727,27 @@ class CancelElement(SubmitElement):
         return self.submittedval
 form_elements['cancel'] = CancelElement
 
+
 class TextElement(InputElementBase, MaxLengthMixin):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         maxlength = kwargs.pop('maxlength', None)
-        InputElementBase.__init__(self, 'text', form, eid, label, vtype, defaultval, strip, **kwargs)
+        InputElementBase.__init__(self, 'text', form, eid, label, vtype, defaultval, strip,
+                                  **kwargs)
 
         self.set_length(maxlength)
 form_elements['text'] = TextElement
 
+
 class ConfirmElement(TextElement):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         match = kwargs.pop('match', None)
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         if not match:
-              raise ProgrammingError('match argument is required for Confirm elements')
+            raise ProgrammingError('match argument is required for Confirm elements')
         elif isinstance(match, six.string_types):
             try:
                 self.mel = self.form.els[match]
@@ -722,26 +778,35 @@ class ConfirmElement(TextElement):
         return ''
 form_elements['confirm'] = ConfirmElement
 
+
 class DateElement(TextElement):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         vargs = multi_pop(kwargs, 'accept_day', 'month_style', 'datetime_module')
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         self.add_processor(fev.DateConverter(**vargs))
 form_elements['date'] = DateElement
 
+
 class EmailElement(TextElement):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         vargs = multi_pop(kwargs, 'resolve_domain')
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         self.add_processor(fev.Email(**vargs))
 form_elements['email'] = EmailElement
+
 
 class PasswordElement(TextElement):
     """
     Techincally, password is on the same level as text as both are types
     of input elements, but I want to inherit the text maxlength validator
     """
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         self.default_ok = kwargs.pop('default_ok', False)
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         # override the type
@@ -756,16 +821,22 @@ class PasswordElement(TextElement):
         return None
 form_elements['password'] = PasswordElement
 
+
 class TimeElement(TextElement):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         vargs = multi_pop(kwargs, 'use_ampm', 'prefer_ampm', 'use_seconds',
                           'use_datetime', 'datetime_module')
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         self.add_processor(fev.TimeConverter(**vargs))
 form_elements['time'] = TimeElement
 
+
 class URLElement(TextElement):
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         vargs = multi_pop(kwargs, 'check_exists', 'add_http', 'require_tld')
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         self.add_processor(fev.URL(**vargs))
@@ -782,19 +853,20 @@ class URLElement(TextElement):
 
 form_elements['url'] = URLElement
 
+
 class SelectElement(FormFieldElementBase):
     """
     Class to dynamically create an HTML select.  Includes methods for working
     with the select's options.
     """
 
-    def __init__(self, form, eid, options, label=NotGiven, vtype = NotGiven,
+    def __init__(self, form, eid, options, label=NotGiven, vtype=NotGiven,
                  defaultval=NotGiven, strip=True, choose='Choose:',
-                 auto_validate=True, invalid = [], error_msg = None,
-                 required = False, **kwargs):
+                 auto_validate=True, invalid=[], error_msg=None,
+                 required=False, **kwargs):
         self.multiple = bool(kwargs.pop('multiple', False))
         FormFieldElementBase.__init__(self, form, eid, label,
-                vtype, defaultval, strip, required=required, **kwargs)
+                                      vtype, defaultval, strip, required=required, **kwargs)
 
         self.options = options
         self.choose = None
@@ -802,7 +874,7 @@ class SelectElement(FormFieldElementBase):
             if isinstance(choose, list):
                 self.choose = choose
             else:
-                self.choose = [(-2, choose), (-1, '-'*25)]
+                self.choose = [(-2, choose), (-1, '-' * 25)]
                 if required:
                     invalid = [-2, -1] + tolist(invalid)
 
@@ -830,7 +902,7 @@ class SelectElement(FormFieldElementBase):
         if self.multiple and not is_notgiven(self._safeval):
             self._safeval = tolist(self._safeval)
 
-    def set_attrs(self, **kwargs ):
+    def set_attrs(self, **kwargs):
         """ no name attribute b/c select tag takes it directly """
         HasValueElement.set_attrs(self, **kwargs)
 
@@ -873,6 +945,7 @@ class SelectElement(FormFieldElementBase):
             todisplay = literal('&nbsp;')
         else:
             values = []
+
             def mapf(option):
                 if isinstance(option, tuple):
                     return six.text_type(option[0]), option[1]
@@ -891,24 +964,29 @@ class SelectElement(FormFieldElementBase):
 
 form_elements['select'] = SelectElement
 
+
 class MultiSelectElement(SelectElement):
-    def __init__(self, form, eid, options, label=NotGiven, vtype = NotGiven,
+
+    def __init__(self, form, eid, options, label=NotGiven, vtype=NotGiven,
                  defaultval=NotGiven, strip=True, choose='Choose:',
-                 auto_validate=True, invalid = [], error_msg = None,
-                 required = False, **kwargs):
+                 auto_validate=True, invalid=[], error_msg=None,
+                 required=False, **kwargs):
         kwargs['multiple'] = True
         SelectElement.__init__(self, form, eid, options, label, vtype,
-                 defaultval, strip, choose,
-                 auto_validate, invalid, error_msg,
-                 required, **kwargs)
+                               defaultval, strip, choose,
+                               auto_validate, invalid, error_msg,
+                               required, **kwargs)
         self.submittedval = NotGivenIter
 form_elements['mselect'] = MultiSelectElement
+
 
 class TextAreaElement(FormFieldElementBase, MaxLengthMixin):
     """
     HTML class for a textarea type field
     """
-    def __init__(self, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, vtype=NotGiven, defaultval=NotGiven, strip=True,
+                 **kwargs):
         # set default values
         kwargs['rows'] = kwargs.pop('rows', 7)
         kwargs['cols'] = kwargs.pop('cols', 40)
@@ -920,7 +998,7 @@ class TextAreaElement(FormFieldElementBase, MaxLengthMixin):
     def __call__(self, **kwargs):
         return self.render(**kwargs)
 
-    def set_attrs(self, **kwargs ):
+    def set_attrs(self, **kwargs):
         """ no name attribute b/c textarea tag takes it directly """
         HasValueElement.set_attrs(self, **kwargs)
 
@@ -961,11 +1039,14 @@ class TextAreaElement(FormFieldElementBase, MaxLengthMixin):
 
 form_elements['textarea'] = TextAreaElement
 
+
 class LogicalGroupElement(FormFieldElementBase):
     """
         Used to support MultiCheckboxElement and RadioElement
     """
-    def __init__(self, is_multiple, form, eid, label=NotGiven, vtype = NotGiven, defaultval=NotGiven, strip=True, **kwargs):
+
+    def __init__(self, is_multiple, form, eid, label=NotGiven, vtype=NotGiven,
+                 defaultval=NotGiven, strip=True, **kwargs):
         self.auto_validate = kwargs.pop('auto_validate', True)
         self.error_msg = kwargs.pop('error_msg', None)
         self.invalid = kwargs.pop('invalid', [])
@@ -1024,7 +1105,8 @@ class LogicalGroupElement(FormFieldElementBase):
                     self.add_processor(Select(options, self.invalid), self.error_msg)
                 else:
                     # NotGiven is a valid option as long as a value isn't required
-                    self.add_processor(Select(options + [(NotGivenIter, 0)], self.invalid), self.error_msg)
+                    self.add_processor(Select(options + [(NotGivenIter, 0)], self.invalid),
+                                       self.error_msg)
         FormFieldElementBase._to_python_processing(self)
 
     def _set_members(self, values):
@@ -1041,8 +1123,11 @@ class LogicalGroupElement(FormFieldElementBase):
 
     def add_member(self, el):
         if el.displayval in self.members:
-            raise ValueError('a member of this group already exists with value "%s"' % el.displayval)
+            raise ValueError(
+                'a member of this group already exists with value "%s"' % el.displayval
+            )
         self.members[el.displayval] = el
+
 
 class PassThruElement(HasValueElement):
     """
@@ -1051,6 +1136,7 @@ class PassThruElement(HasValueElement):
     for this field to be set by submitted values, so .value is safe as long
     as your original was correct.
     """
+
     def __init__(self, form, eid, defaultval=NotGiven, label=NotGiven, **kwargs):
         HasValueElement.__init__(self, form, eid, label, defaultval, **kwargs)
 
@@ -1071,10 +1157,12 @@ class PassThruElement(HasValueElement):
         return self.defaultval
 form_elements['passthru'] = PassThruElement
 
+
 class FixedElement(PassThruElement):
     """
     Like PassThruElement, but renders like a StaticElement
     """
+
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
         PassThruElement.__init__(self, form, eid, defaultval, label, **kwargs)
 
@@ -1090,11 +1178,13 @@ class FixedElement(PassThruElement):
         return HTML.tag('div', self.value, **self.attributes)
 form_elements['fixed'] = FixedElement
 
+
 class StaticElement(ElementBase):
     """
     This element renders, but does not take submitted values or return values.
     It is for display/rendering purposes only.
     """
+
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, **kwargs):
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
 
@@ -1123,6 +1213,7 @@ class StaticElement(ElementBase):
         return HTML.tag('span', displayval, **self.attributes)
 form_elements['static'] = StaticElement
 
+
 class GroupElement(StaticElement, ElementRegistrar):
     """
     HTML class for a form element group
@@ -1131,6 +1222,7 @@ class GroupElement(StaticElement, ElementRegistrar):
     "Submit" and "Reset" buttons in one row or two text fields for first and
     last name in one row).
     """
+
     def __init__(self, form, eid, label=NotGiven, **kwargs):
         StaticElement.__init__(self, form, eid, label, NotGiven, **kwargs)
         ElementRegistrar.__init__(self, form, True)
@@ -1145,6 +1237,7 @@ class GroupElement(StaticElement, ElementRegistrar):
 
 form_elements['elgroup'] = GroupElement
 
+
 class HeaderElement(StaticElement):
     """
     A rendering element used for adding headers to a form.  It can also be used,
@@ -1153,6 +1246,7 @@ class HeaderElement(StaticElement):
     Headers will normally be rendered differently than other static elements,
     hence they have their own class.
     """
+
     def __init__(self, form, eid, defaultval=NotGiven, level='h3', **kwargs):
         StaticElement.__init__(self, form, eid, label=NotGiven, defaultval=defaultval, **kwargs)
         self.level = level
@@ -1163,6 +1257,7 @@ class HeaderElement(StaticElement):
         return HTML.tag(self.level, displayval, **self.attributes)
 form_elements['header'] = HeaderElement
 
+
 class LogicalSupportElement(ElementBase):
     """
         A checkbox for "group" use.  `Defaultval` is what goes in the "value"
@@ -1171,9 +1266,12 @@ class LogicalSupportElement(ElementBase):
 
         These elements are used to support LogicalGroupElement
     """
+
     def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, **kwargs):
         if 'required' in kwargs:
-            raise ProgrammingError('Required is not allowed on this element. Set it for the logical group.')
+            raise ProgrammingError(
+                'Required is not allowed on this element. Set it for the logical group.'
+            )
 
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
         if isinstance(group, six.string_types):
@@ -1238,7 +1336,7 @@ class LogicalSupportElement(ElementBase):
             except KeyError:
                 pass
 
-            #Add static class to the HTML output of static elements, if it is not already there
+            # Add static class to the HTML output of static elements, if it is not already there
             if 'class' in attrs:
                 if 'static' not in attrs['class']:
                     attrs['class'] += ' static'
@@ -1257,8 +1355,11 @@ class LogicalSupportElement(ElementBase):
             todisplay = literal('&nbsp;')
         return HTML.span(todisplay, **self._static_attributes())
 
+
 class MultiCheckboxElement(LogicalSupportElement):
-    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, checked=False, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven,
+                 checked=False, **kwargs):
         chosen = bool(checked)
         self.is_multiple = True
         LogicalSupportElement.__init__(self, form, eid, label, defaultval, group, **kwargs)
@@ -1268,8 +1369,11 @@ class MultiCheckboxElement(LogicalSupportElement):
 
 form_elements['mcheckbox'] = MultiCheckboxElement
 
+
 class RadioElement(LogicalSupportElement):
-    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven, selected=False, **kwargs):
+
+    def __init__(self, form, eid, label=NotGiven, defaultval=NotGiven, group=NotGiven,
+                 selected=False, **kwargs):
         chosen = bool(selected)
         self.is_multiple = False
         LogicalSupportElement.__init__(self, form, eid, label, defaultval, group, **kwargs)
