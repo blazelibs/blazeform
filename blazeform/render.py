@@ -1,9 +1,10 @@
-from webhelpers.html import tags, HTML
-from webhelpers.html.builder import make_tag
+from __future__ import absolute_import
+from webhelpers2.html import tags, HTML
 
 from blazeform import element
 from blazeform.form import FormBase
 from blazeform.util import StringIndentHelper, NotGiven, HtmlAttributeHolder
+
 
 class FormRenderer(object):
     def __init__(self, element):
@@ -52,14 +53,18 @@ class FormRenderer(object):
                 return 'form'
             if self.settings['req_note_level'] == 'section':
                 return 'section'
-        except KeyError, e:
+        except KeyError as e:
             if 'req_note_level' not in str(e):
                 raise
         return None
 
     def render_required_note(self, above_header):
         if self.required_note_level and not self.req_note_written:
-            req_note = self.settings.get('req_note', '<div class="required_note%(above_header)s"><span class="star">*</span> = required field</div>')
+            req_note = self.settings.get(
+                'req_note',
+                '<div class="required_note%(above_header)s"><span class="star">*</span> '
+                '= required field</div>'
+            )
             if above_header:
                 above_header_class = '_above_header'
             else:
@@ -76,6 +81,7 @@ class FormRenderer(object):
             self.output.dec('</div>')
         self.output.dec('</form>')
 
+
 class StaticFormRenderer(FormRenderer):
     no_render = (
         element.ButtonElement,
@@ -88,6 +94,7 @@ class StaticFormRenderer(FormRenderer):
         element.PasswordElement,
         element.ConfirmElement
     )
+
     def begin(self):
         attrs = HtmlAttributeHolder(**self.element.attributes)
         attrs.add_attr('class', 'static-form')
@@ -107,6 +114,7 @@ class StaticFormRenderer(FormRenderer):
         if self.header_section_open:
             self.output.dec('</div>')
         self.output.dec('</div>')
+
 
 class Renderer(object):
     def __init__(self, element, output, is_first, is_alt, wrap_type, settings):
@@ -143,6 +151,7 @@ class Renderer(object):
     def setting(self, key):
         return self.element.settings.get(key, self.settings.get(key, ''))
 
+
 class HeaderRenderer(Renderer):
     def render(self):
         self.begin()
@@ -150,11 +159,13 @@ class HeaderRenderer(Renderer):
             self.output(self.element.render())
         self.end()
 
+
 class FieldRenderer(Renderer):
     def __init__(self, element, output, is_first, is_alt, wrap_type, settings):
         Renderer.__init__(self, element, output, is_first, is_alt, wrap_type, settings)
         self.uses_first = True
         self.uses_alt = True
+
     def begin(self):
         self.begin_row()
         self.label_class()
@@ -162,11 +173,14 @@ class FieldRenderer(Renderer):
             self.label()
         self.field_wrapper()
         self.required()
+
     def begin_row(self):
-        self.output.inc('<div id="%s-%s" class="%s%s%s">' %
-                (self.element.getidattr(), self.wrap_type, self.wrap_type,
-                 self.alt_class(), self.first_class())
-            )
+        self.output.inc(
+            '<div id="%s-%s" class="%s%s%s">' %
+            (self.element.getidattr(), self.wrap_type, self.wrap_type,
+             self.alt_class(), self.first_class())
+        )
+
     def label_class(self):
         classes = []
         if not self.element.label.value:
@@ -186,10 +200,12 @@ class FieldRenderer(Renderer):
 
     def field_wrapper(self):
         self.output.inc('<div id="%s-fw" class="field-wrapper%s">' %
-                            (self.element.getidattr(), self.label_class))
+                        (self.element.getidattr(), self.label_class))
+
     def required(self):
         if self.element.required and not self.element.form._static:
             self.output('<span class="required-star">*</span>')
+
     def notes(self):
         if len(self.element.notes) == 1:
             self.output('<p class="note">%s%s</p>' % (
@@ -204,6 +220,7 @@ class FieldRenderer(Renderer):
                     msg
                 ))
             self.output.dec('</ul>')
+
     def errors(self):
         if len(self.element.errors) == 1:
             self.output('<p class="error">%s%s</p>' % (
@@ -214,10 +231,11 @@ class FieldRenderer(Renderer):
             self.output.inc('<ul class="errors">')
             for msg in self.element.errors:
                 self.output('<li>%s%s</li>' % (
-                self.setting('error_prefix'),
+                    self.setting('error_prefix'),
                     msg
                 ))
             self.output.dec('</ul>')
+
     def end(self):
         self.notes()
         self.errors()
@@ -231,16 +249,20 @@ class FieldRenderer(Renderer):
 
 class InputRenderer(FieldRenderer):
     def begin_row(self):
-        self.output.inc('<div id="%s-%s" class="%s %s%s%s">' %
-                (self.element.getidattr(), self.wrap_type, self.element.etype,
-                 self.wrap_type, self.alt_class(), self.first_class())
-            )
+        self.output.inc(
+            '<div id="%s-%s" class="%s %s%s%s">' %
+            (self.element.getidattr(), self.wrap_type, self.element.etype,
+             self.wrap_type, self.alt_class(), self.first_class())
+        )
+
 
 class StaticRenderer(FieldRenderer):
     def required(self):
         pass
+
     def errors(self):
         pass
+
 
 class GroupRenderer(StaticRenderer):
 
@@ -248,13 +270,15 @@ class GroupRenderer(StaticRenderer):
         self.element.set_attr('id', '%s-%s' % (self.element.getidattr(), self.wrap_type))
         class_str = '%s%s%s' % (self.wrap_type, self.alt_class(), self.first_class())
         self.element.add_attr('class', class_str)
-        # make_tag should not close the div
+        # HTML.tag should not close the div
         attrs = self.element.get_attrs()
         attrs['_closed'] = False
-        self.output.inc(make_tag('div', **attrs))
+        self.output.inc(HTML.tag('div', **attrs))
+
     def field_wrapper(self):
         self.output.inc('<div id="%s-fw" class="group-wrapper%s">' %
-                            (self.element.getidattr(), self.label_class))
+                        (self.element.getidattr(), self.label_class))
+
     def render(self):
         self.begin()
         self.render_children()
@@ -272,6 +296,7 @@ class GroupRenderer(StaticRenderer):
                 on_alt = not on_alt
             if r.uses_first:
                 on_first = False
+
 
 def get_renderer(el):
     plain = (

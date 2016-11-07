@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 import sys
 try:
@@ -20,16 +21,16 @@ setup(
     description = "A library for generating and validating HTML forms",
     long_description=README + '\n\n' + CHANGELOG,
     author = "Randy Syring",
-    author_email = "rsyring@gmail.com",
+    author_email = "randy.syring@level12.io",
     url='http://pypi.python.org/pypi/BlazeForm',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2.5',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Internet :: WWW/HTTP'
       ],
     license='BSD',
@@ -37,10 +38,7 @@ setup(
     install_requires = [
         "FormEncode>=1.2.2",
         "BlazeUtils>=0.3.0",
-        "WebHelpers>=1.0"
+        "WebHelpers2"
     ],
-    test_suite='nose.collector',
-    # tests will issue warning if run without pydns, but only one test uses it
-    tests_require=['nose', 'pydns'],
     zip_safe=False
 )

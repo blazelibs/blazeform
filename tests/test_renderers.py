@@ -1,25 +1,28 @@
+from __future__ import absolute_import
 from os import path
+from six.moves import range
 
 renderers = ('default', 'withaction', 'all_els', 'static', 'noteprefix',
              'reqnote_formtop', 'reqnote_formtop_header', 'reqnote_section')
 rendir = ''
 
+
 def test_all():
     global rendir
     for rname in renderers:
-        rmod = __import__('renderers.%s' % rname, globals(), locals(), ['TestForm'])
+        rmod = __import__('tests.renderers.%s' % rname, globals(), locals(), ['TestForm'])
         if rendir == '':
             rendir = path.dirname(rmod.__file__)
         tf = rmod.TestForm()
         try:
             tf.set_submitted(rmod.submitted_vals)
             tf.is_valid()
-        except AttributeError, e:
+        except AttributeError as e:
             if 'submitted_vals' not in str(e):
                 raise
         try:
             form_html = tf.render(**rmod.render_opts)
-        except AttributeError, e:
+        except AttributeError as e:
             if 'render_opts' not in str(e):
                 raise
             form_html = tf.render()
@@ -29,23 +32,24 @@ def test_all():
             file_html_lines = htmlfile.read().strip().splitlines()
         finally:
             htmlfile.close()
-        
+
         try:
             for lnum in range(0, len(form_html_lines)):
                 try:
                     formstr = form_html_lines[lnum]
                 except IndexError:
-                    if lnum <> 0:
+                    if lnum != 0:
                         raise
                     formstr = '**form output empty**'
                 try:
                     filestr = file_html_lines[lnum]
                 except IndexError:
-                    if lnum <> 0:
+                    if lnum != 0:
                         raise
                     filestr = '**file empty**'
-                #TODO: Restore to normal, changed for testing.
-                assert formstr == filestr, 'line %d not equal in %s\n  form: %s\n  file: %s' % (lnum+1, '%s.html' % rname, formstr, filestr)
+                # TODO: Restore to normal, changed for testing.
+                assert formstr == filestr, 'line %d not equal in %s\n  form: %s\n  file: %s' % \
+                    (lnum+1, '%s.html' % rname, formstr, filestr)
         except AssertionError:
             # write the form output next to the test file for an easy diff
             formfile = open(path.join(rendir, '%s.form.html' % rname), 'w')
@@ -54,5 +58,3 @@ def test_all():
             finally:
                 formfile.close()
             raise
-if __name__ == "__main__":
-    test_all()

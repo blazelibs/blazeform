@@ -1,4 +1,6 @@
-from webhelpers.html import literal
+from __future__ import absolute_import
+import six
+
 
 class StringIndentHelper(object):
 
@@ -19,10 +21,10 @@ class StringIndentHelper(object):
         self.render(value)
 
     def render(self, value, **kwargs):
-        self.output.append('%s%s' % (self.indent(**kwargs), value) )
+        self.output.append('%s%s' % (self.indent(**kwargs), value))
 
-    def indent(self, level = None):
-        if level == None:
+    def indent(self, level=None):
+        if level is None:
             return self.indent_with * self.level
         else:
             return self.indent_with * self.level
@@ -31,6 +33,7 @@ class StringIndentHelper(object):
         retval = '\n'.join(self.output)
         self.output = []
         return retval
+
 
 def is_empty(value):
     # empty values:
@@ -45,12 +48,14 @@ def is_empty(value):
         pass
     return False
 
+
 def multi_pop(d, *args):
     retval = {}
     for key in args:
-        if d.has_key(key):
+        if key in d:
             retval[key] = d.pop(key)
     return retval
+
 
 class NotGivenBase(object):
     """ an empty sentinel object """
@@ -64,6 +69,9 @@ class NotGivenBase(object):
     def __nonzero__(self):
         return False
 
+    def __bool__(self):
+        return False
+
     def __ne__(self, other):
         if other == '' or other == u'' or other is None or isinstance(other, NotGivenBase):
             return False
@@ -73,7 +81,11 @@ class NotGivenBase(object):
         if other == '' or other == u'' or other is None or isinstance(other, NotGivenBase):
             return True
         return False
+
+    def __hash__(self):
+        return hash(self.__class__)
 NotGiven = NotGivenBase()
+
 
 class NotGivenIterBase(NotGivenBase):
     def __str__(self):
@@ -102,9 +114,13 @@ class NotGivenIterBase(NotGivenBase):
     def next(self):
         raise StopIteration
 
+    def __next__(self):
+        raise StopIteration
+
     def __len__(self):
         return 0
 NotGivenIter = NotGivenIterBase()
+
 
 def tolist(x, default=[]):
     if x is None:
@@ -115,8 +131,9 @@ def tolist(x, default=[]):
         return list(x)
     return [x]
 
+
 def is_iterable(possible_iterable):
-    if isinstance(possible_iterable, basestring):
+    if isinstance(possible_iterable, six.string_types):
         return False
     try:
         iter(possible_iterable)
@@ -124,14 +141,17 @@ def is_iterable(possible_iterable):
     except TypeError:
         return False
 
+
 def is_notgiven(object):
     return isinstance(object, NotGivenBase)
+
 
 def is_given(object):
     return not isinstance(object, NotGivenBase)
 
+
 class ElementRegistrar(object):
-    def __init__(self, formref, is_group = False):
+    def __init__(self, formref, is_group=False):
         self._formref = formref
         self._is_group = is_group
 
@@ -143,10 +163,12 @@ class ElementRegistrar(object):
         if name.startswith('add_'):
             type = name.replace('add_', '')
             func = self._create_element
-        elif self._formref.els.has_key(name):
+        elif name in self._formref.els:
             return self._formref.els[name]
         else:
-            raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
+            raise AttributeError(
+                "'%s' object has no attribute '%s'" % (self.__class__.__name__, name)
+            )
 
         def wrapper(eid, *args, **kwargs):
             return func(type, eid, *args, **kwargs)
@@ -155,7 +177,7 @@ class ElementRegistrar(object):
     def _create_element(self, type, eid, *args, **kwargs):
         if type == 'file':
             self._formref.set_attr('enctype', 'multipart/form-data')
-        if self._formref.els.has_key(eid):
+        if eid in self._formref.els:
             raise ValueError('element id "%s" already used' % eid)
 
         try:
@@ -170,13 +192,14 @@ class ElementRegistrar(object):
         self._formref.els[eid] = el
         return el
 
+
 class HtmlAttributeHolder(object):
     def __init__(self, **kwargs):
         self._cleankeys(kwargs)
         #: a dictionary that represents html attributes
         self.attributes = kwargs
 
-    def set_attrs(self, **kwargs ):
+    def set_attrs(self, **kwargs):
         self._cleankeys(kwargs)
         self.attributes.update(kwargs)
 
@@ -192,7 +215,7 @@ class HtmlAttributeHolder(object):
         """
         if key.endswith('_'):
             key = key[:-1]
-        if self.attributes.has_key(key):
+        if key in self.attributes:
             self.attributes[key] = self.attributes[key] + ' ' + value
         else:
             self.attributes[key] = value
@@ -205,7 +228,7 @@ class HtmlAttributeHolder(object):
     def get_attrs(self):
         return self.attributes
 
-    def get_attr(self, key, defaultval = NotGiven):
+    def get_attr(self, key, defaultval=NotGiven):
         try:
             if key.endswith('_'):
                 key = key[:-1]
