@@ -1,3 +1,15 @@
+BlazeForm
+#########
+
+.. image:: https://ci.appveyor.com/api/projects/status/rj4y4vppa4m7l2ar?svg=true
+    :target: https://ci.appveyor.com/project/level12/blazeform
+
+.. image:: https://circleci.com/gh/blazelibs/blazeform.svg?style=shield
+    :target: https://circleci.com/gh/blazelibs/blazeform
+
+.. image:: https://codecov.io/gh/blazelibs/blazeform/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/blazelibs/blazeform
+
 Introduction
 ---------------
 
@@ -82,5 +94,5 @@ Current Status
 
 The code stays pretty stable, but the API may change, especially the rending.
 
-The `blazeform tip <http://bitbucket.org/rsyring/blazeform/get/tip.zip#egg=blazeform-dev>`_
+The `blazeform tip <https://github.com/blazelibs/blazeform/archive/master.zip#egg=blazeform-dev>`_
 is installable via `easy_install` with ``easy_install blazeform==dev``
