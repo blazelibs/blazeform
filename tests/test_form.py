@@ -465,6 +465,7 @@ class CommonFormUsageTest(unittest.TestCase):
         form_errors, field_errors = f1.all_errors(id_as_key=True)
         self.assertEqual(field_errors, {'field': ['field is required']})
 
+
 # run the tests if module called directly
 if __name__ == "__main__":
     unittest.main()

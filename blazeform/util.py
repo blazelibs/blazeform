@@ -84,6 +84,8 @@ class NotGivenBase(object):
 
     def __hash__(self):
         return hash(self.__class__)
+
+
 NotGiven = NotGivenBase()
 
 
@@ -119,6 +121,8 @@ class NotGivenIterBase(NotGivenBase):
 
     def __len__(self):
         return 0
+
+
 NotGivenIter = NotGivenIterBase()
 
 

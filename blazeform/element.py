@@ -472,6 +472,8 @@ class ButtonElement(InputElementBase):
                  **kwargs):
         InputElementBase.__init__(self, 'button', form, eid, label, vtype, defaultval, strip,
                                   **kwargs)
+
+
 form_elements['button'] = ButtonElement
 
 
@@ -539,6 +541,8 @@ class CheckboxElement(InputElementBase):
 
     def render_static(self):
         return HTML.span('yes' if self.displayval else 'no', **self._static_attributes())
+
+
 form_elements['checkbox'] = CheckboxElement
 
 
@@ -660,6 +664,8 @@ class FileElement(InputElementBase):
     def add_processor(self, processor, msg=None):
         """ NotImplementedError: FileElement does not support add_processor() """
         raise NotImplementedError('FileElement does not support add_processor()')
+
+
 form_elements['file'] = FileElement
 
 
@@ -669,6 +675,8 @@ class HiddenElement(InputElementBase):
                  **kwargs):
         InputElementBase.__init__(self, 'hidden', form, eid, label, vtype, defaultval, strip,
                                   **kwargs)
+
+
 form_elements['hidden'] = HiddenElement
 
 
@@ -678,6 +686,8 @@ class ImageElement(InputElementBase):
                  **kwargs):
         InputElementBase.__init__(self, 'image', form, eid, label, vtype, defaultval, strip,
                                   **kwargs)
+
+
 form_elements['image'] = ImageElement
 
 
@@ -689,6 +699,8 @@ class ResetElement(InputElementBase):
                                   **kwargs)
         if self.defaultval is NotGiven:
             self.defaultval = 'Reset'
+
+
 form_elements['reset'] = ResetElement
 
 
@@ -707,6 +719,8 @@ class SubmitElement(InputElementBase):
         if is_notgiven(self.submittedval) or self.fixed:
             return HasValueElement.displayval.fget(self)
         return self.submittedval
+
+
 form_elements['submit'] = SubmitElement
 
 
@@ -725,6 +739,8 @@ class CancelElement(SubmitElement):
         if is_notgiven(self.submittedval) or self.fixed:
             return HasValueElement.displayval.fget(self)
         return self.submittedval
+
+
 form_elements['cancel'] = CancelElement
 
 
@@ -737,6 +753,8 @@ class TextElement(InputElementBase, MaxLengthMixin):
                                   **kwargs)
 
         self.set_length(maxlength)
+
+
 form_elements['text'] = TextElement
 
 
@@ -776,6 +794,8 @@ class ConfirmElement(TextElement):
 
     def render_static(self):
         return ''
+
+
 form_elements['confirm'] = ConfirmElement
 
 
@@ -786,6 +806,8 @@ class DateElement(TextElement):
         vargs = multi_pop(kwargs, 'accept_day', 'month_style', 'datetime_module')
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         self.add_processor(fev.DateConverter(**vargs))
+
+
 form_elements['date'] = DateElement
 
 
@@ -796,6 +818,8 @@ class EmailElement(TextElement):
         vargs = multi_pop(kwargs, 'resolve_domain')
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         self.add_processor(fev.Email(**vargs))
+
+
 form_elements['email'] = EmailElement
 
 
@@ -819,6 +843,8 @@ class PasswordElement(TextElement):
         if self.default_ok:
             return super(PasswordElement, self).displayval
         return None
+
+
 form_elements['password'] = PasswordElement
 
 
@@ -830,6 +856,8 @@ class TimeElement(TextElement):
                           'use_datetime', 'datetime_module')
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         self.add_processor(fev.TimeConverter(**vargs))
+
+
 form_elements['time'] = TimeElement
 
 
@@ -850,6 +878,7 @@ class URLElement(TextElement):
             else:
                 todisplay = self.displayval
         return HTML.span(todisplay, **self._static_attributes())
+
 
 form_elements['url'] = URLElement
 
@@ -962,6 +991,7 @@ class SelectElement(FormFieldElementBase):
         self.add_attr('class', 'select')
         return HTML.span(todisplay, **self._static_attributes())
 
+
 form_elements['select'] = SelectElement
 
 
@@ -977,6 +1007,8 @@ class MultiSelectElement(SelectElement):
                                auto_validate, invalid, error_msg,
                                required, **kwargs)
         self.submittedval = NotGivenIter
+
+
 form_elements['mselect'] = MultiSelectElement
 
 
@@ -1036,6 +1068,7 @@ class TextAreaElement(FormFieldElementBase, MaxLengthMixin):
         else:
             todisplay = self.displayval
         return HTML.span(todisplay, **self._static_attributes())
+
 
 form_elements['textarea'] = TextAreaElement
 
@@ -1155,6 +1188,8 @@ class PassThruElement(HasValueElement):
     @property
     def value(self):
         return self.defaultval
+
+
 form_elements['passthru'] = PassThruElement
 
 
@@ -1176,6 +1211,8 @@ class FixedElement(PassThruElement):
     def render(self, **kwargs):
         self.set_attrs(**kwargs)
         return HTML.tag('div', self.value, **self.attributes)
+
+
 form_elements['fixed'] = FixedElement
 
 
@@ -1211,6 +1248,8 @@ class StaticElement(ElementBase):
         self.set_attrs(**kwargs)
         displayval = self.displayval if self.displayval or self.displayval == 0 else None
         return HTML.tag('span', displayval, **self.attributes)
+
+
 form_elements['static'] = StaticElement
 
 
@@ -1235,6 +1274,7 @@ class GroupElement(StaticElement, ElementRegistrar):
             if el.is_renderable:
                 yield el
 
+
 form_elements['elgroup'] = GroupElement
 
 
@@ -1255,6 +1295,8 @@ class HeaderElement(StaticElement):
         self.set_attrs(**kwargs)
         displayval = self.displayval if self.displayval or self.displayval == 0 else None
         return HTML.tag(self.level, displayval, **self.attributes)
+
+
 form_elements['header'] = HeaderElement
 
 
@@ -1367,6 +1409,7 @@ class MultiCheckboxElement(LogicalSupportElement):
         self.chosen_attr = 'checked'
         self.etype = 'checkbox'
 
+
 form_elements['mcheckbox'] = MultiCheckboxElement
 
 
@@ -1380,4 +1423,6 @@ class RadioElement(LogicalSupportElement):
         self.chosen = chosen
         self.chosen_attr = 'checked'
         self.etype = 'radio'
+
+
 form_elements['radio'] = RadioElement
