@@ -1,6 +1,11 @@
 Change Log
 ----------
 
+0.4.0 released 2016-11-23
+=========================
+
+* added support for Python 3 (3.4 and 3.5)
+* set up CI and coverage
 
 0.3.9 released 2016-05-20
 =========================

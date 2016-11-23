@@ -8,16 +8,14 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages
 
-import blazeform
-version = blazeform.VERSION
-
 cdir = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(cdir, 'readme.rst')).read()
 CHANGELOG = open(os.path.join(cdir, 'changelog.rst')).read()
+VERSION = open(os.path.join(cdir, 'blazeform', 'version.txt')).read().strip()
 
 setup(
     name = "BlazeForm",
-    version = version,
+    version = VERSION,
     description = "A library for generating and validating HTML forms",
     long_description=README + '\n\n' + CHANGELOG,
     author = "Randy Syring",
