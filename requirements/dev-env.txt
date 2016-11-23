@@ -1,10 +1,9 @@
-blazeutils
-formencode
-webhelpers2
+-r common.txt
 
-# testing libs
 codecov
 coverage
 dnspython
 flake8
 nose
+tox
+wheel
