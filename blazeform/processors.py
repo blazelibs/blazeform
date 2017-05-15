@@ -187,4 +187,4 @@ class Decimal(BaseValidator):
         try:
             return decimal.Decimal(value)
         except decimal.DecimalException as e:
-            raise Invalid(str(e), value, state)
+            raise Invalid('Not a valid number', value, state)

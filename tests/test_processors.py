@@ -1,6 +1,11 @@
 from __future__ import absolute_import
+
+from blazeutils.testing import raises
+from decimal import Decimal
 from formencode import Invalid
 from formencode.validators import MaxLength
+
+from blazeform.processors import Decimal as DecimalProc
 
 
 def test_maxlength_bug_fix():
@@ -13,3 +18,14 @@ def test_maxlength_bug_fix():
         assert False, 'expected exception'
     except Invalid as e:
         assert str(e) == 'Enter a value not greater than 5 characters long'
+
+
+def test_decimal():
+    proc = DecimalProc()
+
+    @raises(Invalid, 'Not a valid number')
+    def check():
+        proc.to_python('foo')
+    check()
+
+    assert proc.to_python('1.123') == Decimal('1.123')
