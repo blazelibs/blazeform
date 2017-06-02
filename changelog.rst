@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.4.1 released <in development>
+0.4.1 released 2017-06-02
 =========================
 
-* ?
+* update validation messages for consistency across python versions
 
 0.4.0 released 2016-11-23
 =========================
