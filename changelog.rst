@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.4.2 released <in development>
+0.4.2 released 2018-01-17
 =========================
 
-* ?
+* handle string type in file upload for blank submissions
 
 0.4.1 released 2017-06-02
 =========================

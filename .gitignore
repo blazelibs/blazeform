@@ -11,3 +11,4 @@ nosetests.xml
 htmlcov/*
 .cache/
 dist
+build

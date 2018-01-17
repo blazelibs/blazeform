@@ -582,6 +582,8 @@ class FileElement(InputElementBase):
         self.errors = []
         if isinstance(value, BaseTranslator):
             self._submittedval = value
+        elif isinstance(value, six.string_types):
+            self._submittedval = NotGiven
         else:
             self._submittedval = self.form._fu_translator(value)
 
