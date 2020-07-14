@@ -1,3 +1,9 @@
 recursive-include blazeform *
 recursive-exclude blazeform *.pyc
+include *.yml
 include *.rst
+include *.txt
+include .coveragerc
+include .circleci/config.yml
+include .circleci/pytest.ini
+recursive-include docs *.txt

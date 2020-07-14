@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-import six
-
-
 class StringIndentHelper(object):
 
     def __init__(self):
@@ -137,7 +133,7 @@ def tolist(x, default=[]):
 
 
 def is_iterable(possible_iterable):
-    if isinstance(possible_iterable, six.string_types):
+    if isinstance(possible_iterable, str):
         return False
     try:
         iter(possible_iterable)

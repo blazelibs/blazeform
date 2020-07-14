@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import datetime
 
 from webhelpers2.html import literal
@@ -34,8 +33,8 @@ def test_el_checkbox():
 
 
 def test_el_file():
-        el = Form('f', static=True).add_file('f')
-        assert el() == '', el()
+    el = Form('f', static=True).add_file('f')
+    assert el() == '', el()
 
 
 def test_el_hidden():

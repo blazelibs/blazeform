@@ -1,42 +1,55 @@
-from __future__ import absolute_import
 import os
-import sys
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    from ez_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, find_packages
+from setuptools import setup, find_packages
 
 cdir = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(cdir, 'readme.rst')).read()
 CHANGELOG = open(os.path.join(cdir, 'changelog.rst')).read()
-VERSION = open(os.path.join(cdir, 'blazeform', 'version.txt')).read().strip()
+
+version_fpath = os.path.join(cdir, 'blazeform', 'version.py')
+version_globals = {}
+with open(version_fpath) as fo:
+    exec(fo.read(), version_globals)
 
 setup(
-    name = "BlazeForm",
-    version = VERSION,
-    description = "A library for generating and validating HTML forms",
-    long_description=README + '\n\n' + CHANGELOG,
-    author = "Randy Syring",
-    author_email = "randy.syring@level12.io",
-    url='http://pypi.python.org/pypi/BlazeForm',
+    name="BlazeForm",
+    version=version_globals['VERSION'],
+    description="A library for generating and validating HTML forms",
+    long_description='\n\n'.join((README, CHANGELOG)),
+    long_description_content_type='text/x-rst',
+    author="Randy Syring",
+    author_email="randy.syring@level12.io",
+    url='https://github.com/blazelibs/blazeform',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Internet :: WWW/HTTP'
       ],
     license='BSD',
-    packages=['blazeform'],
-    install_requires = [
-        "FormEncode>=1.2.2",
-        "BlazeUtils>=0.3.0",
+    packages=find_packages(exclude=[]),
+    include_package_data=True,
+    install_requires=[
+        "FormEncode>=1.3.1",
+        "BlazeUtils>=0.6.2",
         "WebHelpers2"
     ],
+    # List additional groups of dependencies here (e.g. development
+    # dependencies). You can install these using the following syntax,
+    # for example:
+    # $ pip install -e .[dev,test]
+    extras_require={
+        'test': [
+            'codecov',
+            'coverage',
+            'dnspython',
+            'flake8',
+            'nose',
+            'tox',
+            'wheel',
+        ],
+    },
     zip_safe=False
 )

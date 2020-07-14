@@ -1,6 +1,4 @@
-from __future__ import absolute_import
 from os import path
-from six.moves import range
 
 renderers = ('default', 'withaction', 'all_els', 'static', 'noteprefix',
              'reqnote_formtop', 'reqnote_formtop_header', 'reqnote_section')
@@ -10,7 +8,7 @@ rendir = ''
 def test_all():
     global rendir
     for rname in renderers:
-        rmod = __import__('tests.renderers.%s' % rname, globals(), locals(), ['TestForm'])
+        rmod = __import__('blazeform.tests.renderers.%s' % rname, globals(), locals(), ['TestForm'])
         if rendir == '':
             rendir = path.dirname(rmod.__file__)
         tf = rmod.TestForm()
@@ -49,7 +47,7 @@ def test_all():
                     filestr = '**file empty**'
                 # TODO: Restore to normal, changed for testing.
                 assert formstr == filestr, 'line %d not equal in %s\n  form: %s\n  file: %s' % \
-                    (lnum+1, '%s.html' % rname, formstr, filestr)
+                    (lnum + 1, '%s.html' % rname, formstr, filestr)
         except AssertionError:
             # write the form output next to the test file for an easy diff
             formfile = open(path.join(rendir, '%s.form.html' % rname), 'w')

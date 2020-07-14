@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import datetime
 import decimal
 import unittest
@@ -102,7 +101,7 @@ class CommonTest(unittest.TestCase):
     def test_if_missing(self):
         f = Form('f')
         el = f.add_text('f', 'f', if_missing='foo')
-        assert el.value is 'foo', el.value
+        assert el.value == 'foo', el.value
 
         # doesn't affect anything if the field is submitted
         f = Form('f')
@@ -114,7 +113,7 @@ class CommonTest(unittest.TestCase):
         # if empty works like if_missing when the field isn't submitted
         f = Form('f')
         el = f.add_text('f', 'f', if_empty='foo')
-        assert el.value is 'foo'
+        assert el.value == 'foo'
 
         # if_empty also covers empty submit values
         f = Form('f')
@@ -984,7 +983,7 @@ class SelectTest(unittest.TestCase):
         # "empty" value when required, but there is an empty value in the
         # options.  It seems that required meaning 'must not be empty' should
         # take precidence.
-        el = Form('f').add_select('f', o+[('', 'blank')], if_empty='', required=True)
+        el = Form('f').add_select('f', o + [('', 'blank')], if_empty='', required=True)
         assert not el.is_valid()
 
         # make sure choose values do not get returned when required=False
@@ -1140,7 +1139,7 @@ class SelectTest(unittest.TestCase):
         # "empty" value when required, but there is an empty value in the
         # options.  It seems that required meaning 'must not be empty' should
         # take precidence.
-        el = Form('f').add_mselect('f', o+[('', 'blank')], if_empty='', required=True)
+        el = Form('f').add_mselect('f', o + [('', 'blank')], if_empty='', required=True)
         assert not el.is_valid()
 
         # make sure choose values do not get returned when required=False

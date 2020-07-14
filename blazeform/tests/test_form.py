@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from formencode.validators import Int
 import unittest
 
@@ -149,8 +148,8 @@ class CommonFormUsageTest(unittest.TestCase):
         f.add_submit('submit', name="submitbtn")
         post = {'login-submit-flag': 'submitted', 'unfield': 'test2', 'submitbtn': 'Submit'}
         f.set_submitted(post)
-        self.assertEqual(f.get_values(),  {'unfield': 'test2', 'login-submit-flag': 'submitted',
-                                           'submitbtn': 'Submit'})
+        self.assertEqual(f.get_values(), {'unfield': 'test2', 'login-submit-flag': 'submitted',
+                                          'submitbtn': 'Submit'})
 
     def test_blank_checkbox(self):
         html = L('<input checked="checked" class="checkbox" id="login-disabled" name="disabled" '
@@ -324,9 +323,9 @@ class CommonFormUsageTest(unittest.TestCase):
         form.add_text('text2', 'Value')
 
         result = form.add_field_errors({
-                                'text1': 'Generic Error',
-                                'text2': 'Error'
-                               })
+            'text1': 'Generic Error',
+            'text2': 'Error'
+        })
         assert result
         self.assertEqual(form.elements.text1.errors, ['Generic Error'])
         self.assertEqual(form.elements.text2.errors, ['Error'])
@@ -337,9 +336,9 @@ class CommonFormUsageTest(unittest.TestCase):
         form.add_text('text2', 'Value')
 
         result = form.add_field_errors({
-                                'text1': ['Generic Error 1', 'Generic Error 2'],
-                                'text2': ['Error 1', 'Error 2']
-                               })
+            'text1': ['Generic Error 1', 'Generic Error 2'],
+            'text2': ['Error 1', 'Error 2']
+        })
         assert result
         assert len(form.elements.text1.errors) == 2
         self.assertEqual(form.elements.text1.errors, ['Generic Error 1', 'Generic Error 2'])
@@ -353,10 +352,10 @@ class CommonFormUsageTest(unittest.TestCase):
         form.add_text('text2', 'Value')
 
         result = form.add_field_errors({
-                                'text1': 'Generic Error',
-                                'text2': 'Error',
-                                'not there': 'Error'
-                               })
+            'text1': 'Generic Error',
+            'text2': 'Error',
+            'not there': 'Error'
+        })
         assert result is False
 
     def test_exception_handling(self):
@@ -416,7 +415,7 @@ class CommonFormUsageTest(unittest.TestCase):
         post = {
             'login1-submit-flag': 'submitted',
             'field': 'foo'
-            }
+        }
         f1.set_submitted(post)
         assert f1.is_submitted()
         assert f1.elements.field.value == 'foo'
@@ -431,7 +430,7 @@ class CommonFormUsageTest(unittest.TestCase):
         post = {
             'login1-submit-flag': 'submitted',
             'field': 'foo'
-            }
+        }
         try:
             f1.set_submitted(post)
             assert False, 'expected exception for submitting to static form'
