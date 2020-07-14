@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import html
 import inspect
 from os import path
@@ -13,8 +12,6 @@ from blazeform.file_upload_translators import BaseTranslator
 from blazeform.processors import Confirm, Select, MultiValues, Wrapper, Decimal
 from blazeform.util import HtmlAttributeHolder, is_empty, multi_pop, NotGiven, \
     tolist, NotGivenIter, is_notgiven, is_iterable, ElementRegistrar, is_given
-import six
-from six.moves import map
 
 form_elements = {}
 
@@ -247,12 +244,12 @@ class FormFieldElementBase(HasValueElement):
         value = self.submittedval
 
         # strip if necessary
-        if self.strip and isinstance(value, six.string_types):
+        if self.strip and isinstance(value, str):
             value = value.strip()
         elif self.strip and is_iterable(value):
             newvalue = []
             for item in value:
-                if isinstance(item, six.string_types):
+                if isinstance(item, str):
                     newvalue.append(item.strip())
                 else:
                     newvalue.append(item)
@@ -390,7 +387,7 @@ class FormFieldElementBase(HasValueElement):
         for looking_for, error_msg, exc_type, callback in self.exception_handlers:
             if is_notgiven(callback):
                 if not is_notgiven(exc_type):
-                    if isinstance(exc_type, six.string_types):
+                    if isinstance(exc_type, str):
                         if exc.__class__.__name__ != exc_type:
                             continue
                     else:
@@ -582,7 +579,7 @@ class FileElement(InputElementBase):
         self.errors = []
         if isinstance(value, BaseTranslator):
             self._submittedval = value
-        elif isinstance(value, six.string_types):
+        elif isinstance(value, str):
             self._submittedval = NotGiven
         else:
             self._submittedval = self.form._fu_translator(value)
@@ -768,7 +765,7 @@ class ConfirmElement(TextElement):
         TextElement.__init__(self, form, eid, label, vtype, defaultval, strip, **kwargs)
         if not match:
             raise ProgrammingError('match argument is required for Confirm elements')
-        elif isinstance(match, six.string_types):
+        elif isinstance(match, str):
             try:
                 self.mel = self.form.els[match]
             except KeyError as e:
@@ -964,10 +961,10 @@ class SelectElement(FormFieldElementBase):
                 value, label = opt
             else:
                 value = label = opt
-            return tags.Option(label, six.text_type(value))
+            return tags.Option(label, str(value))
 
         displayval = self.displayval if self.displayval or self.displayval == 0 else None
-        displayval = [six.text_type(val) for val in tolist(displayval)]
+        displayval = [str(val) for val in tolist(displayval)]
         options = [option_tag(opt) for opt in self.options]
         return tags.select(self.nameattr or self.id, displayval, options, **self.attributes)
 
@@ -979,13 +976,13 @@ class SelectElement(FormFieldElementBase):
 
             def mapf(option):
                 if isinstance(option, tuple):
-                    return six.text_type(option[0]), option[1]
+                    return str(option[0]), option[1]
                 else:
-                    return six.text_type(option), option
+                    return str(option), option
             lookup = dict(map(mapf, self.options))
             for key in tolist(self.displayval):
                 try:
-                    values.append(lookup[six.text_type(key)])
+                    values.append(lookup[str(key)])
                 except KeyError:
                     pass
             todisplay = ', '.join(values)
@@ -1147,11 +1144,11 @@ class LogicalGroupElement(FormFieldElementBase):
     def _set_members(self, values):
         # convert to dict with unicode keys so our comparisons are always
         # the same type
-        values = dict([(six.text_type(v), 1) for v in tolist(values)])
+        values = dict([(str(v), 1) for v in tolist(values)])
 
         # based on our values, set our members to chosen or not chosen
         for key, el in self.members.items():
-            if six.text_type(key) in values:
+            if str(key) in values:
                 el.chosen = True
             else:
                 el.chosen = False
@@ -1318,7 +1315,7 @@ class LogicalSupportElement(ElementBase):
             )
 
         ElementBase.__init__(self, form, eid, label, defaultval, **kwargs)
-        if isinstance(group, six.string_types):
+        if isinstance(group, str):
             self.lgroup = form.elements.get(group, None)
             if not self.lgroup:
                 group_label = kwargs.get('group_label', group)

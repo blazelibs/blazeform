@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import decimal
 
 from formencode import Invalid
@@ -6,7 +5,6 @@ from formencode.validators import FancyValidator
 
 from blazeform.exceptions import ValueInvalid
 from blazeform.util import tolist, is_iterable, is_notgiven
-import six
 
 
 class BaseValidator(FancyValidator):
@@ -35,12 +33,12 @@ class Select(BaseValidator):
     messages = {
         'notthere': "the value did not come from the given options",
         'invalid': "the value chosen is invalid",
-        }
+    }
 
     def _to_python(self, value, state):
         valiter = tolist(value)
-        as_empty = [six.text_type(d) for d in tolist(self.as_empty)]
-        vallist = [six.text_type(d) for d in valiter]
+        as_empty = [str(d) for d in tolist(self.as_empty)]
+        vallist = [str(d) for d in valiter]
         # single
         if len(vallist) == 1:
             if vallist[0] in as_empty:
@@ -53,14 +51,14 @@ class Select(BaseValidator):
                 to_remove.append(index)
         adjust = 0
         for index in to_remove:
-            del valiter[index-adjust]
+            del valiter[index - adjust]
             adjust += 1
         return valiter
 
     def validate_other(self, values, state):
-        soptions = set([six.text_type(d[0] if isinstance(d, tuple) else d) for d in self.options])
-        sinvalid = set([six.text_type(d) for d in tolist(self.invalid)])
-        svalues = set([six.text_type(d) for d in tolist(values)])
+        soptions = set([str(d[0] if isinstance(d, tuple) else d) for d in self.options])
+        sinvalid = set([str(d) for d in tolist(self.invalid)])
+        svalues = set([str(d) for d in tolist(values)])
 
         if len(sinvalid.intersection(svalues)) != 0:
             raise Invalid(self.message('invalid', state), values, state)
@@ -79,7 +77,7 @@ class Confirm(BaseValidator):
     __unpackargs__ = ('tomatch', )
     messages = {
         'notequal': 'does not match field "%(field)s"'
-        }
+    }
 
     def is_empty(self, value):
         """need to override, otherwise validate_python never gets called"""
@@ -102,7 +100,7 @@ class MultiValues(BaseValidator):
     __unpackargs__ = ('validator', 'multi_check')
     messages = {
         'nonmultiple': 'this field does not accept more than one value'
-        }
+    }
 
     def is_empty(self, value):
         """ need this so our confirm element can function correctly """
@@ -186,5 +184,5 @@ class Decimal(BaseValidator):
     def _to_python(self, value, state):
         try:
             return decimal.Decimal(value)
-        except decimal.DecimalException as e:
+        except decimal.DecimalException:
             raise Invalid('Not a valid number', value, state)

@@ -8,20 +8,13 @@ environment:
   matrix:
     # Pre-installed Python versions, which Appveyor may upgrade to
     # a later point release.
-    - PYTHON: "C:\\Python27"
-      PYTHON_VERSION: "2.7.12"
+    - PYTHON: "C:\\Python37"
       PYTHON_ARCH: "32"
-      TOXENV: py27
+      TOXENV: py37
 
-    - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.5"
+    - PYTHON: "C:\\Python38"
       PYTHON_ARCH: "32"
-      TOXENV: py34
-
-    - PYTHON: "C:\\Python35"
-      PYTHON_VERSION: "3.5.2"
-      PYTHON_ARCH: "32"
-      TOXENV: py35
+      TOXENV: py38
 
 install:
   # Prepend newly installed Python to the PATH of this build (this cannot be
@@ -35,7 +28,7 @@ install:
   - pip --version
 
   # Install tox from the wheelhouse
-  - pip install --use-wheel --no-index --find-links=requirements/wheelhouse tox wheel codecov
+  - pip install -U tox wheel codecov
 
 # Not a C# project, build stuff at the test step instead.
 build: false  

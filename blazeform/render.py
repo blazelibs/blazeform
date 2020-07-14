@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from webhelpers2.html import tags, HTML
 
 from blazeform import element

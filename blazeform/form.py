@@ -1,10 +1,9 @@
-from __future__ import absolute_import
 import formencode
 import inspect
 from blazeutils.datastructures import LazyOrderedDict
 
 from blazeform.element import form_elements, CancelElement, CheckboxElement, \
-        MultiSelectElement, LogicalGroupElement
+    MultiSelectElement, LogicalGroupElement
 from blazeform.exceptions import ElementInvalid, ProgrammingError
 from blazeform.file_upload_translators import WerkzeugTranslator
 from blazeform.processors import Wrapper
@@ -12,7 +11,6 @@ from blazeform.util import HtmlAttributeHolder, NotGiven, ElementRegistrar, is_n
 
 # fix the bug in the formencode MaxLength validator
 from formencode.validators import MaxLength
-import six
 MaxLength._messages['__buggy_toolong'] = MaxLength._messages['tooLong']
 MaxLength._messages['tooLong'] = 'Enter a value not greater than %(maxLength)i characters long'
 
@@ -183,7 +181,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
                 msg = (msg or str(e))
                 if msg:
                     self.add_error(msg)
-            except ElementInvalid as e:
+            except ElementInvalid:
                 # since we are getting an ElementInvalid exception, that means
                 # our validator needed the value of an element to complete
                 # validation, but that element is invalid.  In that case,
@@ -195,11 +193,11 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
 
     def _set_submitted_values(self, values):
         for el in self.submittable_els:
-                key = el.nameattr or el.id
-                if key in values:
-                    el.submittedval = values[key]
-                elif isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
-                    el.submittedval = None
+            key = el.nameattr or el.id
+            if key in values:
+                el.submittedval = values[key]
+            elif isinstance(el, (CheckboxElement, MultiSelectElement, LogicalGroupElement)):
+                el.submittedval = None
 
     def set_submitted(self, values):
         """ values should be dict like """
@@ -256,7 +254,7 @@ class FormBase(HtmlAttributeHolder, ElementRegistrar):
 
         for looking_for, error_msg, exc_type, callback in self._exception_handlers:
             if not is_notgiven(exc_type):
-                if isinstance(exc_type, six.string_types):
+                if isinstance(exc_type, str):
                     if exc.__class__.__name__ != exc_type:
                         continue
                 else:

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from blazeutils.testing import raises
 from decimal import Decimal
 from formencode import Invalid

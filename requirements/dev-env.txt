@@ -1,9 +1,0 @@
--r common.txt
-
-codecov
-coverage
-dnspython
-flake8
-nose
-tox
-wheel
