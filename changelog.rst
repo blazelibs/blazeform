@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.5.0 released 2020-07-14
+-------------------------
+
+- drop support for python 2
+- modernize package setup and CI 
+- support python 3.8 (1d9afa9_)
+
+.. _1d9afa9: https://github.com/blazelibs/blazeform/commit/1d9afa9
+
+
 0.4.2 released 2018-01-17
 -------------------------
 
