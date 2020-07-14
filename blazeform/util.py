@@ -199,12 +199,12 @@ class ElementRegistrar(object):
 
 class HtmlAttributeHolder(object):
     def __init__(self, **kwargs):
-        self._cleankeys(kwargs)
+        kwargs = self._cleankeys(kwargs)
         #: a dictionary that represents html attributes
         self.attributes = kwargs
 
     def set_attrs(self, **kwargs):
-        self._cleankeys(kwargs)
+        kwargs = self._cleankeys(kwargs)
         self.attributes.update(kwargs)
 
     def set_attr(self, key, value):
@@ -249,7 +249,4 @@ class HtmlAttributeHolder(object):
             in with an underscore at the end (i.e. "class_").  We want to
             remove the underscore before saving
         """
-        for key, val in dict.items():
-            if key.endswith('_'):
-                del dict[key]
-                dict[key[:-1]] = val
+        return {key[:-1] if key.endswith('_') else key: val for key, val in dict.items()}

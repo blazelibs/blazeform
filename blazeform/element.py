@@ -1,7 +1,7 @@
 from __future__ import absolute_import
+import html
 import inspect
 from os import path
-import cgi
 
 import formencode
 import formencode.validators as fev
@@ -126,7 +126,7 @@ class ElementBase(HtmlAttributeHolder):
 
     def add_note(self, note, escape=True):
         if escape:
-            note = cgi.escape(note)
+            note = html.escape(note)
         self.notes.append(note)
 
 
