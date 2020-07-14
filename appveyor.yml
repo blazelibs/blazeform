@@ -1,3 +1,6 @@
+image:
+  - Visual Studio 2019
+
 environment:
   global:
     # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
@@ -21,7 +24,7 @@ install:
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-  
+
   # Check that we have the expected version and architecture for Python
   - python --version
   - python -c "import struct; print(struct.calcsize('P') * 8)"
@@ -31,7 +34,7 @@ install:
   - pip install -U tox wheel codecov
 
 # Not a C# project, build stuff at the test step instead.
-build: false  
+build: false
 
 test_script:
   - tox
@@ -47,4 +50,3 @@ on_success:
 artifacts:
   # Archive the generated wheel package in the ci.appveyor.com build report.
   - path: dist\*
-
