@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.5.1 released 2020-10-23
+-------------------------
+
+- Fix mutable default argument in tolist (556fcf0_)
+
+.. _556fcf0: https://github.com/blazelibs/blazeform/commit/556fcf0
+
+
 0.5.0 released 2020-07-14
 -------------------------
 
