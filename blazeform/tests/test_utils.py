@@ -1,8 +1,16 @@
-from decimal import Decimal
 import unittest
+from decimal import Decimal
 
-from blazeform.util import multi_pop, NotGiven, is_iterable, NotGivenIter, \
-    is_notgiven, HtmlAttributeHolder, is_empty
+from blazeform.util import (
+    HtmlAttributeHolder,
+    NotGiven,
+    NotGivenIter,
+    is_empty,
+    is_iterable,
+    is_notgiven,
+    multi_pop,
+    tolist,
+)
 
 
 class TestUtilFunctions(unittest.TestCase):
@@ -40,6 +48,19 @@ class TestUtilFunctions(unittest.TestCase):
             self.fail('should emulate empty')
         else:
             assert True, 'should emulate empty'
+
+    def test_tolist(self):
+        assert tolist([1, 2]) == [1, 2]
+        assert tolist((1, 2)) == [1, 2]
+        assert tolist(1) == [1]
+        assert tolist(None) == []
+        assert tolist(None, [1, 2]) == [1, 2]
+
+    def test_tolist_nonmutable_default(self):
+        x = tolist(None)
+        assert x == []
+        x.append(3)
+        assert tolist(None) == []
 
     def test_is_iterable(self):
         assert is_iterable([])
