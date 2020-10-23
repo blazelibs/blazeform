@@ -122,7 +122,9 @@ class NotGivenIterBase(NotGivenBase):
 NotGivenIter = NotGivenIterBase()
 
 
-def tolist(x, default=[]):
+def tolist(x, default=NotGivenIter):
+    if default is NotGivenIter:
+        default = []
     if x is None:
         return default
     if isinstance(x, list):
